@@ -1,0 +1,76 @@
+# ============================================================================
+# VR-GeoNusa — .gitignore untuk Unity Project
+# ============================================================================
+
+# --- Unity Generated ---
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# --- IDE ---
+/.idea/
+/.vs/
+/.vscode/
+*.csproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Unity Meta (JANGAN ignore .meta, wajib di-commit!) ---
+# *.meta  <-- JANGAN uncomment ini!
+
+# --- Build Output ---
+*.apk
+*.aab
+*.ipa
+*.exe
+*.app
+*.dmg
+
+# --- Crash Reports ---
+sysinfo.txt
+crashlytics-build.properties
+
+# --- Asset Store ---
+/[Aa]ssets/AssetStoreTools/
+
+# --- ML Training Output (simpan terpisah) ---
+/MLTraining/output/
+/MLTraining/wandb/
+/MLTraining/__pycache__/
+*.pyc
+
+# --- Fotogrametri Raw (terlalu besar untuk repo) ---
+/RawData/
+/PhotogrammetryProjects/
+
+# --- Dataset Training Lokal ---
+/dataset/geometry_wbn/train/
+/dataset/geometry_wbn/val/
+/dataset/geometry_wbn/test/
+
+# --- Environment ---
+.env
+*.env.local
+
+# --- Gradle (Android Build) ---
+/[Aa]ssets/Plugins/Android/gradle/
+.gradle/

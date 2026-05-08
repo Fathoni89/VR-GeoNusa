@@ -1,0 +1,105 @@
+# ============================================================================
+# VR-GeoNusa — Git LFS Tracking Rules
+# ============================================================================
+# File besar yang WAJIB di-track oleh Git LFS.
+# Tanpa LFS, file-file ini akan membuat repository sangat besar
+# dan memperlambat clone/pull.
+# ============================================================================
+
+# --- Model 3D ---
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.obj filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.glb filter=lfs diff=lfs merge=lfs -text
+*.gltf filter=lfs diff=lfs merge=lfs -text
+*.max filter=lfs diff=lfs merge=lfs -text
+*.ma filter=lfs diff=lfs merge=lfs -text
+*.mb filter=lfs diff=lfs merge=lfs -text
+*.ply filter=lfs diff=lfs merge=lfs -text
+*.stl filter=lfs diff=lfs merge=lfs -text
+*.dae filter=lfs diff=lfs merge=lfs -text
+
+# --- Tekstur & Gambar ---
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.tga filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.exr filter=lfs diff=lfs merge=lfs -text
+*.hdr filter=lfs diff=lfs merge=lfs -text
+*.bmp filter=lfs diff=lfs merge=lfs -text
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.svg filter=lfs diff=lfs merge=lfs -text
+*.webp filter=lfs diff=lfs merge=lfs -text
+
+# --- Audio ---
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.ogg filter=lfs diff=lfs merge=lfs -text
+*.aif filter=lfs diff=lfs merge=lfs -text
+
+# --- Video ---
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.avi filter=lfs diff=lfs merge=lfs -text
+*.webm filter=lfs diff=lfs merge=lfs -text
+
+# --- ML Model ---
+*.onnx filter=lfs diff=lfs merge=lfs -text
+*.tflite filter=lfs diff=lfs merge=lfs -text
+*.pth filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
+*.h5 filter=lfs diff=lfs merge=lfs -text
+*.pb filter=lfs diff=lfs merge=lfs -text
+
+# --- Unity Specific ---
+*.unitypackage filter=lfs diff=lfs merge=lfs -text
+*.asset filter=lfs diff=lfs merge=lfs -text
+*.cubemap filter=lfs diff=lfs merge=lfs -text
+*.prefab filter=lfs diff=lfs merge=lfs -text
+
+# --- Fotogrametri & LiDAR ---
+*.las filter=lfs diff=lfs merge=lfs -text
+*.laz filter=lfs diff=lfs merge=lfs -text
+*.e57 filter=lfs diff=lfs merge=lfs -text
+*.ptx filter=lfs diff=lfs merge=lfs -text
+
+# --- Arsip ---
+*.zip filter=lfs diff=lfs merge=lfs -text
+*.7z filter=lfs diff=lfs merge=lfs -text
+*.rar filter=lfs diff=lfs merge=lfs -text
+*.tar.gz filter=lfs diff=lfs merge=lfs -text
+
+# --- Dokumen Besar ---
+*.pdf filter=lfs diff=lfs merge=lfs -text
+*.docx filter=lfs diff=lfs merge=lfs -text
+*.pptx filter=lfs diff=lfs merge=lfs -text
+*.xlsx filter=lfs diff=lfs merge=lfs -text
+
+# --- APK / Build ---
+*.apk filter=lfs diff=lfs merge=lfs -text
+*.aab filter=lfs diff=lfs merge=lfs -text
+
+# --- Force text for Unity YAML ---
+*.unity text merge=unityyamlmerge
+*.mat text merge=unityyamlmerge
+*.anim text merge=unityyamlmerge
+*.controller text merge=unityyamlmerge
+*.overrideController text merge=unityyamlmerge
+*.physicMaterial text merge=unityyamlmerge
+*.physicsMaterial2D text merge=unityyamlmerge
+*.playable text merge=unityyamlmerge
+*.mask text merge=unityyamlmerge
+*.brush text merge=unityyamlmerge
+*.flare text merge=unityyamlmerge
+*.fontsettings text merge=unityyamlmerge
+*.guiskin text merge=unityyamlmerge
+*.giparams text merge=unityyamlmerge
+*.renderTexture text merge=unityyamlmerge
+*.shadervariants text merge=unityyamlmerge
+*.spriteatlas text merge=unityyamlmerge
+*.terrainlayer text merge=unityyamlmerge
+*.mixer text merge=unityyamlmerge
+*.signal text merge=unityyamlmerge
