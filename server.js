@@ -14,12 +14,15 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 app.use(cors());
 app.use(express.json());
 
+// ── Route eksplisit halaman — harus SEBELUM express.static ──
+app.get('/',      (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'admin', 'index.html')));
+
 // ── Serve static frontend files ──────────────────────
-app.use(express.static(PUBLIC_DIR));
-// Backward compat: lama /admin → /admin/index.html sudah otomatis
-// Aset statis lama (assets/, api/) tetap bisa diakses
+app.use(express.static(PUBLIC_DIR, { index: false })); // index:false → hindari auto-redirect direktori
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
-app.use('/api/ml-placeholder.json', (req, res) => {
+app.use('/data',   express.static(path.join(__dirname, 'data')));   // akses JSON langsung (GitHub Pages compat)
+app.get('/api/ml-placeholder.json', (req, res) => {
   res.sendFile(path.join(__dirname, 'api', 'ml-placeholder.json'));
 });
 
@@ -137,8 +140,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ── Route eksplisit untuk halaman utama ──────────────
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'admin', 'index.html'));
+});
+
 // ── Fallback: semua route unknown → index.html ────────
 app.get('*', (req, res) => {
+  const filePath = path.join(PUBLIC_DIR, req.path);
+  // Cek apakah file statis ada
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    return res.sendFile(filePath);
+  }
+  // Fallback ke index.html (SPA behaviour)
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
