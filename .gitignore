@@ -64,3 +64,6 @@ node_modules/
 
 # --- Claude Code local config ---
 .claude/
+
+# --- Admin credentials (JANGAN commit ke GitHub) ---
+config/admin.json
