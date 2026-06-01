@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VR-GeoNusa — Admin Panel</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0F172A;
+      --surface:   #1E293B;
+      --surface2:  #273549;
+      --border:    rgba(255,255,255,0.07);
+      --accent:    #38BDF8;
+      --accent2:   #818CF8;
+      --green:     #00e676;
+      --yellow:    #ffd700;
+      --red:       #ff5252;
+      --text:      #E2E8F0;
+      --muted:     #64748B;
+      --radius:    12px;
+    }
+
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+
+    /* ── Layout ── */
+    .app { display: grid; grid-template-columns: 240px 1fr; grid-template-rows: 56px 1fr; min-height: 100vh; }
+
+    /* ── Topbar ── */
+    .topbar {
+      grid-column: 1/-1;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 24px; gap: 16px;
+    }
+    .topbar .logo { font-weight: 900; font-size: 1.1em;
+      background: linear-gradient(90deg, #38BDF8, #818CF8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .topbar .badge { background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.2);
+      color: var(--accent); border-radius: 6px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+    .topbar .spacer { flex: 1; }
+    .topbar a { color: var(--muted); text-decoration: none; font-size: 12px; }
+    .topbar a:hover { color: var(--accent); }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 20px 12px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .sidebar .section-label { color: var(--muted); font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 12px 4px; }
+    .sidebar .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 8px; cursor: pointer;
+      color: var(--muted); font-size: 13px; font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .sidebar .nav-item.active { background: rgba(56,189,248,0.1); color: var(--accent); }
+    .sidebar .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+    /* ── Main content ── */
+    .main { padding: 28px; overflow-y: auto; }
+
+    /* ── Page header ── */
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.4em; font-weight: 800; }
+    .page-header .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 700; transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(135deg, #3730A3, #4338CA); color: #C7D2FE; }
+    .btn-success { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.25); }
+    .btn-danger  { background: rgba(255,82,82,0.12);  color: var(--red);   border: 1px solid rgba(255,82,82,0.2); }
+    .btn-ghost   { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); }
+    .btn-sm { padding: 4px 12px; font-size: 11px; border-radius: 6px; }
+
+    /* ── Scene tabs ── */
+    .scene-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .scene-tab {
+      padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px;
+      background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+    .scene-tab.active { background: rgba(56,189,248,0.12); color: var(--accent); border-color: rgba(56,189,248,0.3); }
+
+    /* ── Stats row ── */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; }
+    .stat-card .val { font-size: 2em; font-weight: 900; color: var(--accent); }
+    .stat-card .lbl { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+    /* ── Object table ── */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .table-toolbar { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .table-toolbar h2 { font-size: 14px; font-weight: 700; flex: 1; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 800; letter-spacing: 1px;
+         text-transform: uppercase; color: var(--muted); background: var(--surface2); }
+    td { padding: 10px 16px; border-top: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .badge-geo { background: rgba(129,140,248,0.12); color: var(--accent2); border-radius: 6px;
+                 padding: 2px 8px; font-size: 11px; font-weight: 700; }
+    .badge-interactive { background: rgba(0,230,118,0.1); color: var(--green); border-radius: 6px;
+                         padding: 2px 8px; font-size: 10px; font-weight: 700; }
+    .badge-static { background: rgba(100,116,139,0.15); color: var(--muted); border-radius: 6px;
+                    padding: 2px 8px; font-size: 10px; font-weight: 700; }
+    .badge-model { background: rgba(56,189,248,0.1); color: var(--accent); border-radius: 6px;
+                   padding: 2px 8px; font-size: 10px; font-weight: 700; }
+    .conf-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+      width: 620px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+      padding: 28px; position: relative;
+      transform: translateY(16px); transition: transform 0.2s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal h2 { font-size: 1.15em; font-weight: 800; margin-bottom: 20px; }
+    .modal .close-btn {
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(255,255,255,0.06); border: none; color: var(--muted);
+      width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal .close-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+    /* ── Form ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-grid .full { grid-column: 1/-1; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+    .form-group input, .form-group select, .form-group textarea {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); padding: 8px 12px; font-size: 13px; outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--accent2);
+    }
+    .form-group textarea { resize: vertical; min-height: 70px; font-family: inherit; }
+    .form-group select option { background: var(--surface); }
+    .form-divider { grid-column: 1/-1; border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+    .form-section { grid-column: 1/-1; font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+                    text-transform: uppercase; color: var(--accent2); margin-bottom: -6px; }
+
+    /* ── Export panel ── */
+    .export-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+                  padding: 16px; margin-top: 16px; }
+    .export-box pre { font-size: 11px; color: var(--muted); white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
+    .export-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 20px; font-size: 13px; font-weight: 600; z-index: 9999;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+    #toast.success { border-color: rgba(0,230,118,0.3); color: var(--green); }
+    #toast.error   { border-color: rgba(255,82,82,0.3);  color: var(--red); }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 48px; color: var(--muted); }
+    .empty .icon { font-size: 2.5em; margin-bottom: 10px; }
+
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <span class="logo">VR-GeoNusa</span>
+    <span class="badge">Admin Panel</span>
+    <div class="spacer"></div>
+    <a href="../index.html" target="_blank">↗ Buka Scene Borobudur</a>
+    <a href="../scenes/prambanan.html" target="_blank" style="margin-left:12px">↗ Buka Scene Prambanan</a>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="section-label">Manajemen</div>
+    <div class="nav-item active" onclick="showPage('objects')">
+      <span class="icon">🏛️</span> Objek Scene
+    </div>
+    <div class="nav-item" onclick="showPage('scenes')">
+      <span class="icon">🗺️</span> Info Scene
+    </div>
+    <div class="nav-item" onclick="showPage('export')">
+      <span class="icon">📤</span> Export Data
+    </div>
+    <div class="section-label" style="margin-top:12px">Referensi</div>
+    <div class="nav-item" onclick="showPage('geometri')">
+      <span class="icon">📐</span> Katalog Geometri
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main" id="main-content">
+    <!-- diisi oleh JS -->
+  </main>
+</div>
+
+<!-- Modal Tambah/Edit Objek -->
+<div class="modal-overlay" id="obj-modal">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal()">×</button>
+    <h2 id="modal-title">Tambah Objek Baru</h2>
+    <form id="obj-form" onsubmit="saveObject(event)">
+      <div class="form-grid">
+
+        <div class="form-section">Identitas Objek</div>
+
+        <div class="form-group">
+          <label>ID Unik *</label>
+          <input name="id" placeholder="obj-nama-unik" required>
+        </div>
+        <div class="form-group">
+          <label>Nama Elemen *</label>
+          <input name="element" placeholder="Stupa Utama" required>
+        </div>
+
+        <div class="form-group">
+          <label>Tipe Bentuk *</label>
+          <select name="type" onchange="updateGeomFields(this.value)" required>
+            <option value="box">Box (Kotak/Balok)</option>
+            <option value="sphere">Sphere (Bola)</option>
+            <option value="cylinder">Cylinder (Tabung)</option>
+            <option value="cone">Cone (Kerucut/Limas)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Interaktif (bisa diklik)?</label>
+          <select name="interactive">
+            <option value="true">Ya — tampilkan info geometri</option>
+            <option value="false">Tidak — dekoratif saja</option>
+          </select>
+        </div>
+
+        <hr class="form-divider">
+        <div class="form-section">Posisi & Tampilan</div>
+
+        <div class="form-group full">
+          <label>Posisi (x y z)</label>
+          <input name="position" placeholder="0 0 -8" value="0 0 -8">
+        </div>
+        <div class="form-group full">
+          <label>Rotasi (x y z derajat)</label>
+          <input name="rotation" placeholder="0 0 0" value="0 0 0">
+        </div>
+        <div class="form-group full">
+          <label>Scale (x y z)</label>
+          <input name="scale" placeholder="1 1 1" value="1 1 1">
+        </div>
+
+        <div class="form-group">
+          <label>Warna Normal</label>
+          <input name="color" type="color" value="#5a5a50">
+        </div>
+        <div class="form-group">
+          <label>Warna Hover</label>
+          <input name="color_hover" type="color" value="#6a6a60">
+        </div>
+
+        <!-- Dimensi box -->
+        <div id="fields-box" class="form-group">
+          <label>Lebar (width)</label>
+          <input name="width" placeholder="2" value="2">
+        </div>
+        <div id="fields-box2" class="form-group">
+          <label>Tinggi (height)</label>
+          <input name="height" placeholder="2" value="2">
+        </div>
+        <div id="fields-box3" class="form-group full">
+          <label>Kedalaman (depth)</label>
+          <input name="depth" placeholder="2" value="2">
+        </div>
+
+        <!-- Dimensi sphere -->
+        <div id="fields-sphere" class="form-group" style="display:none">
+          <label>Radius</label>
+          <input name="radius_s" placeholder="1" value="1">
+        </div>
+        <div id="fields-sphere2" class="form-group" style="display:none">
+          <label>Theta Length (90=setengah)</label>
+          <input name="theta_length" placeholder="180" value="180">
+        </div>
+
+        <!-- Dimensi cylinder -->
+        <div id="fields-cyl" class="form-group" style="display:none">
+          <label>Radius</label>
+          <input name="radius_c" placeholder="0.5" value="0.5">
+        </div>
+        <div id="fields-cyl2" class="form-group" style="display:none">
+          <label>Tinggi (height)</label>
+          <input name="height_c" placeholder="2" value="2">
+        </div>
+
+        <!-- Dimensi cone -->
+        <div id="fields-cone" class="form-group" style="display:none">
+          <label>Radius Bawah</label>
+          <input name="radius_bottom" placeholder="1" value="1">
+        </div>
+        <div id="fields-cone2" class="form-group" style="display:none">
+          <label>Radius Atas (0=runcing)</label>
+          <input name="radius_top" placeholder="0.02" value="0.02">
+        </div>
+        <div id="fields-cone3" class="form-group" style="display:none">
+          <label>Tinggi (height)</label>
+          <input name="height_cone" placeholder="2" value="2">
+        </div>
+        <div id="fields-cone4" class="form-group" style="display:none">
+          <label>Segments (4=limas)</label>
+          <input name="segments_radial" placeholder="36" value="36">
+        </div>
+
+        <hr class="form-divider">
+        <div class="form-section">Model 3D (opsional — Tahun 2)</div>
+
+        <div class="form-group full">
+          <label>Path Model GLTF/GLB</label>
+          <input name="model_src" placeholder="../assets/models/borobudur-stupa.glb">
+          <small style="color:var(--muted);font-size:10px;margin-top:3px">Kosongkan untuk pakai bentuk primitif di atas. Isi path relatif dari root project.</small>
+        </div>
+
+        <hr class="form-divider">
+        <div class="form-section">Data Geometri Matematika</div>
+
+        <div class="form-group">
+          <label>Nama Geometri (Indonesia) *</label>
+          <input name="geo" placeholder="Setengah Bola">
+        </div>
+        <div class="form-group">
+          <label>Nama Geometri (English)</label>
+          <input name="geo_en" placeholder="Hemisphere">
+        </div>
+        <div class="form-group">
+          <label>Jumlah Sisi</label>
+          <input name="sisi" type="number" placeholder="1" value="0">
+        </div>
+        <div class="form-group">
+          <label>Jumlah Rusuk</label>
+          <input name="rusuk" type="number" placeholder="0" value="0">
+        </div>
+        <div class="form-group full">
+          <label>Jumlah Titik Sudut</label>
+          <input name="titik" type="number" placeholder="0" value="0">
+        </div>
+        <div class="form-group full">
+          <label>Rumus Volume</label>
+          <input name="volume" placeholder="⅔ × π × r³">
+        </div>
+        <div class="form-group full">
+          <label>Rumus Luas Permukaan</label>
+          <input name="luas" placeholder="3πr²">
+        </div>
+        <div class="form-group">
+          <label>Confidence ML (%)</label>
+          <input name="conf" type="number" min="0" max="100" placeholder="90" value="90">
+        </div>
+        <div class="form-group full">
+          <label>Konteks Budaya</label>
+          <textarea name="context" placeholder="Deskripsi makna budaya objek ini..."></textarea>
+        </div>
+
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        <button type="submit" class="btn btn-primary">💾 Simpan Objek</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+const BASE = '../';
+const SCENES_META = {
+  borobudur: { label: 'Candi Borobudur', file: 'data/borobudur.json', sceneFile: 'index.html' },
+  prambanan: { label: 'Candi Prambanan', file: 'data/prambanan.json', sceneFile: 'scenes/prambanan.html' },
+};
+
+let state = {
+  currentScene: 'borobudur',
+  scenes: { borobudur: null, prambanan: null },
+  editingId: null,
+  currentPage: 'objects',
+};
+
+// ── Boot ───────────────────────────────────────────────
+async function boot() {
+  await Promise.all([
+    loadJSON('borobudur'),
+    loadJSON('prambanan'),
+  ]);
+  showPage('objects');
+}
+
+async function loadJSON(sceneId) {
+  try {
+    const res = await fetch(BASE + SCENES_META[sceneId].file + '?t=' + Date.now());
+    state.scenes[sceneId] = await res.json();
+  } catch (e) {
+    state.scenes[sceneId] = { objects: [] };
+    toast('Gagal load ' + sceneId + ': ' + e.message, 'error');
+  }
+}
+
+// ── Navigation ─────────────────────────────────────────
+function showPage(page) {
+  state.currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  event && event.currentTarget && event.currentTarget.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el => {
+    if (el.textContent.includes(
+      page === 'objects' ? 'Objek' : page === 'scenes' ? 'Info' : page === 'export' ? 'Export' : 'Katalog'
+    )) el.classList.add('active');
+  });
+
+  const main = document.getElementById('main-content');
+  if (page === 'objects')  renderObjectsPage(main);
+  if (page === 'scenes')   renderScenesPage(main);
+  if (page === 'export')   renderExportPage(main);
+  if (page === 'geometri') renderGeometriPage(main);
+}
+
+// ── Objects Page ───────────────────────────────────────
+function renderObjectsPage(main) {
+  const scene = state.scenes[state.currentScene];
+  const meta  = SCENES_META[state.currentScene];
+  const interactive = scene.objects.filter(o => o.interactive).length;
+  const withModel   = scene.objects.filter(o => o.model_src).length;
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div>
+        <h1>Manajemen Objek Scene</h1>
+        <div class="sub">Tambah, edit, atau hapus objek dalam scene VR</div>
+      </div>
+      <button class="btn btn-primary" onclick="openAddModal()">+ Tambah Objek</button>
+    </div>
+
+    <div class="scene-tabs">
+      <div class="scene-tab ${state.currentScene==='borobudur'?'active':''}" onclick="switchScene('borobudur')">🛕 Borobudur</div>
+      <div class="scene-tab ${state.currentScene==='prambanan'?'active':''}" onclick="switchScene('prambanan')">🏛️ Prambanan</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="val">${scene.objects.length}</div><div class="lbl">Total Objek</div></div>
+      <div class="stat-card"><div class="val">${interactive}</div><div class="lbl">Interaktif</div></div>
+      <div class="stat-card"><div class="val">${scene.objects.length - interactive}</div><div class="lbl">Dekoratif</div></div>
+      <div class="stat-card"><div class="val">${withModel > 0 ? withModel : '—'}</div><div class="lbl">Model GLTF</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <h2>Daftar Objek — ${meta.label}</h2>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('export')">📤 Export JSON</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Elemen</th>
+            <th>Tipe</th>
+            <th>Geometri</th>
+            <th>Conf.</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${scene.objects.map(obj => `
+            <tr>
+              <td style="font-family:monospace;font-size:11px;color:var(--muted)">${obj.id}</td>
+              <td style="font-weight:600">${obj.element || '—'}</td>
+              <td><code style="font-size:11px;color:var(--accent2)">${obj.type}</code></td>
+              <td>${obj.geo ? `<span class="badge-geo">${obj.geo}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+              <td>${obj.conf && obj.interactive ? confPill(obj.conf) : '—'}</td>
+              <td>
+                ${obj.interactive ? '<span class="badge-interactive">Interaktif</span>' : '<span class="badge-static">Dekoratif</span>'}
+                ${obj.model_src   ? '<span class="badge-model" style="margin-left:4px">GLTF</span>' : ''}
+              </td>
+              <td>
+                <button class="btn btn-ghost btn-sm" onclick="openEditModal('${obj.id}')">✏️ Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteObject('${obj.id}')" style="margin-left:4px">🗑</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function confPill(conf) {
+  const c = parseInt(conf);
+  const bg = c >= 93 ? 'rgba(0,230,118,0.1)' : c >= 87 ? 'rgba(255,215,0,0.1)' : 'rgba(255,82,82,0.1)';
+  const cl = c >= 93 ? 'var(--green)' : c >= 87 ? 'var(--yellow)' : 'var(--red)';
+  return `<span class="conf-pill" style="background:${bg};color:${cl}">${c}%</span>`;
+}
+
+function switchScene(id) {
+  state.currentScene = id;
+  renderObjectsPage(document.getElementById('main-content'));
+}
+
+// ── Scenes Page ────────────────────────────────────────
+function renderScenesPage(main) {
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Info Scene</h1><div class="sub">Lihat metadata scene yang tersedia</div></div>
+    </div>
+    ${Object.entries(SCENES_META).map(([id, meta]) => {
+      const sc = state.scenes[id];
+      return `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div>
+              <div style="font-weight:800;font-size:1.1em">${sc?.name || meta.label}</div>
+              <div style="color:var(--muted);font-size:12px">${sc?.location || ''} · ${sc?.era || ''}</div>
+            </div>
+            <a href="../${meta.sceneFile}" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Scene</a>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <div style="background:var(--surface2);border-radius:8px;padding:12px">
+              <div style="color:var(--accent);font-size:1.4em;font-weight:800">${sc?.objects?.length || 0}</div>
+              <div style="color:var(--muted);font-size:11px">Total Objek</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px">
+              <div style="color:var(--green);font-size:1.4em;font-weight:800">${sc?.objects?.filter(o=>o.interactive)?.length || 0}</div>
+              <div style="color:var(--muted);font-size:11px">Interaktif</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px">
+              <div style="color:var(--accent2);font-size:1.4em;font-weight:800">${sc?.cursor_color || '—'}</div>
+              <div style="color:var(--muted);font-size:11px">Cursor Color</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+// ── Export Page ────────────────────────────────────────
+function renderExportPage(main) {
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Export Data JSON</h1><div class="sub">Download file JSON untuk di-commit ke GitHub</div></div>
+    </div>
+    ${Object.entries(SCENES_META).map(([id, meta]) => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px">
+        <div style="font-weight:700;margin-bottom:8px">${meta.label} <code style="font-size:11px;color:var(--muted);margin-left:8px">${meta.file}</code></div>
+        <div class="export-box">
+          <pre id="preview-${id}">${JSON.stringify(state.scenes[id], null, 2).slice(0, 400)}...</pre>
+        </div>
+        <div class="export-actions">
+          <button class="btn btn-success" onclick="downloadJSON('${id}')">⬇️ Download ${meta.file}</button>
+          <button class="btn btn-ghost" onclick="copyJSON('${id}')">📋 Copy ke Clipboard</button>
+        </div>
+        <div style="margin-top:12px;background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.12);border-radius:8px;padding:12px;font-size:12px;color:var(--muted)">
+          💡 <strong style="color:var(--accent)">Cara update scene:</strong>
+          Download file → simpan ke <code>VR-GeoNusa/${meta.file}</code> → commit & push ke GitHub
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function downloadJSON(sceneId) {
+  const data = JSON.stringify(state.scenes[sceneId], null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = sceneId + '.json';
+  a.click();
+  toast('Download ' + sceneId + '.json dimulai', 'success');
+}
+
+function copyJSON(sceneId) {
+  navigator.clipboard.writeText(JSON.stringify(state.scenes[sceneId], null, 2));
+  toast('JSON berhasil disalin ke clipboard', 'success');
+}
+
+// ── Geometri Catalog Page ──────────────────────────────
+function renderGeometriPage(main) {
+  const catalog = [
+    { name: 'Kubus',           en: 'Cube',               sisi: 6,  rusuk: 12, titik: 8,  v: 's³', l: '6s²' },
+    { name: 'Balok',           en: 'Rectangular Prism',  sisi: 6,  rusuk: 12, titik: 8,  v: 'p×l×t', l: '2(pl+pt+lt)' },
+    { name: 'Tabung',          en: 'Cylinder',            sisi: 3,  rusuk: 2,  titik: 0,  v: 'π·r²·t', l: '2πr²+2πrt' },
+    { name: 'Kerucut',         en: 'Cone',                sisi: 2,  rusuk: 1,  titik: 1,  v: '⅓·π·r²·t', l: 'πr²+πrs' },
+    { name: 'Bola',            en: 'Sphere',              sisi: 1,  rusuk: 0,  titik: 0,  v: '⁴⁄₃·π·r³', l: '4πr²' },
+    { name: 'Setengah Bola',   en: 'Hemisphere',          sisi: 1,  rusuk: 0,  titik: 0,  v: '⅔·π·r³', l: '3πr²' },
+    { name: 'Limas Segitiga',  en: 'Triangular Pyramid',  sisi: 4,  rusuk: 6,  titik: 4,  v: '⅓·A·t', l: 'A+Σsisi' },
+    { name: 'Limas Segiempat', en: 'Square Pyramid',      sisi: 5,  rusuk: 8,  titik: 5,  v: '⅓·A·t', l: 'A+Σsisi' },
+    { name: 'Prisma Segitiga', en: 'Triangular Prism',    sisi: 5,  rusuk: 9,  titik: 6,  v: 'A·t', l: '2A+K·t' },
+    { name: 'Prisma Segi-6',   en: 'Hexagonal Prism',     sisi: 8,  rusuk: 18, titik: 12, v: 'A·t', l: '2A+K·t' },
+  ];
+  main.innerHTML = `
+    <div class="page-header"><div><h1>Katalog Geometri Ruang</h1><div class="sub">Referensi cepat untuk mengisi form objek</div></div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nama Indonesia</th><th>English</th><th>Sisi</th><th>Rusuk</th><th>Titik Sudut</th><th>Rumus V</th><th>Rumus L</th></tr></thead>
+        <tbody>
+          ${catalog.map(g => `
+            <tr>
+              <td style="font-weight:700"><span class="badge-geo">${g.name}</span></td>
+              <td style="color:var(--muted);font-style:italic">${g.en}</td>
+              <td style="color:var(--accent);font-weight:700">${g.sisi}</td>
+              <td style="color:var(--accent);font-weight:700">${g.rusuk}</td>
+              <td style="color:var(--accent);font-weight:700">${g.titik}</td>
+              <td style="font-size:12px">${g.v}</td>
+              <td style="font-size:12px">${g.l}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── Modal CRUD ─────────────────────────────────────────
+function openAddModal() {
+  state.editingId = null;
+  document.getElementById('modal-title').textContent = 'Tambah Objek Baru';
+  document.getElementById('obj-form').reset();
+  updateGeomFields('box');
+  document.getElementById('obj-modal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const scene = state.scenes[state.currentScene];
+  const obj = scene.objects.find(o => o.id === id);
+  if (!obj) return;
+  state.editingId = id;
+  document.getElementById('modal-title').textContent = 'Edit Objek: ' + (obj.element || id);
+  const form = document.getElementById('obj-form');
+
+  // Populate form
+  const set = (name, val) => { const el = form.elements[name]; if (el) el.value = val ?? ''; };
+  set('id', obj.id);
+  set('element', obj.element);
+  set('type', obj.type);
+  form.elements['interactive'].value = obj.interactive ? 'true' : 'false';
+  set('position', obj.position);
+  set('rotation', obj.rotation);
+  set('scale', obj.scale);
+  form.elements['color'].value = obj.color || '#5a5a50';
+  form.elements['color_hover'].value = obj.color_hover || '#6a6a60';
+
+  // Dimensions
+  set('width',   obj.width);   set('height', obj.height);  set('depth', obj.depth);
+  set('radius_s', obj.radius); set('theta_length', obj.theta_length);
+  set('radius_c', obj.radius); set('height_c', obj.height);
+  set('radius_bottom', obj.radius_bottom); set('radius_top', obj.radius_top);
+  set('height_cone', obj.height); set('segments_radial', obj.segments_radial);
+
+  set('model_src', obj.model_src);
+  set('geo', obj.geo); set('geo_en', obj.geo_en);
+  set('sisi', obj.sisi); set('rusuk', obj.rusuk); set('titik', obj.titik);
+  set('volume', obj.volume); set('luas', obj.luas);
+  set('conf', obj.conf);
+  set('context', obj.context);
+
+  updateGeomFields(obj.type);
+  document.getElementById('obj-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('obj-modal').classList.remove('open');
+}
+
+function saveObject(e) {
+  e.preventDefault();
+  const form = e.target;
+  const get  = name => form.elements[name]?.value ?? '';
+  const type = get('type');
+
+  const obj = {
+    id:          get('id').trim().replace(/\s+/g, '-'),
+    type,
+    position:    get('position') || '0 0 0',
+    scale:       get('scale')    || '1 1 1',
+    rotation:    get('rotation') || '0 0 0',
+    color:       get('color'),
+    color_hover: get('color_hover'),
+    roughness:   '0.85',
+    model_src:   get('model_src').trim(),
+    geo:         get('geo'),
+    geo_en:      get('geo_en'),
+    sisi:        get('sisi'),
+    rusuk:       get('rusuk'),
+    titik:       get('titik'),
+    volume:      get('volume'),
+    luas:        get('luas'),
+    element:     get('element'),
+    context:     get('context'),
+    conf:        get('conf'),
+    interactive: get('interactive') === 'true',
+  };
+
+  if (type === 'box')      { obj.width = get('width'); obj.height = get('height'); obj.depth = get('depth'); }
+  if (type === 'sphere')   { obj.radius = get('radius_s'); obj.theta_length = get('theta_length'); }
+  if (type === 'cylinder') { obj.radius = get('radius_c'); obj.height = get('height_c'); }
+  if (type === 'cone')     { obj.radius_bottom = get('radius_bottom'); obj.radius_top = get('radius_top'); obj.height = get('height_cone'); obj.segments_radial = get('segments_radial'); }
+
+  const scene = state.scenes[state.currentScene];
+  if (state.editingId) {
+    const idx = scene.objects.findIndex(o => o.id === state.editingId);
+    if (idx >= 0) scene.objects[idx] = obj;
+    toast('Objek berhasil diupdate ✓', 'success');
+  } else {
+    if (scene.objects.find(o => o.id === obj.id)) {
+      toast('ID sudah ada, gunakan ID yang berbeda', 'error'); return;
+    }
+    scene.objects.push(obj);
+    toast('Objek berhasil ditambahkan ✓', 'success');
+  }
+
+  closeModal();
+  renderObjectsPage(document.getElementById('main-content'));
+}
+
+function deleteObject(id) {
+  if (!confirm('Hapus objek "' + id + '"? Tindakan ini tidak bisa di-undo sebelum export.')) return;
+  const scene = state.scenes[state.currentScene];
+  scene.objects = scene.objects.filter(o => o.id !== id);
+  toast('Objek "' + id + '" dihapus', 'success');
+  renderObjectsPage(document.getElementById('main-content'));
+}
+
+// ── Geom field visibility ──────────────────────────────
+function updateGeomFields(type) {
+  const hide = ids => ids.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  const show = ids => ids.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+  hide(['fields-box','fields-box2','fields-box3','fields-sphere','fields-sphere2','fields-cyl','fields-cyl2','fields-cone','fields-cone2','fields-cone3','fields-cone4']);
+  if (type === 'box')      show(['fields-box','fields-box2','fields-box3']);
+  if (type === 'sphere')   show(['fields-sphere','fields-sphere2']);
+  if (type === 'cylinder') show(['fields-cyl','fields-cyl2']);
+  if (type === 'cone')     show(['fields-cone','fields-cone2','fields-cone3','fields-cone4']);
+}
+
+// ── Toast ──────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+// Close modal on overlay click
+document.getElementById('obj-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+boot();
+</script>
+</body>
+</html>
