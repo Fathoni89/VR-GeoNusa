@@ -1,5 +1,66 @@
+# ============================================================================
+# VR-GeoNusa — .gitignore
+# ============================================================================
+
+# --- Unity Generated (Tahun 2) ---
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# --- IDE ---
+/.idea/
+/.vs/
+*.csproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+
+# --- OS ---
 .DS_Store
-*.log
-node_modules/
+Thumbs.db
+desktop.ini
+
+# --- Build Output ---
+*.apk
+*.aab
+*.ipa
+*.exe
+*.app
+*.dmg
+
+# --- ML Training Output ---
+/MLTraining/output/
+/MLTraining/wandb/
+/MLTraining/__pycache__/
+*.pyc
+*.pth
+*.onnx
+
+# --- Fotogrametri Raw (terlalu besar) ---
+/RawData/
+/PhotogrammetryProjects/
+
+# --- Dataset Training Lokal ---
+/Dataset/geometry_wbn/train/
+/Dataset/geometry_wbn/val/
+/Dataset/geometry_wbn/test/
+
+# --- Environment ---
 .env
+*.env.local
+
+# --- Gradle (Android Build) ---
+.gradle/
+
+# --- Node (jika ada tooling) ---
+node_modules/
+*.log
+
+# --- Claude Code local config ---
 .claude/

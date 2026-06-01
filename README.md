@@ -1,31 +1,46 @@
 # VR-GeoNusa
-**Eksplorasi Geometri Warisan Budaya Nusantara via WebXR**
 
-Prototype Tahun 1 — Hibah Fundamental BIMA 2026
+**Integrasi Machine Learning dan Virtual Reality untuk Preservasi Digital dan Identifikasi Cerdas Geometri pada Warisan Budaya Nusantara**
+
+Hibah Penelitian Fundamental — BIMA Kemenristekdikti 2026–2027
 
 ---
 
-## Cara Menjalankan
+## Tim Peneliti
 
-### Lokal (30 detik)
+| Nama | Peran | Institusi |
+|------|-------|-----------|
+| Fitria Sulistyowati | Ketua Pengusul | UST |
+| Betty Kusumaningrum | Anggota 1 | UST |
+| Fathoni Mahardika | Anggota 2 (Informatika) | Universitas Sebelas April |
+| Ahmad Taupik Paisal | Mahasiswa (Informatika) | Universitas Sebelas April |
+| Moch. Sugih Nugraha | Mahasiswa (Informatika) | Universitas Sebelas April |
+| Elisa Silvi Ardita | Mahasiswa (Pend. Matematika) | UST |
+| Farah Luqen Nur Aini | Mahasiswa (Pend. Matematika) | UST |
+
+---
+
+## Prototype WebXR (Tahun 1)
+
+**Demo langsung:** Buka `index.html` di browser atau akses via GitHub Pages.
+
+### Cara Menjalankan Lokal
+
 ```bash
 # Python 3
 python3 -m http.server 8000
 # Buka: http://localhost:8000
 ```
-Atau: double-klik `index.html` langsung di browser.
 
-### GitHub Pages (untuk akses Quest 3)
-```bash
-git init && git add . && git commit -m "init"
-git remote add origin https://github.com/[username]/vrgeonusa-prototype.git
-git push -u origin main
-# Aktifkan Settings → Pages → Branch: main
-```
+Atau double-klik `index.html` langsung di browser. Tidak perlu install apapun.
 
----
+### Akses di Meta Quest 3
 
-## Kontrol
+1. Aktifkan GitHub Pages: Settings → Pages → Branch: main
+2. Buka URL GitHub Pages di Meta Quest Browser
+3. Klik "Masuk Eksplorasi" → klik ikon VR goggles untuk mode penuh
+
+### Kontrol
 
 | Platform | Gerak | Lihat | Identifikasi |
 |---|---|---|---|
@@ -34,26 +49,28 @@ git push -u origin main
 
 ---
 
-## Struktur Project
+## Struktur Repository
 
 ```
 VR-GeoNusa/
-├── index.html          ← Entry point utama + scene Borobudur
-├── css/
-│   └── ui.css          ← Semua styling UI
-├── js/
-│   └── app.js          ← Logika interaksi & scene management
+├── index.html              # Scene utama: Candi Borobudur (WebXR)
+├── scenes/
+│   └── prambanan.html      # Scene: Candi Prambanan (WebXR)
+├── css/ui.css              # Styling UI overlay
+├── js/app.js               # Logika interaksi & scene management
+├── api/
+│   └── ml-placeholder.json # Placeholder respons ML (Tahun 2)
 ├── assets/
-│   ├── models/         ← (Tahun 2) Model GLTF/GLB
-│   └── textures/       ← (Tahun 2) Tekstur kustom
-└── scenes/
-    └── (Tahun 2) Scene tambahan
+│   ├── models/             # (Tahun 2) Model GLTF/GLB fotogrametri
+│   └── textures/           # (Tahun 2) Tekstur kustom
+└── README.md
 ```
 
 ---
 
-## Objek Interaktif (Scene Borobudur)
+## Objek Interaktif
 
+### Scene Borobudur (7 objek)
 | Objek | Geometri | Confidence |
 |---|---|---|
 | Stupa Utama | Setengah Bola | 97% |
@@ -64,30 +81,46 @@ VR-GeoNusa/
 | Tangga Masuk | Prisma Segitiga | 87% |
 | Ornamen Puncak | Kerucut | 85% |
 
+### Scene Prambanan (6 objek)
+| Objek | Geometri | Confidence |
+|---|---|---|
+| Menara Utama | Limas Segiempat | 93% |
+| Tubuh Candi | Balok | 91% |
+| Pilar Gapura | Tabung | 90% |
+| Candi Brahma/Wisnu | Balok | 89% |
+| Lingga Yoni | Tabung | 88% |
+| Antefix/Ornamen | Kerucut | 86% |
+
 ---
 
-## Stack Teknis
+## Stack Teknis (Tahun 1 — WebXR)
 
 - **Framework:** A-Frame 1.5.0 (WebXR)
 - **Movement:** aframe-extras movement-controls
-- **Interaksi:** Gaze cursor + fuse timer 1500ms
 - **Kompatibel:** Chrome, Firefox, Edge, Quest Browser, Pico Browser
-- **Ukuran:** < 100KB (tanpa aset eksternal)
-- **Requirement:** Browser modern — tidak perlu install apapun
+- **Ukuran:** < 100KB — tidak perlu install, tidak perlu GPU dedicated
+
+## Stack Teknis (Tahun 2 — Unity, target)
+
+- **VR Engine:** Unity 2022 LTS + Universal Render Pipeline
+- **XR SDK:** Meta XR SDK / XR Interaction Toolkit
+- **ML Framework:** PyTorch 2.x → ONNX → Unity Barracuda
+- **3D Capture:** Agisoft Metashape + LiDAR
+- **Target Device:** Meta Quest 3 / Pico 4
 
 ---
 
 ## Roadmap
 
-| Tahap | Target | Deskripsi |
+| Tahap | Target | Status |
 |---|---|---|
-| ✅ Prototype Tahun 1 | Juni 2026 | Scene Borobudur + 7 geometri + panel edukasi |
-| 🔲 Tambah Scene | Agustus 2026 | Candi Prambanan + Keraton Yogyakarta |
-| 🔲 Model 3D Asli | Oktober 2026 | Ganti placeholder dengan model GLTF fotogrametri |
-| 🔲 ML Integration | Tahun 2 | API endpoint klasifikasi geometri real |
-| 🔲 Migrasi Unity | Tahun 2 | Porting ke Unity XR untuk performa optimal |
+| Prototype WebXR Tahun 1 | Juni 2026 | ✅ Selesai |
+| Scene Prambanan | Juni 2026 | ✅ Selesai |
+| Model 3D GLTF asli | Oktober 2026 | 🔲 Planned |
+| ML Integration API | Tahun 2 | 🔲 Planned |
+| Migrasi ke Unity XR | Tahun 2 | 🔲 Planned |
+| 25 Sekolah pilot | Tahun 2 | 🔲 Planned |
 
 ---
 
-*Dikembangkan menggunakan WebXR/A-Frame sebagai solusi teknis Tahun 1 dengan anggaran terbatas.*  
-*Lihat `Analisis_Solusi_Teknis_Prototype.md` untuk justifikasi pemilihan platform.*
+*Platform WebXR dipilih untuk Tahun 1 karena kendala device mahasiswa dan anggaran. Lihat `Analisis_Solusi_Teknis_Prototype.md` untuk justifikasi teknis lengkap.*
