@@ -1,0 +1,157 @@
+{
+  "_comment": "VR-GeoNusa — ML Endpoint Placeholder (Tahun 2 Integration Point)",
+  "_version": "0.1.0",
+  "_note": "Pada Tahun 2, file ini digantikan oleh REST API endpoint yang memanggil model CNN terlatih.",
+
+  "endpoint": "/api/classify",
+  "method": "POST",
+  "request_schema": {
+    "image_base64": "string — gambar crop objek dari scene VR (base64 encoded)",
+    "scene_id": "string — contoh: 'borobudur', 'prambanan'",
+    "object_id": "string — contoh: 'obj-stupa', 'obj-dasar'"
+  },
+
+  "mock_responses": [
+    {
+      "object_id": "obj-stupa",
+      "scene_id": "borobudur",
+      "predicted_geometry": "Setengah Bola",
+      "predicted_geometry_en": "Hemisphere",
+      "confidence": 0.97,
+      "confidence_pct": 97,
+      "top3": [
+        { "label": "Setengah Bola", "score": 0.97 },
+        { "label": "Bola Penuh",    "score": 0.02 },
+        { "label": "Elipsoid",      "score": 0.01 }
+      ],
+      "properties": { "sisi": 1, "rusuk": 0, "titik_sudut": 0 },
+      "formula_volume": "⅔ × π × r³",
+      "formula_luas":   "3πr²"
+    },
+    {
+      "object_id": "obj-teras1",
+      "scene_id": "borobudur",
+      "predicted_geometry": "Balok",
+      "predicted_geometry_en": "Rectangular Prism",
+      "confidence": 0.94,
+      "confidence_pct": 94,
+      "top3": [
+        { "label": "Balok",  "score": 0.94 },
+        { "label": "Kubus",  "score": 0.04 },
+        { "label": "Prisma", "score": 0.02 }
+      ],
+      "properties": { "sisi": 6, "rusuk": 12, "titik_sudut": 8 },
+      "formula_volume": "p × l × t",
+      "formula_luas":   "2(pl + pt + lt)"
+    },
+    {
+      "object_id": "obj-stupa-kecil",
+      "scene_id": "borobudur",
+      "predicted_geometry": "Tabung",
+      "predicted_geometry_en": "Cylinder",
+      "confidence": 0.91,
+      "confidence_pct": 91,
+      "top3": [
+        { "label": "Tabung",  "score": 0.91 },
+        { "label": "Prisma",  "score": 0.06 },
+        { "label": "Silinder Terpotong", "score": 0.03 }
+      ],
+      "properties": { "sisi": 3, "rusuk": 2, "titik_sudut": 0 },
+      "formula_volume": "π × r² × t",
+      "formula_luas":   "2πr² + 2πrt"
+    },
+    {
+      "object_id": "obj-pilar",
+      "scene_id": "borobudur",
+      "predicted_geometry": "Tabung",
+      "predicted_geometry_en": "Cylinder",
+      "confidence": 0.91,
+      "confidence_pct": 91,
+      "top3": [
+        { "label": "Tabung",          "score": 0.91 },
+        { "label": "Prisma Segi-12",  "score": 0.05 },
+        { "label": "Prisma Segi-8",   "score": 0.04 }
+      ],
+      "properties": { "sisi": 3, "rusuk": 2, "titik_sudut": 0 },
+      "formula_volume": "π × r² × t",
+      "formula_luas":   "2πr² + 2πrt"
+    },
+    {
+      "object_id": "obj-dasar",
+      "scene_id": "borobudur",
+      "predicted_geometry": "Limas Segiempat",
+      "predicted_geometry_en": "Square Pyramid",
+      "confidence": 0.88,
+      "confidence_pct": 88,
+      "top3": [
+        { "label": "Limas Segiempat", "score": 0.88 },
+        { "label": "Limas Segitiga",  "score": 0.07 },
+        { "label": "Prisma",          "score": 0.05 }
+      ],
+      "properties": { "sisi": 5, "rusuk": 8, "titik_sudut": 5 },
+      "formula_volume": "⅓ × Luas alas × t",
+      "formula_luas":   "Luas alas + Σ luas sisi tegak"
+    },
+    {
+      "object_id": "obj-tangga",
+      "scene_id": "borobudur",
+      "predicted_geometry": "Prisma Segitiga",
+      "predicted_geometry_en": "Triangular Prism",
+      "confidence": 0.87,
+      "confidence_pct": 87,
+      "top3": [
+        { "label": "Prisma Segitiga", "score": 0.87 },
+        { "label": "Balok",           "score": 0.09 },
+        { "label": "Limas Segitiga",  "score": 0.04 }
+      ],
+      "properties": { "sisi": 5, "rusuk": 9, "titik_sudut": 6 },
+      "formula_volume": "Luas alas × t",
+      "formula_luas":   "2 × Luas alas + Keliling alas × t"
+    },
+    {
+      "object_id": "obj-kerucut",
+      "scene_id": "borobudur",
+      "predicted_geometry": "Kerucut",
+      "predicted_geometry_en": "Cone",
+      "confidence": 0.85,
+      "confidence_pct": 85,
+      "top3": [
+        { "label": "Kerucut",          "score": 0.85 },
+        { "label": "Limas Segiempat",  "score": 0.10 },
+        { "label": "Limas Segitiga",   "score": 0.05 }
+      ],
+      "properties": { "sisi": 2, "rusuk": 1, "titik_sudut": 1 },
+      "formula_volume": "⅓ × π × r² × t",
+      "formula_luas":   "πr² + πrs"
+    },
+    {
+      "object_id": "obj-menara-utama",
+      "scene_id": "prambanan",
+      "predicted_geometry": "Limas Segiempat",
+      "predicted_geometry_en": "Square Pyramid",
+      "confidence": 0.93,
+      "confidence_pct": 93,
+      "top3": [
+        { "label": "Limas Segiempat", "score": 0.93 },
+        { "label": "Prisma",          "score": 0.05 },
+        { "label": "Kerucut",         "score": 0.02 }
+      ],
+      "properties": { "sisi": 5, "rusuk": 8, "titik_sudut": 5 },
+      "formula_volume": "⅓ × Luas alas × t",
+      "formula_luas":   "Luas alas + Σ luas sisi tegak"
+    }
+  ],
+
+  "geometry_catalog": [
+    { "id": "kubus",           "name_id": "Kubus",           "name_en": "Cube",              "sisi": 6,  "rusuk": 12, "titik": 8 },
+    { "id": "balok",           "name_id": "Balok",           "name_en": "Rectangular Prism", "sisi": 6,  "rusuk": 12, "titik": 8 },
+    { "id": "tabung",          "name_id": "Tabung",          "name_en": "Cylinder",          "sisi": 3,  "rusuk": 2,  "titik": 0 },
+    { "id": "kerucut",         "name_id": "Kerucut",         "name_en": "Cone",              "sisi": 2,  "rusuk": 1,  "titik": 1 },
+    { "id": "bola",            "name_id": "Bola",            "name_en": "Sphere",            "sisi": 1,  "rusuk": 0,  "titik": 0 },
+    { "id": "setengah-bola",   "name_id": "Setengah Bola",   "name_en": "Hemisphere",        "sisi": 1,  "rusuk": 0,  "titik": 0 },
+    { "id": "limas-segitiga",  "name_id": "Limas Segitiga",  "name_en": "Triangular Pyramid","sisi": 4,  "rusuk": 6,  "titik": 4 },
+    { "id": "limas-segiempat", "name_id": "Limas Segiempat", "name_en": "Square Pyramid",    "sisi": 5,  "rusuk": 8,  "titik": 5 },
+    { "id": "prisma-segitiga", "name_id": "Prisma Segitiga", "name_en": "Triangular Prism",  "sisi": 5,  "rusuk": 9,  "titik": 6 },
+    { "id": "prisma-segi6",    "name_id": "Prisma Segi-6",   "name_en": "Hexagonal Prism",   "sisi": 8,  "rusuk": 18, "titik": 12 }
+  ]
+}
