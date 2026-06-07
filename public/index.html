@@ -441,65 +441,168 @@
     .geo-en   { color: var(--stone-500); font-size: .72rem; font-style: italic; }
 
     /* ── SECTION: TIM ────────────────────────── */
+    /* ── TIM PENELITI ────────────────────────── */
     #tim {
       padding: 80px 8%;
       background: var(--stone-800);
       border-top: 1px solid var(--border);
     }
-    .team-layout {
-      display: grid;
-      grid-template-columns: 1fr 2fr; gap: 60px; align-items: start;
+
+    /* Header bar */
+    .tim-header {
+      display: flex; align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px; margin-bottom: 48px;
+      flex-wrap: wrap;
     }
-    .team-intro { padding-top: 8px; }
-    .team-intro p { color: var(--stone-400); font-size: .9rem; line-height: 1.8; margin-bottom: 16px; }
+    .tim-header-text { max-width: 560px; }
     .team-grant {
-      padding: 14px 16px;
+      flex-shrink: 0; max-width: 280px;
+      padding: 14px 18px;
       background: var(--stone-700);
       border-left: 2px solid var(--gold);
-      border-radius: 0 6px 6px 0;
-      font-size: .82rem; color: var(--stone-400); line-height: 1.7;
+      border-radius: 0 8px 8px 0;
+      font-size: .8rem; color: var(--stone-400); line-height: 1.75;
     }
-    .team-grant strong { color: var(--gold); }
-    .team-grid {
+    .team-grant strong { display: block; color: var(--gold); margin-bottom: 2px; }
+
+    /* Group label */
+    .team-group-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--stone-500);
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .team-group-label::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── Card: Peneliti (horizontal, besar) ── */
+    .team-researchers {
       display: grid;
-      grid-template-columns: 1fr 1fr; gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 36px;
     }
-    .team-card {
+    .team-card-h {
+      background: var(--stone-700);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: border-color .25s, box-shadow .25s;
+    }
+    .team-card-h:hover {
+      border-color: var(--gold-border);
+      box-shadow: 0 4px 20px rgba(200,150,62,.08);
+    }
+    /* Photo — portrait 4:5 */
+    .team-card-h .tc-photo {
+      position: relative;
+      aspect-ratio: 4 / 5;
+      background: var(--stone-600);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .team-card-h .tc-photo img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      display: block;
+      transition: transform .4s ease;
+    }
+    .team-card-h:hover .tc-photo img { transform: scale(1.04); }
+    .team-card-h .tc-initials {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--serif);
+      font-size: 2.2em; font-weight: 700;
+      color: var(--stone-400);
+      letter-spacing: -1px;
+      background: linear-gradient(145deg, var(--stone-600), var(--stone-700));
+    }
+    /* Role badge on photo */
+    .team-card-h .tc-badge {
+      position: absolute; bottom: 10px; left: 10px;
+      background: rgba(14,11,8,.85);
+      border: 1px solid var(--gold-border);
+      color: var(--gold); font-size: 9px; font-weight: 800;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 4px;
+    }
+    /* Info */
+    .team-card-h .tc-body {
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 5px; flex: 1;
+    }
+    .tc-name { font-weight: 800; font-size: .92rem; color: var(--stone-100); line-height: 1.3; }
+    .tc-role { color: var(--gold); font-size: .72rem; font-weight: 700; letter-spacing: .3px; }
+    .tc-inst { color: var(--stone-500); font-size: .72rem; }
+    .tc-bio  {
+      color: var(--stone-400); font-size: .78rem; line-height: 1.65;
+      margin-top: 2px;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .tc-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .tc-tag {
+      background: var(--gold-dim); border: 1px solid var(--gold-border);
+      color: var(--gold); border-radius: 3px; padding: 2px 7px;
+      font-size: .68rem; font-weight: 600;
+    }
+    .tc-links { display: flex; gap: 10px; margin-top: 8px; align-items: center; }
+    .tc-links a {
+      color: var(--stone-500); font-size: .72rem;
+      text-decoration: none; transition: color .15s;
+    }
+    .tc-links a:hover { color: var(--gold-light); }
+
+    /* ── Card: Mahasiswa (horizontal compact) ── */
+    .team-students {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .team-card-s {
       background: var(--stone-700);
       border: 1px solid var(--border);
       border-radius: 10px;
-      overflow: hidden;
-      display: flex; flex-direction: column;
-      transition: border-color .2s, transform .2s;
+      display: flex; gap: 0; overflow: hidden;
+      transition: border-color .2s;
+      min-height: 100px;
     }
-    .team-card:hover { border-color: var(--gold-border); transform: translateY(-2px); }
-    .team-photo {
-      width: 100%; aspect-ratio: 1/1;
+    .team-card-s:hover { border-color: var(--gold-border); }
+    /* Photo strip — square, left side */
+    .team-card-s .ts-photo {
+      width: 86px; flex-shrink: 0;
       background: var(--stone-600);
       display: flex; align-items: center; justify-content: center;
-      overflow: hidden; flex-shrink: 0;
+      overflow: hidden; position: relative;
     }
-    .team-photo img {
+    .team-card-s .ts-photo img {
       width: 100%; height: 100%;
       object-fit: cover; object-position: center top;
     }
-    .team-photo .team-avatar-fb {
-      font-size: 2.5em; color: var(--stone-500);
+    .team-card-s .ts-initials {
+      font-family: var(--serif);
+      font-size: 1.4em; font-weight: 700;
+      color: var(--stone-400);
     }
-    .team-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
-    .team-name { font-weight: 700; font-size: .88rem; color: var(--stone-200); }
-    .team-role { color: var(--gold); font-size: .72rem; font-weight: 700; letter-spacing: .3px; }
-    .team-inst { color: var(--stone-500); font-size: .72rem; }
-    .team-bio  { color: var(--stone-400); font-size: .75rem; line-height: 1.6; margin-top: 4px; }
-    .team-expertise { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
-    .team-tag {
-      background: var(--gold-dim); border: 1px solid var(--gold-border);
-      color: var(--gold); border-radius: 3px; padding: 1px 6px;
-      font-size: .68rem; font-weight: 600;
+    /* Body */
+    .team-card-s .ts-body {
+      padding: 12px 14px;
+      display: flex; flex-direction: column;
+      justify-content: center; gap: 3px; flex: 1;
+      min-width: 0;
     }
-    .team-links { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-    .team-links a { color: var(--stone-500); font-size: .72rem; text-decoration: none; }
-    .team-links a:hover { color: var(--gold-light); }
+    .ts-name { font-weight: 700; font-size: .84rem; color: var(--stone-100); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ts-role { color: var(--gold); font-size: .68rem; font-weight: 700; }
+    .ts-inst { color: var(--stone-500); font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ts-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+    .ts-tag  {
+      background: rgba(200,150,62,.08); border: 1px solid rgba(200,150,62,.15);
+      color: var(--stone-400); border-radius: 3px; padding: 1px 5px;
+      font-size: .64rem;
+    }
 
     /* ── FOOTER ──────────────────────────────── */
     footer {
@@ -543,25 +646,32 @@
 
     /* ── Responsive ──────────────────────────── */
     @media (max-width: 1024px) {
-      .hero { grid-template-columns: 1fr; min-height: auto; }
-      .hero-left { padding: 100px 6% 48px; }
-      .hero-right { height: 300px; }
+      .hero            { grid-template-columns: 1fr; min-height: auto; }
+      .hero-left       { padding: 100px 6% 48px; }
+      .hero-right      { height: 300px; }
       .hero-photo-inset, .hero-photo-caption, .hero-geom { display: none; }
-      .scenes-row { grid-template-columns: 1fr; }
+      .scenes-row      { grid-template-columns: 1fr; }
       .scene-card .scene-card-img,
       .scene-card:first-child .scene-card-img { aspect-ratio: 16/9; }
-      .steps-layout  { grid-template-columns: 1fr; gap: 40px; }
-      .team-layout   { grid-template-columns: 1fr; gap: 32px; }
-      footer         { grid-template-columns: 1fr 1fr; }
+      .steps-layout    { grid-template-columns: 1fr; gap: 40px; }
+      .team-researchers{ grid-template-columns: repeat(2, 1fr); }
+      .tim-header      { flex-direction: column; align-items: flex-start; }
+      .team-grant      { max-width: 100%; }
+      footer           { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .team-researchers { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .team-students    { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
-      .nav-links     { display: none; }
-      .hero-btns     { flex-direction: column; }
-      .hero-stats    { gap: 20px; }
-      .team-grid     { grid-template-columns: 1fr; }
-      .scenes-row    { gap: 3px; }
-      footer         { grid-template-columns: 1fr; }
-      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+      .nav-links        { display: none; }
+      .hero-btns        { flex-direction: column; }
+      .hero-stats       { gap: 20px; }
+      .scenes-row       { gap: 3px; }
+      .team-researchers { grid-template-columns: 1fr; }
+      .team-students    { grid-template-columns: 1fr; }
+      footer            { grid-template-columns: 1fr; }
+      .footer-bottom    { flex-direction: column; gap: 8px; text-align: center; }
     }
   </style>
 </head>
@@ -806,20 +916,32 @@
 
 <!-- ── TIM ────────────────────────────────────── -->
 <section id="tim">
-  <div class="team-layout">
-    <div class="team-intro">
+  <!-- Header row -->
+  <div class="tim-header">
+    <div class="tim-header-text">
       <div class="section-eyebrow">Tim Peneliti</div>
-      <h2 class="section-h2" style="font-size:1.8rem">Di Balik<br>VR-GeoNusa</h2>
-      <p>Kolaborasi lintas institusi antara peneliti matematika, informatika, dan pendidikan untuk menghadirkan media pembelajaran geometri yang inovatif.</p>
-      <div class="team-grant">
-        <strong>Hibah Penelitian Fundamental</strong><br>
-        BIMA Kemenristekdikti 2026–2027.<br>
-        Prototype Tahun 1 — Platform WebXR.
-      </div>
+      <h2 class="section-h2" style="margin-bottom:8px">Di Balik VR-GeoNusa</h2>
+      <p style="color:var(--stone-400);font-size:.9rem;max-width:480px;line-height:1.75">
+        Kolaborasi lintas institusi antara peneliti matematika, informatika, dan pendidikan untuk menghadirkan media pembelajaran geometri yang inovatif.
+      </p>
     </div>
-    <div id="team-grid" class="team-grid">
-      <div style="color:var(--stone-500);font-size:.85rem;grid-column:1/-1">Memuat data tim…</div>
+    <div class="team-grant">
+      <strong>Hibah Penelitian Fundamental</strong>
+      BIMA Kemenristekdikti 2026–2027.<br>
+      Prototype Tahun 1 — Platform WebXR.
     </div>
+  </div>
+
+  <!-- Cards — diisi dinamis JS -->
+  <div id="team-researchers-wrap">
+    <div class="team-group-label">Peneliti &amp; Dosen</div>
+    <div id="team-researchers" class="team-researchers">
+      <div style="color:var(--stone-600);grid-column:1/-1;padding:20px 0;font-size:.85rem">Memuat…</div>
+    </div>
+  </div>
+  <div id="team-students-wrap">
+    <div class="team-group-label" style="margin-top:32px">Mahasiswa</div>
+    <div id="team-students" class="team-students"></div>
   </div>
 </section>
 
@@ -874,12 +996,17 @@ async function loadStats() {
   } catch(_) {}
 }
 
+// Ambil inisial dari nama
+function initials(name) {
+  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+
 // Load tim peneliti dari API/JSON
 async function loadTeam() {
-  const grid = document.getElementById('team-grid');
-  if (!grid) return;
+  const resGrid = document.getElementById('team-researchers');
+  const stuGrid = document.getElementById('team-students');
+  if (!resGrid) return;
   try {
-    // Coba API backend dulu, fallback ke JSON statis
     let members = [];
     for (const url of ['api/team', 'data/team.json']) {
       try {
@@ -889,39 +1016,67 @@ async function loadTeam() {
         if (Array.isArray(members) && members.length) break;
       } catch(_) {}
     }
-    if (!members.length) { grid.innerHTML = ''; return; }
+    if (!members.length) { resGrid.innerHTML = ''; return; }
     members.sort((a,b) => (a.order||99)-(b.order||99));
 
-    const makeCard = m => {
-      const expertise = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(s=>s.trim()).filter(Boolean)).slice(0,3);
+    const researchers = members.filter(m => m.role_type !== 'mahasiswa');
+    const students    = members.filter(m => m.role_type === 'mahasiswa');
+
+    // ── Kartu Peneliti (vertikal, foto portrait) ──
+    const makeResCard = m => {
+      const exp   = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(s=>s.trim()).filter(Boolean)).slice(0, 3);
       const links = [
-        m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${m.sinta_id}" target="_blank">SINTA ↗</a>` : '',
-        m.orcid    ? `<a href="https://orcid.org/${m.orcid}" target="_blank">ORCID ↗</a>` : '',
-        m.email    ? `<a href="mailto:${m.email}">✉</a>` : '',
-      ].filter(Boolean);
-      const fallback = m.role_type === 'mahasiswa' ? '👨‍🎓' : '👩‍🔬';
+        m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${m.sinta_id}" target="_blank" title="SINTA">SINTA ↗</a>` : '',
+        m.orcid    ? `<a href="https://orcid.org/${m.orcid}" target="_blank" title="ORCID">ORCID ↗</a>` : '',
+        m.email    ? `<a href="mailto:${m.email}" title="Email">✉ Email</a>` : '',
+      ].filter(Boolean).join('');
+      const photoHtml = m.photo
+        ? `<img src="${m.photo}" alt="${m.name}" loading="lazy"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+           <div class="tc-initials" style="display:none">${initials(m.name)}</div>`
+        : `<div class="tc-initials">${initials(m.name)}</div>`;
       return `
-        <div class="team-card">
-          <div class="team-photo">
-            ${m.photo
-              ? `<img src="${m.photo}" alt="${m.name}" loading="lazy"
-                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-              : ''}
-            <div class="team-avatar-fb" style="${m.photo?'display:none':''}">${fallback}</div>
+        <div class="team-card-h">
+          <div class="tc-photo">
+            ${photoHtml}
+            <span class="tc-badge">${m.role_type === 'peneliti' ? 'Peneliti' : 'Dosen'}</span>
           </div>
-          <div class="team-body">
-            <div class="team-name">${m.name}</div>
-            <div class="team-role">${m.role}</div>
-            <div class="team-inst">${m.institution}</div>
-            ${m.bio ? `<div class="team-bio">${m.bio.slice(0,100)}${m.bio.length>100?'…':''}</div>` : ''}
-            ${expertise.length ? `<div class="team-expertise">${expertise.map(e=>`<span class="team-tag">${e}</span>`).join('')}</div>` : ''}
-            ${links.length ? `<div class="team-links">${links.join('')}</div>` : ''}
+          <div class="tc-body">
+            <div class="tc-name">${m.name}</div>
+            <div class="tc-role">${m.role}</div>
+            <div class="tc-inst">${m.institution}</div>
+            ${m.bio ? `<div class="tc-bio">${m.bio}</div>` : ''}
+            ${exp.length ? `<div class="tc-tags">${exp.map(e=>`<span class="tc-tag">${e}</span>`).join('')}</div>` : ''}
+            ${links ? `<div class="tc-links">${links}</div>` : ''}
           </div>
         </div>`;
     };
-    grid.innerHTML = members.map(makeCard).join('');
+
+    // ── Kartu Mahasiswa (horizontal compact) ──
+    const makeStuCard = m => {
+      const exp = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(s=>s.trim()).filter(Boolean)).slice(0, 2);
+      const photoHtml = m.photo
+        ? `<img src="${m.photo}" alt="${m.name}" loading="lazy"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+           <div class="ts-initials" style="display:none">${initials(m.name)}</div>`
+        : `<div class="ts-initials">${initials(m.name)}</div>`;
+      return `
+        <div class="team-card-s">
+          <div class="ts-photo">${photoHtml}</div>
+          <div class="ts-body">
+            <div class="ts-name">${m.name}</div>
+            <div class="ts-role">${m.role}</div>
+            <div class="ts-inst">${m.institution}</div>
+            ${exp.length ? `<div class="ts-tags">${exp.map(e=>`<span class="ts-tag">${e}</span>`).join('')}</div>` : ''}
+          </div>
+        </div>`;
+    };
+
+    resGrid.innerHTML = researchers.map(makeResCard).join('') || '<p style="color:var(--stone-600)">Belum ada data.</p>';
+    if (stuGrid) stuGrid.innerHTML = students.map(makeStuCard).join('');
+
   } catch(e) {
-    grid.innerHTML = '<div style="color:var(--stone-500);font-size:.85rem;grid-column:1/-1">Gagal memuat data tim.</div>';
+    if (resGrid) resGrid.innerHTML = '<div style="color:var(--stone-500);grid-column:1/-1">Gagal memuat data tim.</div>';
   }
 }
 
