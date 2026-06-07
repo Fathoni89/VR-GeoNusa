@@ -88,7 +88,13 @@ function readScene(sceneId) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 function writeScene(sceneId, data) {
-  fs.writeFileSync(path.join(DATA_DIR, `${sceneId}.json`), JSON.stringify(data, null, 2), 'utf8');
+  const json = JSON.stringify(data, null, 2);
+  // Tulis ke data/ (sumber backend)
+  fs.writeFileSync(path.join(DATA_DIR, `${sceneId}.json`), json, 'utf8');
+  // Sinkron ke public/data/ agar GitHub Pages selalu up-to-date
+  const pubDataDir = path.join(PUBLIC_DIR, 'data');
+  if (!fs.existsSync(pubDataDir)) fs.mkdirSync(pubDataDir, { recursive: true });
+  fs.writeFileSync(path.join(pubDataDir, `${sceneId}.json`), json, 'utf8');
 }
 
 // ── VR HTML template generator ────────────────────────
@@ -195,22 +201,28 @@ function generateVrPage(scene) {
 <script src="../js/app.js"></script>
 <script>
 currentScene = '${scene.scene_id}';
-// Load objek dari JSON
 document.addEventListener('DOMContentLoaded', () => {
   const vrscene = document.getElementById('vrscene');
-  if (vrscene.hasLoaded) { loadObjectsFromAPI(); }
-  else { vrscene.addEventListener('loaded', loadObjectsFromAPI); }
+  if (vrscene.hasLoaded) { loadObjects(); }
+  else { vrscene.addEventListener('loaded', loadObjects); }
 });
-async function loadObjectsFromAPI() {
-  try {
-    const res = await fetch('/api/scenes/${scene.scene_id}');
-    const { data } = await res.json();
-    data.objects.forEach(obj => {
-      const el = buildAFrameEntity(obj);
-      document.getElementById('vrscene').appendChild(el);
-    });
-    initInteractions();
-  } catch(e) { console.warn('Gagal load objek:', e); initInteractions(); }
+async function loadObjects() {
+  // Coba API backend dulu, fallback ke JSON statis (GitHub Pages)
+  const urls = ['/api/scenes/${scene.scene_id}', '../data/${scene.scene_id}.json'];
+  for (const url of urls) {
+    try {
+      const res  = await fetch(url);
+      const json = await res.json();
+      const objects = json.data?.objects ?? json.objects ?? [];
+      objects.forEach(obj => {
+        const el = buildAFrameEntity(obj);
+        document.getElementById('vrscene').appendChild(el);
+      });
+      initInteractions();
+      return;
+    } catch(_) {}
+  }
+  initInteractions(); // tetap init meski gagal load
 }
 </script>
 </body>

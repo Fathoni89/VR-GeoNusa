@@ -1,0 +1,29 @@
+name: Deploy VR-GeoNusa ke GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # bisa trigger manual dari GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kode
+        uses: actions/checkout@v4
+
+      - name: Salin data JSON ke public/data/
+        run: |
+          mkdir -p public/data
+          cp data/*.json public/data/
+
+      - name: Deploy public/ ke gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          force_orphan: true
+          commit_message: "deploy: update GitHub Pages dari main [${{ github.sha }}]"

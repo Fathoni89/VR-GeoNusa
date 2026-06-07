@@ -3,620 +3,913 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0F172A">
-  <meta name="description" content="VR-GeoNusa — Jelajahi geometri warisan budaya Nusantara dalam Virtual Reality. Candi Borobudur, Prambanan, dan lebih banyak lagi.">
+  <meta name="theme-color" content="#0E0B08">
+  <meta name="description" content="VR-GeoNusa — Jelajahi geometri warisan budaya Nusantara dalam Virtual Reality.">
   <title>VR-GeoNusa — Eksplorasi Geometri Warisan Budaya</title>
   <style>
+    /* ── Reset & Base ─────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #080E1A;
-      --surface: #0F1A2E;
-      --surface2: #162236;
-      --border: rgba(255,255,255,0.06);
-      --accent: #38BDF8;
-      --accent2: #818CF8;
-      --purple: #A78BFA;
-      --green: #34D399;
-      --text: #E2E8F0;
-      --muted: #64748B;
-    }
-    html { scroll-behavior: smooth; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      overflow-x: hidden;
+      --stone-900: #0E0B08;
+      --stone-800: #1A1410;
+      --stone-700: #261E16;
+      --stone-600: #3A2E22;
+      --stone-500: #5A4A38;
+      --stone-400: #8A7A6A;
+      --stone-300: #B8A898;
+      --stone-200: #D8CCC0;
+      --stone-100: #F0E6D8;
+
+      --gold:       #C8963E;
+      --gold-light: #E0B86A;
+      --gold-dim:   rgba(200,150,62,.15);
+      --gold-border:rgba(200,150,62,.25);
+
+      --teal:       #4A7A6A;
+      --teal-light: #6A9A8A;
+      --terra:      #8B4A38;
+
+      --text:   #EDE3D8;
+      --muted:  #8A7A6A;
+      --border: rgba(200,150,62,.12);
+
+      --serif: Georgia, 'Times New Roman', serif;
+      --sans:  'Segoe UI', system-ui, -apple-system, sans-serif;
+      --mono:  'SF Mono', 'Cascadia Code', monospace;
     }
 
-    /* ── NAV ───────────────────────────────── */
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--stone-900);
+      color: var(--text);
+      font-family: var(--sans);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ── Scrollbar ───────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--stone-800); }
+    ::-webkit-scrollbar-thumb { background: var(--stone-500); border-radius: 3px; }
+
+    /* ── NAV ─────────────────────────────────── */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      display: flex; align-items: center; padding: 0 5%;
-      height: 64px;
-      background: rgba(8,14,26,0.85);
+      height: 60px;
+      display: flex; align-items: center;
+      padding: 0 6%;
+      background: rgba(14,11,8,.92);
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(16px);
+      transition: background .3s;
     }
-    .nav-logo {
-      font-weight: 900; font-size: 1.2em; letter-spacing: -0.5px;
-      background: linear-gradient(90deg, #38BDF8, #818CF8);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
       text-decoration: none;
     }
-    .nav-links { display: flex; gap: 28px; margin-left: 40px; }
-    .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; transition: color .2s; }
-    .nav-links a:hover { color: var(--text); }
-    .nav-spacer { flex: 1; }
-    .nav-cta {
-      padding: 8px 20px; border-radius: 10px;
-      background: linear-gradient(135deg, #3730A3, #4338CA);
-      color: #C7D2FE; font-size: 13px; font-weight: 700;
-      text-decoration: none; transition: opacity .2s, transform .15s;
+    .nav-brand-mark {
+      width: 32px; height: 32px;
+      border: 1.5px solid var(--gold);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--gold);
     }
-    .nav-cta:hover { opacity: .85; transform: translateY(-1px); }
+    .nav-brand-name {
+      font-family: var(--serif);
+      font-size: 1.1em; font-weight: 700;
+      letter-spacing: .5px;
+      color: var(--stone-100);
+    }
+    .nav-links {
+      display: flex; gap: 32px;
+      margin-left: 48px;
+    }
+    .nav-links a {
+      color: var(--stone-400); text-decoration: none;
+      font-size: 13px; letter-spacing: .3px;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--stone-200); }
+    .nav-spacer { flex: 1; }
+    .nav-admin {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 18px; border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--gold-border);
+      color: var(--gold-light); font-size: 12px; font-weight: 600;
+      text-decoration: none; letter-spacing: .5px;
+      transition: background .2s, border-color .2s;
+    }
+    .nav-admin:hover {
+      background: var(--gold-dim);
+      border-color: var(--gold);
+    }
 
-    /* ── HERO ──────────────────────────────── */
+    /* ── HERO ────────────────────────────────── */
     .hero {
       min-height: 100vh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center;
-      padding: 120px 5% 80px;
-      position: relative; overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative;
     }
-    /* Animated grid background */
-    .hero::before {
-      content: '';
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(rgba(56,189,248,.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(56,189,248,.04) 1px, transparent 1px);
-      background-size: 40px 40px;
-      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+
+    /* Left panel */
+    .hero-left {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 120px 6% 80px 8%;
+      position: relative; z-index: 2;
     }
-    /* Glow orbs */
-    .hero::after {
-      content: '';
-      position: absolute; top: 20%; left: 30%;
-      width: 600px; height: 600px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(129,140,248,.12) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .hero-badge {
+    .hero-eyebrow {
       display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(56,189,248,.08);
-      border: 1px solid rgba(56,189,248,.2);
-      border-radius: 30px; padding: 6px 16px;
-      color: var(--accent); font-size: 12px; font-weight: 700;
-      letter-spacing: .5px; margin-bottom: 24px;
+      font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 24px;
     }
-    .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
-    .hero h1 {
-      font-size: clamp(2.8rem, 6vw, 5rem);
-      font-weight: 900; line-height: 1.1;
-      letter-spacing: -2px; margin-bottom: 8px;
-      background: linear-gradient(135deg, #ffffff 30%, #818CF8 70%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    .hero-eyebrow::before {
+      content: ''; width: 24px; height: 1px; background: var(--gold);
+    }
+    .hero-h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.6rem, 4vw, 4rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      color: var(--stone-100);
+      margin-bottom: 12px;
+    }
+    .hero-h1 em {
+      font-style: italic;
+      color: var(--gold-light);
     }
     .hero-sub {
-      font-size: clamp(1rem, 2vw, 1.3rem);
-      background: linear-gradient(90deg, #38BDF8, #A78BFA);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      font-weight: 700; margin-bottom: 20px;
+      font-size: 1rem;
+      color: var(--stone-400);
+      max-width: 400px;
+      line-height: 1.75;
+      margin-bottom: 40px;
     }
-    .hero p {
-      max-width: 560px; color: var(--muted); font-size: 1rem;
-      line-height: 1.8; margin: 0 auto 40px;
+    .hero-btns {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 56px;
     }
-    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 64px; }
-    .btn-hero-primary {
-      padding: 14px 36px; border-radius: 14px;
-      background: linear-gradient(135deg, #3730A3, #4338CA);
-      color: #C7D2FE; font-size: 1em; font-weight: 800;
+    .btn-primary {
+      padding: 13px 32px; border-radius: 6px;
+      background: var(--gold); color: var(--stone-900);
+      font-size: 13px; font-weight: 700; letter-spacing: .5px;
       text-decoration: none;
-      box-shadow: 0 4px 24px rgba(99,102,241,.35);
-      transition: transform .15s, box-shadow .15s;
+      transition: background .2s, transform .15s;
     }
-    .btn-hero-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(99,102,241,.5); }
-    .btn-hero-ghost {
-      padding: 14px 36px; border-radius: 14px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.1);
-      color: var(--text); font-size: 1em; font-weight: 700;
+    .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .btn-outline {
+      padding: 13px 32px; border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--stone-600);
+      color: var(--stone-300); font-size: 13px; font-weight: 600;
       text-decoration: none;
-      transition: background .2s;
+      transition: border-color .2s, color .2s;
     }
-    .btn-hero-ghost:hover { background: rgba(255,255,255,.08); }
+    .btn-outline:hover { border-color: var(--stone-400); color: var(--stone-200); }
 
-    /* Device badges */
-    .device-badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .device-badge {
-      display: flex; align-items: center; gap: 8px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 8px 16px;
-      font-size: 12px; font-weight: 600; color: var(--muted);
+    /* Stats row */
+    .hero-stats {
+      display: flex; gap: 32px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
     }
-    .device-badge .icon { font-size: 16px; }
+    .hero-stat-num {
+      font-family: var(--serif);
+      font-size: 1.8em; font-weight: 700;
+      color: var(--gold);
+    }
+    .hero-stat-lbl {
+      font-size: 11px; color: var(--stone-500);
+      letter-spacing: .5px; margin-top: 2px;
+    }
 
-    /* ── SECTION COMMON ────────────────────── */
-    section { padding: 80px 5%; }
-    .section-label {
-      color: var(--accent); font-size: 11px; font-weight: 800;
-      letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px;
+    /* Right panel — photo collage */
+    .hero-right {
+      position: relative; overflow: hidden;
     }
-    .section-title {
-      font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 900;
-      letter-spacing: -1px; margin-bottom: 12px;
+    .hero-photo-main {
+      position: absolute; inset: 0;
+      background: var(--stone-800);
     }
-    .section-desc { color: var(--muted); max-width: 560px; line-height: 1.8; margin-bottom: 48px; }
-
-    /* ── SCENES GRID ───────────────────────── */
-    #scenes { background: var(--surface); }
-    .scenes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-    .scene-card {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: 18px; overflow: hidden;
-      transition: transform .2s, border-color .2s, box-shadow .2s;
-      text-decoration: none; display: block;
+    .hero-photo-main img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 30%;
+      filter: brightness(.6) saturate(.9);
     }
-    .scene-card:hover { transform: translateY(-4px); border-color: rgba(129,140,248,.3); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
-    .scene-card.coming-soon { opacity: .5; pointer-events: none; }
-    .scene-preview {
-      height: 200px; position: relative;
+    /* Gradient overlay left side */
+    .hero-right::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to right, var(--stone-900) 0%, transparent 40%);
+    }
+    /* Small inset photo bottom-right */
+    .hero-photo-inset {
+      position: absolute; bottom: 40px; right: 40px; z-index: 2;
+      width: 200px; height: 130px; border-radius: 8px;
       overflow: hidden;
-      background: #0F172A;
+      border: 2px solid rgba(200,150,62,.3);
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
     }
-    /* Foto asli via <img> */
-    .scene-preview img {
+    .hero-photo-inset img {
       width: 100%; height: 100%;
       object-fit: cover; object-position: center 40%;
+    }
+    /* Caption on inset */
+    .hero-photo-caption {
+      position: absolute; bottom: 38px; right: 256px; z-index: 2;
+      text-align: right;
+    }
+    .hero-photo-caption p {
+      font-size: 10px; color: var(--stone-400);
+      letter-spacing: .5px;
+    }
+    .hero-photo-caption strong {
+      display: block; font-size: 12px;
+      color: var(--stone-300); font-family: var(--serif);
+    }
+
+    /* Geometric accent */
+    .hero-geom {
+      position: absolute; top: 100px; right: 20px; z-index: 3;
+      width: 80px; height: 80px;
+      border: 1px solid rgba(200,150,62,.2);
+      transform: rotate(45deg);
+    }
+    .hero-geom::before {
+      content: ''; position: absolute; inset: 10px;
+      border: 1px solid rgba(200,150,62,.15);
+    }
+
+    /* ── DIVIDER ─────────────────────────────── */
+    .divider {
+      display: flex; align-items: center; gap: 20px;
+      padding: 0 8%; margin: 0;
+    }
+    .divider-line { flex: 1; height: 1px; background: var(--border); }
+    .divider-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--stone-600);
+      white-space: nowrap;
+    }
+
+    /* ── SECTION: SCENES ─────────────────────── */
+    #scenes { padding: 80px 8%; }
+    .section-head { margin-bottom: 48px; }
+    .section-eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--gold);
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .section-eyebrow::after { content: ''; flex: 0 0 40px; height: 1px; background: var(--gold); }
+    .section-h2 {
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 2.5vw, 2.6rem);
+      font-weight: 700; letter-spacing: -.5px;
+      color: var(--stone-100);
+      margin-bottom: 10px;
+    }
+    .section-desc { color: var(--stone-400); font-size: .95rem; max-width: 560px; }
+
+    /* Scene cards — cinematic style */
+    .scenes-row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 2px;
+      border-radius: 12px; overflow: hidden;
+    }
+    .scene-card {
+      position: relative; overflow: hidden;
+      display: block; text-decoration: none;
+      cursor: pointer;
+    }
+    .scene-card-img {
+      width: 100%; aspect-ratio: 3/4;
+      object-fit: cover; object-position: center 35%;
       display: block;
-      transition: transform .4s ease;
-      filter: brightness(.82) saturate(1.1);
+      transition: transform .5s ease, filter .4s;
+      filter: brightness(.65) saturate(.85);
     }
-    .scene-card:hover .scene-preview img {
-      transform: scale(1.06);
-      filter: brightness(.92) saturate(1.2);
+    .scene-card:first-child .scene-card-img { aspect-ratio: 2/3; }
+    .scene-card:hover .scene-card-img {
+      transform: scale(1.04);
+      filter: brightness(.78) saturate(1);
     }
-    /* Fallback gradient jika foto belum ada */
-    .scene-preview.coming {
-      background: linear-gradient(160deg, #0F172A 0%, #1E293B 100%);
-      display: flex; align-items: center; justify-content: center;
-    }
-    /* Overlay gelap di bawah foto agar tag terbaca */
-    .scene-preview::after {
+    /* Gradient overlay */
+    .scene-card::after {
       content: ''; position: absolute; inset: 0;
-      background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,.55) 100%);
-      pointer-events: none;
+      background: linear-gradient(to top,
+        rgba(14,11,8,.95) 0%,
+        rgba(14,11,8,.4) 50%,
+        transparent 100%);
     }
-    .scene-preview-icon { font-size: 3.5em; opacity: .7; position: relative; z-index: 1; }
-    .scene-tag {
-      position: absolute; top: 12px; right: 12px;
-      background: rgba(0,0,0,.5); backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,.1);
-      color: var(--text); font-size: 10px; font-weight: 700;
-      border-radius: 6px; padding: 3px 10px; letter-spacing: .5px;
+    /* Card content */
+    .scene-card-body {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 24px 22px; z-index: 2;
     }
-    .scene-tag.new { background: rgba(52,211,153,.15); border-color: rgba(52,211,153,.3); color: var(--green); }
-    .scene-body { padding: 20px; }
-    .scene-name { font-size: 1.1em; font-weight: 800; margin-bottom: 4px; }
-    .scene-loc { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
-    .scene-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-    .geo-tag {
-      background: rgba(129,140,248,.1); border: 1px solid rgba(129,140,248,.15);
-      color: var(--accent2); border-radius: 20px; padding: 2px 10px;
-      font-size: 10px; font-weight: 700;
+    .scene-card-badge {
+      display: inline-block; margin-bottom: 10px;
+      padding: 3px 10px; border-radius: 4px;
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase;
     }
-    .scene-footer { display: flex; align-items: center; justify-content: space-between; }
-    .scene-obj-count { color: var(--muted); font-size: 11px; }
-    .scene-cta {
+    .badge-available {
+      background: rgba(74,122,106,.25);
+      border: 1px solid rgba(74,122,106,.5);
+      color: var(--teal-light);
+    }
+    .badge-soon {
+      background: rgba(90,74,56,.4);
+      border: 1px solid rgba(200,150,62,.2);
+      color: var(--stone-400);
+    }
+    .scene-card-name {
+      font-family: var(--serif);
+      font-size: 1.3em; font-weight: 700;
+      color: var(--stone-100); margin-bottom: 4px;
+      line-height: 1.2;
+    }
+    .scene-card:first-child .scene-card-name { font-size: 1.7em; }
+    .scene-card-loc {
+      font-size: 11px; color: var(--stone-400);
+      letter-spacing: .3px; margin-bottom: 14px;
+    }
+    .scene-card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .scene-geo-tag {
+      background: rgba(200,150,62,.1);
+      border: 1px solid rgba(200,150,62,.2);
+      color: var(--gold);
+      border-radius: 3px; padding: 2px 8px;
+      font-size: 10px; font-weight: 600;
+    }
+    .scene-card-cta {
       display: inline-flex; align-items: center; gap: 6px;
-      color: var(--accent); font-size: 12px; font-weight: 700;
+      font-size: 12px; font-weight: 700;
+      color: var(--gold-light);
+      letter-spacing: .3px;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity .25s, transform .25s;
     }
-
-    /* ── HOW TO USE ────────────────────────── */
-    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-    .step-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 24px;
+    .scene-card:hover .scene-card-cta { opacity: 1; transform: translateY(0); }
+    .scene-card-coming {
+      position: absolute; inset: 0; z-index: 2;
+      display: flex; align-items: flex-end;
+      padding: 24px 22px;
+      background: linear-gradient(to top, rgba(14,11,8,.9) 0%, transparent 60%);
     }
-    .step-num {
-      width: 36px; height: 36px; border-radius: 10px;
-      background: linear-gradient(135deg, #3730A3, #4338CA);
-      color: #C7D2FE; font-weight: 900; font-size: 1em;
+    /* Fallback bg for coming soon */
+    .scene-thumb-placeholder {
+      width: 100%; aspect-ratio: 3/4;
+      background: var(--stone-800);
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 16px;
+      font-size: 3em; opacity: .3;
     }
-    .step-title { font-weight: 800; margin-bottom: 6px; }
-    .step-desc { color: var(--muted); font-size: 13px; line-height: 1.7; }
 
-    /* ── GEOMETRI HIGHLIGHT ────────────────── */
-    #geometri { background: var(--surface); }
-    .geo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-    .geo-card {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: 14px; padding: 20px 16px; text-align: center;
-      transition: border-color .2s;
+    /* ── SECTION: CARA PAKAI ─────────────────── */
+    #cara-pakai {
+      padding: 80px 8%;
+      background: var(--stone-800);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
     }
-    .geo-card:hover { border-color: rgba(129,140,248,.3); }
-    .geo-icon { font-size: 2em; margin-bottom: 8px; }
-    .geo-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
-    .geo-en { color: var(--muted); font-size: 10px; font-style: italic; }
+    .steps-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px; align-items: start;
+    }
+    .steps-left { padding-top: 8px; }
+    .steps-list { display: flex; flex-direction: column; gap: 0; }
+    .step-item {
+      display: flex; gap: 20px; padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+      transition: background .2s;
+    }
+    .step-item:first-child { padding-top: 0; }
+    .step-item:last-child { border-bottom: none; }
+    .step-num {
+      flex-shrink: 0;
+      width: 36px; height: 36px;
+      border: 1px solid var(--gold-border);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--serif);
+      font-size: 14px; font-weight: 700;
+      color: var(--gold);
+    }
+    .step-title { font-weight: 700; color: var(--stone-200); margin-bottom: 4px; font-size: .95rem; }
+    .step-desc  { color: var(--stone-400); font-size: .88rem; line-height: 1.7; }
 
-    /* ── DEVICES ───────────────────────────── */
-    .devices-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    /* Right: device compatibility */
+    .devices-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
     .device-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 16px; padding: 24px; text-align: center;
+      background: var(--stone-700);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px 16px;
     }
-    .device-icon { font-size: 2.5em; margin-bottom: 12px; }
-    .device-name { font-weight: 800; font-size: 1em; margin-bottom: 4px; }
-    .device-note { color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .device-icon { font-size: 1.8em; margin-bottom: 10px; }
+    .device-name { font-weight: 700; font-size: .9rem; color: var(--stone-200); margin-bottom: 4px; }
+    .device-note { color: var(--stone-500); font-size: .8rem; line-height: 1.6; }
     .device-status {
-      display: inline-block; margin-top: 10px;
-      padding: 2px 10px; border-radius: 20px;
-      font-size: 10px; font-weight: 700;
+      display: inline-block; margin-top: 8px;
+      padding: 2px 8px; border-radius: 3px;
+      font-size: 10px; font-weight: 700; letter-spacing: .3px;
     }
-    .status-full { background: rgba(52,211,153,.1); color: var(--green); }
-    .status-partial { background: rgba(56,189,248,.1); color: var(--accent); }
+    .status-full    { background: rgba(74,122,106,.2); color: var(--teal-light); }
+    .status-partial { background: rgba(200,150,62,.12); color: var(--gold); }
 
-    /* ── TEAM ──────────────────────────────── */
-    .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    /* ── SECTION: GEOMETRI ───────────────────── */
+    #geometri { padding: 80px 8%; }
+    .geo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px,1fr));
+      gap: 2px; border-radius: 10px; overflow: hidden;
+    }
+    .geo-card {
+      background: var(--stone-800);
+      padding: 22px 16px; text-align: center;
+      transition: background .2s;
+      border: 1px solid transparent;
+    }
+    .geo-card:hover { background: var(--stone-700); border-color: var(--border); }
+    .geo-icon { font-size: 1.6em; margin-bottom: 8px; }
+    .geo-name { font-weight: 700; font-size: .82rem; color: var(--stone-200); margin-bottom: 2px; }
+    .geo-en   { color: var(--stone-500); font-size: .72rem; font-style: italic; }
+
+    /* ── SECTION: TIM ────────────────────────── */
+    #tim {
+      padding: 80px 8%;
+      background: var(--stone-800);
+      border-top: 1px solid var(--border);
+    }
+    .team-layout {
+      display: grid;
+      grid-template-columns: 1fr 2fr; gap: 60px; align-items: start;
+    }
+    .team-intro { padding-top: 8px; }
+    .team-intro p { color: var(--stone-400); font-size: .9rem; line-height: 1.8; margin-bottom: 16px; }
+    .team-grant {
+      padding: 14px 16px;
+      background: var(--stone-700);
+      border-left: 2px solid var(--gold);
+      border-radius: 0 6px 6px 0;
+      font-size: .82rem; color: var(--stone-400); line-height: 1.7;
+    }
+    .team-grant strong { color: var(--gold); }
+    .team-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr; gap: 12px;
+    }
     .team-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 14px; padding: 18px;
+      background: var(--stone-700);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px;
       display: flex; gap: 12px; align-items: flex-start;
     }
     .team-avatar {
-      width: 40px; height: 40px; border-radius: 10px;
-      background: linear-gradient(135deg, #3730A3, #4338CA);
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: var(--stone-600);
+      border: 1px solid var(--gold-border);
+      border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.1em; flex-shrink: 0;
+      font-size: .9em;
     }
-    .team-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
-    .team-role { color: var(--accent2); font-size: 10px; font-weight: 700; }
-    .team-inst { color: var(--muted); font-size: 10px; margin-top: 2px; }
+    .team-name { font-weight: 700; font-size: .85rem; color: var(--stone-200); margin-bottom: 2px; }
+    .team-role { color: var(--gold); font-size: .72rem; font-weight: 700; letter-spacing: .3px; }
+    .team-inst { color: var(--stone-500); font-size: .72rem; margin-top: 2px; }
 
-    /* ── FOOTER ────────────────────────────── */
+    /* ── FOOTER ──────────────────────────────── */
     footer {
-      background: var(--surface);
+      padding: 48px 8% 32px;
       border-top: 1px solid var(--border);
-      padding: 40px 5%;
-      display: flex; flex-direction: column; align-items: center;
-      text-align: center; gap: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 40px;
     }
-    footer .f-logo { font-weight: 900; font-size: 1.3em;
-      background: linear-gradient(90deg, #38BDF8, #818CF8);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    footer p { color: var(--muted); font-size: 12px; line-height: 1.8; }
-    footer .f-links { display: flex; gap: 20px; }
-    footer .f-links a { color: var(--muted); text-decoration: none; font-size: 12px; }
-    footer .f-links a:hover { color: var(--accent); }
+    .footer-brand { }
+    .footer-brand-name {
+      font-family: var(--serif);
+      font-size: 1.2em; font-weight: 700;
+      color: var(--stone-200); margin-bottom: 8px;
+    }
+    .footer-brand p { color: var(--stone-500); font-size: .82rem; line-height: 1.7; }
+    .footer-col h4 {
+      font-size: .75rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--stone-500);
+      margin-bottom: 14px;
+    }
+    .footer-col a {
+      display: block; color: var(--stone-400);
+      text-decoration: none; font-size: .85rem;
+      margin-bottom: 8px; transition: color .2s;
+    }
+    .footer-col a:hover { color: var(--gold-light); }
+    .footer-bottom {
+      padding: 20px 8% 0;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 0;
+    }
+    .footer-bottom p { color: var(--stone-600); font-size: .78rem; }
 
+    /* ── Geometric background pattern ────────── */
+    .geo-bg {
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: 40%; pointer-events: none; overflow: hidden; z-index: 0;
+    }
+
+    /* ── Responsive ──────────────────────────── */
+    @media (max-width: 1024px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .hero-left { padding: 100px 6% 48px; }
+      .hero-right { height: 300px; }
+      .hero-photo-inset, .hero-photo-caption, .hero-geom { display: none; }
+      .scenes-row { grid-template-columns: 1fr; }
+      .scene-card .scene-card-img,
+      .scene-card:first-child .scene-card-img { aspect-ratio: 16/9; }
+      .steps-layout  { grid-template-columns: 1fr; gap: 40px; }
+      .team-layout   { grid-template-columns: 1fr; gap: 32px; }
+      footer         { grid-template-columns: 1fr 1fr; }
+    }
     @media (max-width: 640px) {
-      nav .nav-links { display: none; }
-      .hero h1 { letter-spacing: -1px; }
+      .nav-links     { display: none; }
+      .hero-btns     { flex-direction: column; }
+      .hero-stats    { gap: 20px; }
+      .team-grid     { grid-template-columns: 1fr; }
+      .scenes-row    { gap: 3px; }
+      footer         { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
     }
   </style>
 </head>
 <body>
 
-<!-- ── NAV ─────────────────────────────────────────── -->
+<!-- ── NAV ──────────────────────────────────── -->
 <nav>
-  <a href="/" class="nav-logo">VR-GeoNusa</a>
+  <a href="/" class="nav-brand">
+    <div class="nav-brand-mark">▲</div>
+    <span class="nav-brand-name">VR-GeoNusa</span>
+  </a>
   <div class="nav-links">
-    <a href="#scenes">Scene VR</a>
+    <a href="#scenes">Destinasi</a>
     <a href="#cara-pakai">Cara Pakai</a>
     <a href="#geometri">Geometri</a>
     <a href="#tim">Tim</a>
   </div>
   <div class="nav-spacer"></div>
-  <a href="/admin" class="nav-cta">⚙️ Admin</a>
+  <a href="admin/" class="nav-admin">⚙ Admin Panel</a>
 </nav>
 
-<!-- ── HERO ────────────────────────────────────────── -->
-<section class="hero" id="home">
-  <div class="hero-badge">
-    <span class="dot"></span>
-    Prototype Tahun 1 · Hibah Fundamental BIMA 2026
+<!-- ── HERO ─────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Hibah Fundamental BIMA 2026</div>
+    <h1 class="hero-h1">
+      Geometri di Balik<br>
+      <em>Warisan Budaya</em><br>
+      Nusantara
+    </h1>
+    <p class="hero-sub">
+      Identifikasi bentuk-bentuk geometri ruang yang tersembunyi dalam arsitektur Candi Borobudur dan Prambanan melalui pengalaman Virtual Reality yang imersif.
+    </p>
+    <div class="hero-btns">
+      <a href="#scenes" class="btn-primary">Mulai Eksplorasi</a>
+      <a href="https://github.com/Fathoni89/VR-GeoNusa" target="_blank" class="btn-outline">Lihat GitHub →</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num" id="stat-scenes">2</div>
+        <div class="hero-stat-lbl">Destinasi VR</div>
+      </div>
+      <div>
+        <div class="hero-stat-num" id="stat-objects">17</div>
+        <div class="hero-stat-lbl">Objek Interaktif</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">8</div>
+        <div class="hero-stat-lbl">Jenis Geometri</div>
+      </div>
+    </div>
   </div>
-  <h1>Jelajahi Geometri<br>Warisan Budaya</h1>
-  <div class="hero-sub">Nusantara dalam Virtual Reality</div>
-  <p>
-    Temukan hubungan matematika di balik keindahan Candi Borobudur dan Prambanan.
-    Identifikasi bentuk geometri ruang melalui pengalaman VR yang imersif.
-  </p>
-  <div class="hero-btns">
-    <a href="#scenes" class="btn-hero-primary">🏛️ Mulai Eksplorasi</a>
-    <a href="https://github.com/Fathoni89/VR-GeoNusa" target="_blank" class="btn-hero-ghost">GitHub →</a>
-  </div>
-  <div class="device-badges">
-    <div class="device-badge"><span class="icon">🥽</span> Meta Quest 3</div>
-    <div class="device-badge"><span class="icon">💻</span> Browser Desktop</div>
-    <div class="device-badge"><span class="icon">📱</span> Smartphone</div>
-    <div class="device-badge"><span class="icon">🎮</span> Pico 4</div>
+
+  <div class="hero-right">
+    <div class="hero-photo-main">
+      <img src="assets/images/borobudur.jpg" alt="Candi Borobudur"
+        onerror="this.style.display='none'">
+    </div>
+    <div class="hero-geom"></div>
+    <div class="hero-photo-inset">
+      <img src="assets/images/prambanan.jpg" alt="Candi Prambanan"
+        onerror="this.parentElement.style.display='none'">
+    </div>
+    <div class="hero-photo-caption">
+      <strong>Candi Prambanan</strong>
+      <p>Sleman, DI Yogyakarta</p>
+    </div>
   </div>
 </section>
 
-<!-- ── SCENE SELECTION ──────────────────────────────── -->
+<!-- ── DIVIDER ───────────────────────────────── -->
+<div class="divider" style="padding: 24px 8%">
+  <div class="divider-line"></div>
+  <div class="divider-label">Pilih Destinasi</div>
+  <div class="divider-line"></div>
+</div>
+
+<!-- ── SCENES ────────────────────────────────── -->
 <section id="scenes">
-  <div class="section-label">Scene VR</div>
-  <h2 class="section-title">Pilih Destinasi Eksplorasi</h2>
-  <p class="section-desc">Setiap scene menampilkan situs warisan budaya yang berbeda dengan objek-objek geometri yang bisa diidentifikasi secara interaktif.</p>
+  <div class="section-head">
+    <div class="section-eyebrow">Scene VR</div>
+    <h2 class="section-h2">Destinasi Eksplorasi</h2>
+    <p class="section-desc">
+      Setiap scene menampilkan situs warisan budaya dengan objek-objek geometri yang dapat diidentifikasi secara interaktif.
+    </p>
+  </div>
 
-  <div class="scenes-grid" id="scenes-grid">
-    <!-- Diisi secara dinamis oleh JS -->
-    <a href="/vr/borobudur.html" class="scene-card">
-      <div class="scene-preview">
-        <img
-          src="/assets/images/borobudur.jpg"
-          alt="Candi Borobudur"
-          loading="lazy"
-          onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(160deg,#1a2744 0%,#2d4a2a 100%)'"
-        >
-        <span class="scene-tag new">Tersedia</span>
-      </div>
-      <div class="scene-body">
-        <div class="scene-name">Candi Borobudur</div>
-        <div class="scene-loc">📍 Magelang, Jawa Tengah · Abad ke-8 M</div>
-        <div class="scene-tags">
-          <span class="geo-tag">Setengah Bola</span>
-          <span class="geo-tag">Balok</span>
-          <span class="geo-tag">Tabung</span>
-          <span class="geo-tag">Kerucut</span>
+  <div class="scenes-row">
+
+    <!-- Borobudur — featured -->
+    <a href="vr/borobudur.html" class="scene-card">
+      <img class="scene-card-img"
+        src="assets/images/borobudur.jpg" alt="Candi Borobudur"
+        onerror="this.style.filter='brightness(0)'; this.style.background='#1A1410'">
+      <div class="scene-card-body">
+        <span class="scene-card-badge badge-available">Tersedia</span>
+        <div class="scene-card-name">Candi Borobudur</div>
+        <div class="scene-card-loc">📍 Magelang, Jawa Tengah · Abad ke-8 M</div>
+        <div class="scene-card-tags">
+          <span class="scene-geo-tag">Setengah Bola</span>
+          <span class="scene-geo-tag">Balok</span>
+          <span class="scene-geo-tag">Tabung</span>
+          <span class="scene-geo-tag">Kerucut</span>
         </div>
-        <div class="scene-footer">
-          <span class="scene-obj-count">7 objek interaktif</span>
-          <span class="scene-cta">Masuk VR →</span>
-        </div>
+        <div class="scene-card-cta">Masuk Scene VR →</div>
       </div>
     </a>
 
-    <a href="/vr/prambanan.html" class="scene-card">
-      <div class="scene-preview">
-        <img
-          src="/assets/images/prambanan.jpg"
-          alt="Candi Prambanan"
-          loading="lazy"
-          onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(160deg,#1f1a30 0%,#6a5a3a 100%)'"
-        >
-        <span class="scene-tag new">Tersedia</span>
-      </div>
-      <div class="scene-body">
-        <div class="scene-name">Candi Prambanan</div>
-        <div class="scene-loc">📍 Sleman, DI Yogyakarta · Abad ke-9 M</div>
-        <div class="scene-tags">
-          <span class="geo-tag">Limas Segiempat</span>
-          <span class="geo-tag">Balok</span>
-          <span class="geo-tag">Tabung</span>
-          <span class="geo-tag">Kerucut</span>
+    <!-- Prambanan -->
+    <a href="vr/prambanan.html" class="scene-card">
+      <img class="scene-card-img"
+        src="assets/images/prambanan.jpg" alt="Candi Prambanan"
+        onerror="this.style.filter='brightness(0)'">
+      <div class="scene-card-body">
+        <span class="scene-card-badge badge-available">Tersedia</span>
+        <div class="scene-card-name">Candi Prambanan</div>
+        <div class="scene-card-loc">📍 Sleman, DI Yogyakarta · Abad ke-9 M</div>
+        <div class="scene-card-tags">
+          <span class="scene-geo-tag">Limas Segiempat</span>
+          <span class="scene-geo-tag">Balok</span>
+          <span class="scene-geo-tag">Tabung</span>
         </div>
-        <div class="scene-footer">
-          <span class="scene-obj-count">7 objek interaktif</span>
-          <span class="scene-cta">Masuk VR →</span>
-        </div>
+        <div class="scene-card-cta">Masuk Scene VR →</div>
       </div>
     </a>
 
-    <div class="scene-card coming-soon">
-      <div class="scene-preview coming">
-        <span class="scene-preview-icon">🕌</span>
-        <span class="scene-tag">Segera</span>
-      </div>
-      <div class="scene-body">
-        <div class="scene-name">Keraton Yogyakarta</div>
-        <div class="scene-loc">📍 Yogyakarta · Abad ke-18 M</div>
-        <div class="scene-tags">
-          <span class="geo-tag">Prisma</span>
-          <span class="geo-tag">Limas</span>
+    <!-- Keraton — coming soon -->
+    <div class="scene-card" style="cursor:default">
+      <img class="scene-card-img"
+        src="assets/images/keratonyogya.jpg" alt="Keraton Yogyakarta"
+        onerror="this.style.display='none'; document.querySelector('.scene-thumb-placeholder').style.display='flex'">
+      <div class="scene-thumb-placeholder" style="display:none">🕌</div>
+      <div class="scene-card-body">
+        <span class="scene-card-badge badge-soon">Segera</span>
+        <div class="scene-card-name">Keraton Yogyakarta</div>
+        <div class="scene-card-loc">📍 Yogyakarta · Abad ke-18 M</div>
+        <div class="scene-card-tags">
+          <span class="scene-geo-tag">Prisma</span>
+          <span class="scene-geo-tag">Limas</span>
         </div>
-        <div class="scene-footer">
-          <span class="scene-obj-count">Dalam pengembangan</span>
-        </div>
+        <div style="font-size:11px; color: var(--stone-500); margin-top: 4px;">Dalam pengembangan</div>
       </div>
     </div>
+
   </div>
 </section>
 
-<!-- ── CARA PAKAI ───────────────────────────────────── -->
+<!-- ── CARA PAKAI ─────────────────────────────── -->
 <section id="cara-pakai">
-  <div class="section-label">Panduan</div>
-  <h2 class="section-title">Cara Menggunakan</h2>
-  <p class="section-desc">Tidak perlu install apapun. Cukup buka di browser dan mulai eksplorasi.</p>
+  <div class="steps-layout">
+    <div>
+      <div class="section-eyebrow">Panduan</div>
+      <h2 class="section-h2">Cara Menggunakan</h2>
+      <p class="section-desc" style="margin-bottom:36px">
+        Tidak perlu instalasi. Buka di browser dan langsung eksplorasi.
+      </p>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div>
+            <div class="step-title">Pilih Destinasi</div>
+            <div class="step-desc">Klik salah satu scene di atas. Halaman VR akan terbuka langsung di browser Anda.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div>
+            <div class="step-title">Navigasi Scene</div>
+            <div class="step-desc"><b>Desktop:</b> WASD untuk bergerak, Mouse untuk melihat sekeliling.<br>
+            <b>Quest 3:</b> Joystick kiri + gerak kepala.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div>
+            <div class="step-title">Identifikasi Geometri</div>
+            <div class="step-desc">Arahkan kursor ke objek bercahaya, tahan selama 1,5 detik hingga panel informasi geometri muncul.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div>
+            <div class="step-title">Mode VR Imersif</div>
+            <div class="step-desc">Di Meta Quest 3, klik ikon headset di pojok kanan bawah untuk masuk ke mode VR penuh.</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <div class="steps">
-    <div class="step-card">
-      <div class="step-num">1</div>
-      <div class="step-title">Pilih Scene</div>
-      <div class="step-desc">Klik salah satu destinasi di atas. Scene akan langsung terbuka di browser Anda.</div>
-    </div>
-    <div class="step-card">
-      <div class="step-num">2</div>
-      <div class="step-title">Bergerak & Menjelajah</div>
-      <div class="step-desc"><strong>Desktop:</strong> WASD untuk bergerak, Mouse untuk melihat.<br><strong>Quest 3:</strong> Joystick + gerak kepala.</div>
-    </div>
-    <div class="step-card">
-      <div class="step-num">3</div>
-      <div class="step-title">Identifikasi Geometri</div>
-      <div class="step-desc">Arahkan kursor ke objek berwarna. Tahan 1,5 detik → panel info geometri muncul.</div>
-    </div>
-    <div class="step-card">
-      <div class="step-num">4</div>
-      <div class="step-title">Mode VR Penuh</div>
-      <div class="step-desc">Di Quest 3, klik ikon 🥽 di sudut kanan bawah untuk masuk ke mode VR imersif penuh.</div>
+    <div>
+      <div class="section-eyebrow" style="margin-bottom:20px">Kompatibilitas</div>
+      <div class="devices-grid">
+        <div class="device-card">
+          <div class="device-icon">🥽</div>
+          <div class="device-name">Meta Quest 3</div>
+          <div class="device-note">Mode VR imersif penuh via Meta Quest Browser.</div>
+          <div class="device-status status-full">✓ VR Penuh</div>
+        </div>
+        <div class="device-card">
+          <div class="device-icon">💻</div>
+          <div class="device-name">Desktop</div>
+          <div class="device-note">Mode 3D interaktif. Berjalan di spesifikasi rendah sekalipun.</div>
+          <div class="device-status status-full">✓ Mode 3D</div>
+        </div>
+        <div class="device-card">
+          <div class="device-icon">📱</div>
+          <div class="device-name">Smartphone</div>
+          <div class="device-note">Mode 3D dengan sensor gyroscope untuk melihat sekeliling.</div>
+          <div class="device-status status-partial">✓ Mode 3D</div>
+        </div>
+        <div class="device-card">
+          <div class="device-icon">🎮</div>
+          <div class="device-name">Pico 4</div>
+          <div class="device-note">Akses via Pico Browser, WebXR aktif otomatis.</div>
+          <div class="device-status status-full">✓ VR Penuh</div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ── GEOMETRI ─────────────────────────────────────── -->
+<!-- ── GEOMETRI ────────────────────────────────── -->
 <section id="geometri">
-  <div class="section-label">Materi</div>
-  <h2 class="section-title">Geometri yang Bisa Ditemukan</h2>
-  <p class="section-desc">Setiap objek dalam scene dikaitkan dengan bentuk geometri ruang beserta rumus volume dan luas permukaannya.</p>
-
+  <div class="section-head">
+    <div class="section-eyebrow">Materi</div>
+    <h2 class="section-h2">Geometri yang Dipelajari</h2>
+    <p class="section-desc" style="margin-bottom:36px">
+      Setiap objek candi dikaitkan dengan bentuk geometri ruang beserta rumus dan konteks budayanya.
+    </p>
+  </div>
   <div class="geo-grid">
-    <div class="geo-card"><div class="geo-icon">🔷</div><div class="geo-name">Balok</div><div class="geo-en">Rectangular Prism</div></div>
-    <div class="geo-card"><div class="geo-icon">🔶</div><div class="geo-name">Limas Segiempat</div><div class="geo-en">Square Pyramid</div></div>
-    <div class="geo-card"><div class="geo-icon">🔵</div><div class="geo-name">Setengah Bola</div><div class="geo-en">Hemisphere</div></div>
-    <div class="geo-card"><div class="geo-icon">🥫</div><div class="geo-name">Tabung</div><div class="geo-en">Cylinder</div></div>
-    <div class="geo-card"><div class="geo-icon">🔺</div><div class="geo-name">Kerucut</div><div class="geo-en">Cone</div></div>
-    <div class="geo-card"><div class="geo-icon">📐</div><div class="geo-name">Prisma Segitiga</div><div class="geo-en">Triangular Prism</div></div>
-    <div class="geo-card"><div class="geo-icon">⬛</div><div class="geo-name">Kubus</div><div class="geo-en">Cube</div></div>
-    <div class="geo-card"><div class="geo-icon">🔮</div><div class="geo-name">Bola</div><div class="geo-en">Sphere</div></div>
+    <div class="geo-card"><div class="geo-icon">◼</div><div class="geo-name">Balok</div><div class="geo-en">Rectangular Prism</div></div>
+    <div class="geo-card"><div class="geo-icon">▲</div><div class="geo-name">Limas Segiempat</div><div class="geo-en">Square Pyramid</div></div>
+    <div class="geo-card"><div class="geo-icon">◑</div><div class="geo-name">Setengah Bola</div><div class="geo-en">Hemisphere</div></div>
+    <div class="geo-card"><div class="geo-icon">⬤</div><div class="geo-name">Tabung</div><div class="geo-en">Cylinder</div></div>
+    <div class="geo-card"><div class="geo-icon">▽</div><div class="geo-name">Kerucut</div><div class="geo-en">Cone</div></div>
+    <div class="geo-card"><div class="geo-icon">◇</div><div class="geo-name">Prisma Segitiga</div><div class="geo-en">Triangular Prism</div></div>
+    <div class="geo-card"><div class="geo-icon">□</div><div class="geo-name">Kubus</div><div class="geo-en">Cube</div></div>
+    <div class="geo-card"><div class="geo-icon">○</div><div class="geo-name">Bola</div><div class="geo-en">Sphere</div></div>
   </div>
 </section>
 
-<!-- ── PERANGKAT ────────────────────────────────────── -->
-<section id="devices">
-  <div class="section-label">Kompatibilitas</div>
-  <h2 class="section-title">Berjalan di Semua Perangkat</h2>
-  <p class="section-desc">Dibangun dengan WebXR — teknologi VR berbasis web yang tidak memerlukan instalasi apapun.</p>
-
-  <div class="devices-grid">
-    <div class="device-card">
-      <div class="device-icon">🥽</div>
-      <div class="device-name">Meta Quest 3</div>
-      <div class="device-note">Mode VR imersif penuh. Gunakan Meta Quest Browser dan controller bawaan.</div>
-      <div class="device-status status-full">✓ VR Penuh</div>
-    </div>
-    <div class="device-card">
-      <div class="device-icon">💻</div>
-      <div class="device-name">Desktop / Laptop</div>
-      <div class="device-note">Mode 3D interaktif. WASD + mouse. Bisa di laptop spesifikasi rendah sekalipun.</div>
-      <div class="device-status status-full">✓ Mode 3D</div>
-    </div>
-    <div class="device-card">
-      <div class="device-icon">📱</div>
-      <div class="device-name">Smartphone</div>
-      <div class="device-note">Mode 3D dengan gyroscope. Putar HP untuk melihat sekeliling. Touch untuk klik objek.</div>
-      <div class="device-status status-partial">✓ Mode 3D</div>
-    </div>
-    <div class="device-card">
-      <div class="device-icon">🎮</div>
-      <div class="device-name">Pico 4</div>
-      <div class="device-note">Akses via Pico Browser. WebXR otomatis aktif. Gunakan controller untuk navigasi.</div>
-      <div class="device-status status-full">✓ VR Penuh</div>
-    </div>
-  </div>
-</section>
-
-<!-- ── TIM ──────────────────────────────────────────── -->
-<section id="tim" style="background: var(--surface)">
-  <div class="section-label">Tim Peneliti</div>
-  <h2 class="section-title">Di Balik VR-GeoNusa</h2>
-  <p class="section-desc">Didanai oleh Hibah Penelitian Fundamental BIMA Kemenristekdikti 2026–2027.</p>
-
-  <div class="team-grid">
-    <div class="team-card">
-      <div class="team-avatar">👩‍🔬</div>
-      <div>
-        <div class="team-name">Fitria Sulistyowati</div>
-        <div class="team-role">Ketua Pengusul</div>
-        <div class="team-inst">UST</div>
+<!-- ── TIM ────────────────────────────────────── -->
+<section id="tim">
+  <div class="team-layout">
+    <div class="team-intro">
+      <div class="section-eyebrow">Tim Peneliti</div>
+      <h2 class="section-h2" style="font-size:1.8rem">Di Balik<br>VR-GeoNusa</h2>
+      <p>Kolaborasi lintas institusi antara peneliti matematika, informatika, dan pendidikan untuk menghadirkan media pembelajaran geometri yang inovatif.</p>
+      <div class="team-grant">
+        <strong>Hibah Penelitian Fundamental</strong><br>
+        BIMA Kemenristekdikti 2026–2027.<br>
+        Prototype Tahun 1 — Platform WebXR.
       </div>
     </div>
-    <div class="team-card">
-      <div class="team-avatar">👩‍🏫</div>
-      <div>
-        <div class="team-name">Betty Kusumaningrum</div>
-        <div class="team-role">Anggota Peneliti</div>
-        <div class="team-inst">UST</div>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-avatar">👩‍🔬</div>
+        <div>
+          <div class="team-name">Fitria Sulistyowati</div>
+          <div class="team-role">Ketua Pengusul</div>
+          <div class="team-inst">UST</div>
+        </div>
       </div>
-    </div>
-    <div class="team-card">
-      <div class="team-avatar">👨‍💻</div>
-      <div>
-        <div class="team-name">Fathoni Mahardika</div>
-        <div class="team-role">Informatika</div>
-        <div class="team-inst">Universitas Sebelas April</div>
+      <div class="team-card">
+        <div class="team-avatar">👩‍🏫</div>
+        <div>
+          <div class="team-name">Betty Kusumaningrum</div>
+          <div class="team-role">Anggota Peneliti</div>
+          <div class="team-inst">UST</div>
+        </div>
       </div>
-    </div>
-    <div class="team-card">
-      <div class="team-avatar">👨‍🎓</div>
-      <div>
-        <div class="team-name">Ahmad Taupik Paisal</div>
-        <div class="team-role">Mahasiswa Informatika</div>
-        <div class="team-inst">Universitas Sebelas April</div>
+      <div class="team-card">
+        <div class="team-avatar">👨‍💻</div>
+        <div>
+          <div class="team-name">Fathoni Mahardika</div>
+          <div class="team-role">Anggota — Informatika</div>
+          <div class="team-inst">Universitas Sebelas April</div>
+        </div>
       </div>
-    </div>
-    <div class="team-card">
-      <div class="team-avatar">👨‍🎓</div>
-      <div>
-        <div class="team-name">Moch. Sugih Nugraha</div>
-        <div class="team-role">Mahasiswa Informatika</div>
-        <div class="team-inst">Universitas Sebelas April</div>
+      <div class="team-card">
+        <div class="team-avatar">👨‍🎓</div>
+        <div>
+          <div class="team-name">Ahmad Taupik Paisal</div>
+          <div class="team-role">Mahasiswa Informatika</div>
+          <div class="team-inst">Universitas Sebelas April</div>
+        </div>
       </div>
-    </div>
-    <div class="team-card">
-      <div class="team-avatar">👩‍🎓</div>
-      <div>
-        <div class="team-name">Elisa Silvi Ardita</div>
-        <div class="team-role">Mahasiswa Pend. Matematika</div>
-        <div class="team-inst">UST</div>
+      <div class="team-card">
+        <div class="team-avatar">👨‍🎓</div>
+        <div>
+          <div class="team-name">Moch. Sugih Nugraha</div>
+          <div class="team-role">Mahasiswa Informatika</div>
+          <div class="team-inst">Universitas Sebelas April</div>
+        </div>
       </div>
-    </div>
-    <div class="team-card">
-      <div class="team-avatar">👩‍🎓</div>
-      <div>
-        <div class="team-name">Farah Luqen Nur Aini</div>
-        <div class="team-role">Mahasiswa Pend. Matematika</div>
-        <div class="team-inst">UST</div>
+      <div class="team-card">
+        <div class="team-avatar">👩‍🎓</div>
+        <div>
+          <div class="team-name">Elisa Silvi Ardita</div>
+          <div class="team-role">Mahasiswa Pend. Matematika</div>
+          <div class="team-inst">UST</div>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">👩‍🎓</div>
+        <div>
+          <div class="team-name">Farah Luqen Nur Aini</div>
+          <div class="team-role">Mahasiswa Pend. Matematika</div>
+          <div class="team-inst">UST</div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── FOOTER ───────────────────────────────────────── -->
+<!-- ── FOOTER ─────────────────────────────────── -->
 <footer>
-  <div class="f-logo">VR-GeoNusa</div>
-  <p>
-    Integrasi Machine Learning dan Virtual Reality untuk Preservasi Digital<br>
-    dan Identifikasi Cerdas Geometri pada Warisan Budaya Nusantara<br>
-    <strong style="color:var(--muted)">Hibah Fundamental BIMA — Kemenristekdikti 2026–2027</strong>
-  </p>
-  <div class="f-links">
-    <a href="https://github.com/Fathoni89/VR-GeoNusa" target="_blank">GitHub</a>
-    <a href="/admin">Admin Panel</a>
-    <a href="/api/health">API Status</a>
+  <div class="footer-brand">
+    <div class="footer-brand-name">VR-GeoNusa</div>
+    <p>Media pembelajaran geometri berbasis Virtual Reality dan warisan budaya Nusantara. Prototype Tahun 1 — WebXR/A-Frame.</p>
   </div>
-  <p style="color:#334155;font-size:11px">Prototype Tahun 1 — Platform WebXR/A-Frame 1.5.0</p>
+  <div class="footer-col">
+    <h4>Scene VR</h4>
+    <a href="vr/borobudur.html">Candi Borobudur</a>
+    <a href="vr/prambanan.html">Candi Prambanan</a>
+    <a href="#scenes" style="color:var(--stone-600)">Keraton Yogyakarta (segera)</a>
+  </div>
+  <div class="footer-col">
+    <h4>Tautan</h4>
+    <a href="admin/">Admin Panel</a>
+    <a href="https://github.com/Fathoni89/VR-GeoNusa" target="_blank">GitHub Repository</a>
+    <a href="api/health" target="_blank">API Status</a>
+  </div>
 </footer>
+<div class="footer-bottom">
+  <p>© 2026 Tim VR-GeoNusa · Hibah Fundamental BIMA Kemenristekdikti</p>
+  <p style="color:var(--stone-700)">Prototype Tahun 1 · WebXR · A-Frame 1.5</p>
+</div>
 
 <script>
 // Smooth scroll
-document.querySelectorAll('a[href^="#"]').forEach(a => {
+document.querySelectorAll('a[href^="#"]').forEach(a =>
   a.addEventListener('click', e => {
     e.preventDefault();
-    document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
-  });
-});
+    document.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior:'smooth' });
+  })
+);
 
-// Nav highlight on scroll
-const sections = document.querySelectorAll('section[id]');
-const navLinks = document.querySelectorAll('.nav-links a');
+// Nav scroll effect
 window.addEventListener('scroll', () => {
-  let current = '';
-  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) current = s.id; });
-  navLinks.forEach(a => {
-    a.style.color = a.getAttribute('href') === '#' + current ? 'var(--text)' : '';
-  });
+  document.querySelector('nav').style.background =
+    window.scrollY > 40 ? 'rgba(14,11,8,.97)' : 'rgba(14,11,8,.92)';
 });
 
-// Optionally fetch live scene data from API
-async function loadSceneStats() {
+// Live stats dari API
+async function loadStats() {
   try {
-    const res = await fetch('/api/scenes');
-    if (!res.ok) return; // fallback ke static
+    const res  = await fetch('api/scenes');
+    if (!res.ok) return;
     const { data } = await res.json();
-    // Update scene cards with live counts if available
-    data.forEach(scene => {
-      const countEl = document.querySelector(`[href="/vr/${scene.scene_id}.html"] .scene-obj-count`);
-      if (countEl) countEl.textContent = scene.obj_count + ' objek interaktif';
-    });
-  } catch (_) { /* static fallback, no problem */ }
+    const total = data.reduce((s,sc) => s + (sc.obj_count||0), 0);
+    document.getElementById('stat-scenes').textContent  = data.length;
+    document.getElementById('stat-objects').textContent = total;
+  } catch(_) {}
 }
-loadSceneStats();
+loadStats();
 </script>
 </body>
 </html>
