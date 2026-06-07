@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1A0F2E">
+  <meta name="description" content="VR-GeoNusa — Scene Candi Prambanan">
+  <title>VR-GeoNusa — Candi Prambanan</title>
+
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+  <link rel="stylesheet" href="../css/ui.css">
+</head>
+<body>
+
+<div id="loading-bar"></div>
+
+<!-- ── SPLASH ─────────────────────────────────────── -->
+<div id="splash">
+  <div class="logo-wrap">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30" stroke="#818CF8" stroke-width="1.5" opacity="0.4"/>
+      <polygon points="32,6 50,46 14,46" stroke="#A78BFA" stroke-width="1.8" fill="rgba(167,139,250,0.08)"/>
+      <polygon points="32,14 46,46 18,46" stroke="#38BDF8" stroke-width="1.2" fill="rgba(56,189,248,0.06)"/>
+      <rect x="26" y="46" width="12" height="6" rx="1.5" stroke="#A78BFA" stroke-width="1.2" fill="rgba(167,139,250,0.08)"/>
+    </svg>
+  </div>
+
+  <h1>VR-GeoNusa</h1>
+  <p class="tagline">Candi Prambanan — Sleman, DI Yogyakarta</p>
+
+  <div class="scene-list">
+    <div class="scene-card" data-scene="borobudur" onclick="window.location.href='/'">
+      <div class="sc-name">Candi Borobudur</div>
+      <div class="sc-loc">Magelang, Jawa Tengah</div>
+    </div>
+    <div class="scene-card active" data-scene="prambanan">
+      <div class="sc-name">Candi Prambanan</div>
+      <div class="sc-loc">Sleman, DI Yogyakarta</div>
+    </div>
+  </div>
+
+  <button onclick="startApp()">Masuk Eksplorasi</button>
+
+  <div class="meta">
+    Prototype Tahun 1 — Hibah Fundamental BIMA 2026<br>
+    Arahkan kursor ke objek bercahaya → tahan 1.5 detik → info geometri muncul<br>
+    WASD / Joystick untuk bergerak · Mouse / Head untuk melihat
+  </div>
+</div>
+
+<!-- ── HUD ───────────────────────────────────────── -->
+<div id="hud" style="display:none">
+  <div id="hud-scene">
+    <div class="hud-label">VR-GeoNusa</div>
+    <div class="hud-name" id="hud-name">Candi Prambanan</div>
+    <div class="hud-loc"  id="hud-loc">Sleman, DI Yogyakarta</div>
+  </div>
+</div>
+
+<div id="controls-hint">
+  WASD bergerak &nbsp;·&nbsp; Mouse lihat &nbsp;·&nbsp; Tahan kursor ke objek untuk identifikasi
+</div>
+
+<!-- ── Info Panel ────────────────────────────────── -->
+<div id="info-overlay">
+  <button class="close" onclick="hideInfo()" aria-label="Tutup">×</button>
+  <div class="panel-label">Geometri Teridentifikasi</div>
+  <div class="geo-name" id="info-geo-name">—</div>
+  <div class="geo-sub"  id="info-geo-sub">—</div>
+  <div class="element-tag" id="info-element"></div>
+  <div class="conf-row">
+    <span class="conf-title">Confidence ML</span>
+    <span class="conf-text" id="info-conf-text">0%</span>
+  </div>
+  <div class="conf-bar"><div class="conf-fill" id="info-conf-bar" style="width:0%"></div></div>
+  <div class="props">
+    <div><div class="prop-val" id="info-sisi">0</div><div class="prop-label">Sisi</div></div>
+    <div><div class="prop-val" id="info-rusuk">0</div><div class="prop-label">Rusuk</div></div>
+    <div><div class="prop-val" id="info-titik">0</div><div class="prop-label">Titik Sudut</div></div>
+  </div>
+  <div class="formula-block">
+    <div class="formula"><b>V =</b> <span id="info-volume">—</span></div>
+    <div class="formula"><b>L =</b> <span id="info-luas">—</span></div>
+  </div>
+  <div class="context">
+    <div class="ctx-label">Konteks Budaya</div>
+    <div id="info-context">—</div>
+  </div>
+</div>
+
+<button id="scene-btn" onclick="window.location.href='/'">← Borobudur</button>
+
+<!-- ── A-FRAME SCENE — CANDI PRAMBANAN ──────────── -->
+<a-scene
+  id="vrscene"
+  vr-mode-ui="enabled: true"
+  renderer="colorManagement:true; sortObjects:true; physicallyCorrectLights:true"
+  loading-screen="enabled:false"
+  style="display:none"
+>
+  <a-assets timeout="10000">
+    <img id="ground-tex" src="https://cdn.aframe.io/a-painter/images/floor.jpg" crossorigin="anonymous">
+  </a-assets>
+
+  <!-- Langit sore (Prambanan terkenal indah saat sunset) -->
+  <a-sky color="#1f1a30"></a-sky>
+
+  <!-- Lighting: warm sunset tone -->
+  <a-entity light="type:ambient;      color:#aa8866; intensity:0.5"></a-entity>
+  <a-entity light="type:directional;  color:#ffcc88; intensity:1.0; castShadow:true" position="3 5 1"></a-entity>
+  <a-entity light="type:directional;  color:#6655aa; intensity:0.3" position="-4 2 -3"></a-entity>
+
+  <!-- Ground (tanah kering Prambanan) -->
+  <a-plane position="0 0 0" rotation="-90 0 0" width="100" height="100" color="#6a5a3a" roughness="1"></a-plane>
+  <a-plane position=" 4 0.01  -5" rotation="-90 0 0" width="6" height="8" color="#5a4a2a" roughness="1"></a-plane>
+  <a-plane position="-5 0.01  -9" rotation="-90 0 0" width="5" height="5" color="#5a4a2a" roughness="1"></a-plane>
+
+  <!-- ─────────────────────────────────────────────
+       CANDI PRAMBANAN — Placeholder Geometry
+       ───────────────────────────────────────────── -->
+
+  <!-- Batur/Pondasi utama — Balok besar -->
+  <a-box
+    id="obj-batur" class="wbn-object"
+    position="0 0.4 -8"
+    width="10" height="0.8" depth="10"
+    color="#6a5a40" roughness="0.95"
+    data-geo="Balok"
+    data-geo-en="Rectangular Prism"
+    data-sisi="6" data-rusuk="12" data-titik="8"
+    data-volume="p × l × t"
+    data-luas="2(pl + pt + lt)"
+    data-element="Batur Pondasi Utama"
+    data-context="Batur (pondasi bertingkat) Prambanan mencerminkan konsep Mandala — peta kosmologi Hindu. Denah bujur sangkar melambangkan keteraturan alam semesta."
+    data-conf="93"
+    event-set__mouseenter="color:#7a6a50"
+    event-set__mouseleave="color:#6a5a40"
+  ></a-box>
+
+  <!-- Kaki candi (pelipit) — Balok tengah -->
+  <a-box position="0 1.2 -8" width="7" height="0.8" depth="7" color="#706050" roughness="0.9"></a-box>
+
+  <!-- Tubuh candi — Balok tinggi -->
+  <a-box
+    id="obj-tubuh" class="wbn-object"
+    position="0 2.8 -8"
+    width="4.5" height="2.4" depth="4.5"
+    color="#786858" roughness="0.85"
+    data-geo="Balok"
+    data-geo-en="Rectangular Prism"
+    data-sisi="6" data-rusuk="12" data-titik="8"
+    data-volume="p × l × t"
+    data-luas="2(pl + pt + lt)"
+    data-element="Tubuh Candi Utama"
+    data-context="Tubuh candi (garbhagriha) menyimpan arca dewa utama. Candi Siwa yang terbesar memiliki ruang garbhagriha berisi arca Siwa Mahadewa setinggi 3 meter."
+    data-conf="91"
+    event-set__mouseenter="color:#887868"
+    event-set__mouseleave="color:#786858"
+  ></a-box>
+
+  <!-- Menara Utama (Ratna puncak) — Limas Segiempat -->
+  <a-cone
+    id="obj-menara-utama" class="wbn-object"
+    position="0 5.8 -8"
+    radius-bottom="2.2" radius-top="0.05" height="5"
+    segments-radial="4"
+    color="#8a7860" roughness="0.8"
+    data-geo="Limas Segiempat"
+    data-geo-en="Square Pyramid"
+    data-sisi="5" data-rusuk="8" data-titik="5"
+    data-volume="⅓ × Luas alas × t"
+    data-luas="Luas alas + Σ luas sisi tegak"
+    data-element="Menara Utama (Ratna)"
+    data-context="Atap candi berbentuk limas segiempat bertingkat (shikhara) melambangkan Gunung Meru — kediaman para dewa dalam kosmologi Hindu. Candi Siwa mencapai tinggi 47 meter."
+    data-conf="93"
+    event-set__mouseenter="color:#9a8870"
+    event-set__mouseleave="color:#8a7860"
+  ></a-cone>
+
+  <!-- Ratna puncak -->
+  <a-sphere position="0 8.4 -8" radius="0.3" color="#9a8860"></a-sphere>
+
+  <!-- Candi Pendamping Kiri (Candi Brahma) — skala lebih kecil -->
+  <!-- Pondasi -->
+  <a-box position="-5 0.35 -8" width="6" height="0.7" depth="6" color="#645540" roughness="0.95"></a-box>
+  <a-box position="-5 1.1  -8" width="4" height="0.8" depth="4" color="#6a5a48" roughness="0.9"></a-box>
+  <!-- Tubuh -->
+  <a-box
+    id="obj-candi-brahma" class="wbn-object"
+    position="-5 2.4 -8"
+    width="2.8" height="1.8" depth="2.8"
+    color="#726248" roughness="0.85"
+    data-geo="Balok"
+    data-geo-en="Rectangular Prism"
+    data-sisi="6" data-rusuk="12" data-titik="8"
+    data-volume="p × l × t"
+    data-luas="2(pl + pt + lt)"
+    data-element="Candi Brahma"
+    data-context="Candi Brahma (selatan) merupakan candi pendamping Candi Siwa. Berisi arca Brahma — dewa pencipta dalam Trimurti Hindu — dengan tinggi asli sekitar 37 meter."
+    data-conf="89"
+    event-set__mouseenter="color:#827258"
+    event-set__mouseleave="color:#726248"
+  ></a-box>
+  <!-- Menara Brahma -->
+  <a-cone position="-5 4.6 -8" radius-bottom="1.4" radius-top="0.04" height="3.5"
+          segments-radial="4" color="#7a6850" roughness="0.8"></a-cone>
+  <a-sphere position="-5 6.5 -8" radius="0.2" color="#8a7858"></a-sphere>
+
+  <!-- Candi Pendamping Kanan (Candi Wisnu) -->
+  <a-box position="5 0.35 -8" width="6" height="0.7" depth="6" color="#645540" roughness="0.95"></a-box>
+  <a-box position="5 1.1  -8" width="4" height="0.8" depth="4" color="#6a5a48" roughness="0.9"></a-box>
+  <a-box
+    id="obj-candi-wisnu" class="wbn-object"
+    position="5 2.4 -8"
+    width="2.8" height="1.8" depth="2.8"
+    color="#726248" roughness="0.85"
+    data-geo="Balok"
+    data-geo-en="Rectangular Prism"
+    data-sisi="6" data-rusuk="12" data-titik="8"
+    data-volume="p × l × t"
+    data-luas="2(pl + pt + lt)"
+    data-element="Candi Wisnu"
+    data-context="Candi Wisnu (utara) menyimpan arca Wisnu — dewa pemelihara. Dalam kompleks Prambanan terdapat 240 candi, 16 di antaranya merupakan candi utama zona inti."
+    data-conf="89"
+    event-set__mouseenter="color:#827258"
+    event-set__mouseleave="color:#726248"
+  ></a-box>
+  <a-cone position="5 4.6 -8" radius-bottom="1.4" radius-top="0.04" height="3.5"
+          segments-radial="4" color="#7a6850" roughness="0.8"></a-cone>
+  <a-sphere position="5 6.5 -8" radius="0.2" color="#8a7858"></a-sphere>
+
+  <!-- Pilar Gapura — Tabung -->
+  <a-cylinder
+    id="obj-pilar-gapura" class="wbn-object"
+    position="0 1 -3"
+    radius="0.35" height="2"
+    color="#7a6a50" roughness="0.9"
+    data-geo="Tabung"
+    data-geo-en="Cylinder"
+    data-sisi="3" data-rusuk="2" data-titik="0"
+    data-volume="π × r² × t"
+    data-luas="2πr² + 2πrt"
+    data-element="Pilar Gapura Utama"
+    data-context="Pilar silinder pada gapura (gopura) berfungsi sebagai penyangga bangunan pintu masuk zona inti candi. Ornamen kala-makara menghiasi bagian atas pilar."
+    data-conf="90"
+    event-set__mouseenter="color:#8a7a60"
+    event-set__mouseleave="color:#7a6a50"
+  ></a-cylinder>
+  <a-cylinder position="-2 1 -3" radius="0.35" height="2" color="#7a6a50"></a-cylinder>
+  <a-cylinder position=" 2 1 -3" radius="0.35" height="2" color="#7a6a50"></a-cylinder>
+
+  <!-- Balok lintel gapura -->
+  <a-box position="0 2.2 -3" width="5" height="0.4" depth="0.7" color="#6a5a40"></a-box>
+
+  <!-- Ornamen Kerucut kecil (antefix) — Kerucut -->
+  <a-cone
+    id="obj-antefix" class="wbn-object"
+    position="3 5 -5.5"
+    radius-bottom="0.35" radius-top="0.02" height="1.4"
+    color="#7a7050" roughness="0.8"
+    data-geo="Kerucut"
+    data-geo-en="Cone"
+    data-sisi="2" data-rusuk="1" data-titik="1"
+    data-volume="⅓ × π × r² × t"
+    data-luas="πr² + πrs"
+    data-element="Antefix / Ornamen Ratna Kecil"
+    data-context="Ratna kecil berbentuk kerucut menghiasi tepi-tepi atap dan dinding candi sebagai ornamen arkitektur sekaligus simbolisasi puncak gunung suci dalam miniatur."
+    data-conf="86"
+    event-set__mouseenter="color:#8a8060"
+    event-set__mouseleave="color:#7a7050"
+  ></a-cone>
+  <a-cone position="-3 5 -5.5" radius-bottom="0.35" radius-top="0.02" height="1.4" color="#7a7050"></a-cone>
+  <a-cone position=" 3 5 -10.5" radius-bottom="0.35" radius-top="0.02" height="1.4" color="#7a7050"></a-cone>
+  <a-cone position="-3 5 -10.5" radius-bottom="0.35" radius-top="0.02" height="1.4" color="#7a7050"></a-cone>
+
+  <!-- Arca placeholder (Lingga) — Tabung kecil -->
+  <a-cylinder
+    id="obj-lingga" class="wbn-object"
+    position="0 2.2 -4.5"
+    radius="0.18" height="0.8"
+    color="#9a8a72" roughness="0.7"
+    data-geo="Tabung"
+    data-geo-en="Cylinder"
+    data-sisi="3" data-rusuk="2" data-titik="0"
+    data-volume="π × r² × t"
+    data-luas="2πr² + 2πrt"
+    data-element="Lingga Yoni (Simbol Siwa)"
+    data-context="Lingga berbentuk silinder merupakan simbol utama Dewa Siwa. Ditempatkan di garbhagriha (ruang utama) candi sebagai objek pemujaan utama dalam tradisi Shaivisme."
+    data-conf="88"
+    event-set__mouseenter="color:#aa9a82"
+    event-set__mouseleave="color:#9a8a72"
+  ></a-cylinder>
+  <a-cylinder position="0 1.8 -4.5" radius="0.28" height="0.15" color="#8a7a62"></a-cylinder>
+
+  <!-- Pohon lontar (dekoratif) -->
+  <a-cylinder position=" 13 2  -6"  radius="0.15" height="4"   color="#4a3820"></a-cylinder>
+  <a-sphere   position=" 13 4.5 -6"  radius="1.5"  color="#3a5820" roughness="1" scale="1 0.5 1"></a-sphere>
+  <a-cylinder position="-13 1.8 -10" radius="0.13" height="3.5" color="#4a3820"></a-cylinder>
+  <a-sphere   position="-13 4   -10" radius="1.3"  color="#3a5820" roughness="1" scale="1 0.5 1"></a-sphere>
+  <a-cylinder position="  9 1.5   4" radius="0.12" height="3"   color="#4a3820"></a-cylinder>
+  <a-sphere   position="  9 3.2   4" radius="1.2"  color="#3a5820" roughness="1" scale="1 0.5 1"></a-sphere>
+
+  <!-- Floating label -->
+  <a-entity position="0 10.5 -8">
+    <a-text value="CANDI PRAMBANAN"  align="center" color="#ffcc88" width="9"  opacity="0.55"></a-text>
+    <a-text value="Abad ke-9 Masehi" align="center" color="#ffffff" width="6"  position="0 -0.45 0" opacity="0.25"></a-text>
+  </a-entity>
+
+  <!-- Instruction text -->
+  <a-text
+    value="Arahkan kursor ke objek berwarna · tahan 1.5 detik · identifikasi geometri"
+    align="center" color="#ffffff" width="7" opacity="0.18"
+    position="0 0.05 -2" rotation="-90 0 0"
+  ></a-text>
+
+  <!-- Camera Rig -->
+  <a-entity id="rig" movement-controls="speed:0.15" position="0 0 2">
+    <a-entity camera look-controls="pointerLockEnabled:false" position="0 1.6 0">
+      <a-cursor
+        fuse="true" fuse-timeout="1500"
+        color="#ffcc88" opacity="0.8"
+        raycaster="objects:.wbn-object; far:25"
+        animation__fusing="property:scale; from:1 1 1; to:0.5 0.5 0.5; dur:1500; startEvents:fusing"
+        animation__defuse="property:scale; to:1 1 1; dur:200; startEvents:mouseleave"
+      ></a-cursor>
+    </a-entity>
+  </a-entity>
+
+</a-scene>
+
+<script src="../js/app.js"></script>
+<script>
+// Set scene context untuk Prambanan sebelum startApp() dipanggil
+currentScene = 'prambanan';
+</script>
+</body>
+</html>

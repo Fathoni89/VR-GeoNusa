@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="description" content="VR-GeoNusa — Eksplorasi geometri warisan budaya Nusantara dalam lingkungan Virtual Reality">
+  <title>VR-GeoNusa — Eksplorasi Geometri Warisan Budaya</title>
+
+  <!-- A-Frame WebXR Framework -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- aframe-extras: movement controls -->
+  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+
+  <link rel="stylesheet" href="../css/ui.css">
+</head>
+<body>
+
+<!-- Loading Bar -->
+<div id="loading-bar"></div>
+
+<!-- ── SPLASH SCREEN ────────────────────────────────── -->
+<div id="splash">
+  <div class="logo-wrap">
+    <!-- Simplified nusantara icon -->
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30" stroke="#818CF8" stroke-width="1.5" opacity="0.4"/>
+      <polygon points="32,8 52,44 12,44" stroke="#38BDF8" stroke-width="1.8" fill="rgba(56,189,248,0.08)"/>
+      <rect x="22" y="44" width="20" height="8" rx="2" stroke="#A78BFA" stroke-width="1.5" fill="rgba(167,139,250,0.08)"/>
+      <circle cx="32" cy="28" r="5" stroke="#00e5ff" stroke-width="1.5" fill="rgba(0,229,255,0.1)"/>
+    </svg>
+  </div>
+
+  <h1>VR-GeoNusa</h1>
+  <p class="tagline">Eksplorasi Geometri Warisan Budaya Nusantara</p>
+
+  <!-- Scene Selection -->
+  <div class="scene-list">
+    <div class="scene-card active" data-scene="borobudur" onclick="selectScene('borobudur')">
+      <div class="sc-name">Candi Borobudur</div>
+      <div class="sc-loc">Magelang, Jawa Tengah</div>
+    </div>
+    <div class="scene-card" data-scene="prambanan" onclick="window.location.href='../vr/prambanan.html'">
+      <div class="sc-name">Candi Prambanan</div>
+      <div class="sc-loc">Sleman, DI Yogyakarta</div>
+    </div>
+  </div>
+
+  <button onclick="startApp()">Masuk Eksplorasi</button>
+
+  <div class="meta">
+    Prototype Tahun 1 — Hibah Fundamental BIMA 2026<br>
+    Arahkan kursor ke objek bercahaya → tahan 1.5 detik → info geometri muncul<br>
+    WASD / Joystick untuk bergerak · Mouse / Head untuk melihat
+  </div>
+</div>
+
+<!-- ── HUD ───────────────────────────────────────────── -->
+<div id="hud" style="display:none">
+  <div id="hud-scene">
+    <div class="hud-label">VR-GeoNusa</div>
+    <div class="hud-name" id="hud-name">Candi Borobudur</div>
+    <div class="hud-loc"  id="hud-loc">Magelang, Jawa Tengah</div>
+  </div>
+</div>
+
+<!-- ── Controls Hint ─────────────────────────────────── -->
+<div id="controls-hint">
+  WASD bergerak &nbsp;·&nbsp; Mouse lihat &nbsp;·&nbsp; Tahan kursor ke objek untuk identifikasi
+</div>
+
+<!-- ── Info Overlay Panel ────────────────────────────── -->
+<div id="info-overlay">
+  <button class="close" onclick="hideInfo()" aria-label="Tutup">×</button>
+
+  <div class="panel-label">Geometri Teridentifikasi</div>
+  <div class="geo-name" id="info-geo-name">—</div>
+  <div class="geo-sub"  id="info-geo-sub">—</div>
+  <div class="element-tag" id="info-element"></div>
+
+  <!-- Confidence bar -->
+  <div class="conf-row">
+    <span class="conf-title">Confidence ML</span>
+    <span class="conf-text" id="info-conf-text">0%</span>
+  </div>
+  <div class="conf-bar">
+    <div class="conf-fill" id="info-conf-bar" style="width:0%"></div>
+  </div>
+
+  <!-- Geometric properties -->
+  <div class="props">
+    <div>
+      <div class="prop-val"   id="info-sisi">0</div>
+      <div class="prop-label">Sisi</div>
+    </div>
+    <div>
+      <div class="prop-val"   id="info-rusuk">0</div>
+      <div class="prop-label">Rusuk</div>
+    </div>
+    <div>
+      <div class="prop-val"   id="info-titik">0</div>
+      <div class="prop-label">Titik Sudut</div>
+    </div>
+  </div>
+
+  <!-- Formulas -->
+  <div class="formula-block">
+    <div class="formula"><b>V =</b> <span id="info-volume">—</span></div>
+    <div class="formula"><b>L =</b> <span id="info-luas">—</span></div>
+  </div>
+
+  <!-- Cultural context -->
+  <div class="context">
+    <div class="ctx-label">Konteks Budaya</div>
+    <div id="info-context">—</div>
+  </div>
+</div>
+
+<!-- ── Scene Switch Button ───────────────────────────── -->
+<button id="scene-btn" onclick="window.location.href="/"">⟳ Ganti Scene</button>
+
+<!-- ── A-FRAME VR SCENE ──────────────────────────────── -->
+<a-scene
+  id="vrscene"
+  vr-mode-ui="enabled: true"
+  renderer="colorManagement:true; sortObjects:true; physicallyCorrectLights:true"
+  loading-screen="enabled:false"
+  style="display:none"
+>
+  <!-- Assets -->
+  <a-assets timeout="10000">
+    <img id="ground-tex" src="https://cdn.aframe.io/a-painter/images/floor.jpg" crossorigin="anonymous">
+  </a-assets>
+
+  <!-- Sky gradient (procedural — no external image dependency) -->
+  <a-sky color="#1a2744"></a-sky>
+
+  <!-- Ambient + Directional light -->
+  <a-entity light="type:ambient;  color:#8899aa; intensity:0.45"></a-entity>
+  <a-entity light="type:directional; color:#ffeedd; intensity:0.85; castShadow:true"
+            position="2 4 2"></a-entity>
+  <!-- Fill light from opposite side -->
+  <a-entity light="type:directional; color:#aabbcc; intensity:0.25" position="-3 2 -2"></a-entity>
+
+  <!-- Ground -->
+  <a-plane
+    position="0 0 0" rotation="-90 0 0"
+    width="80" height="80"
+    color="#2d4a2a"
+    roughness="1"
+  ></a-plane>
+  <a-plane position=" 5 0.01  -3" rotation="-90 0 0" width="9"  height="9"  color="#3a5a30" roughness="1"></a-plane>
+  <a-plane position="-6 0.01   4" rotation="-90 0 0" width="7"  height="7"  color="#3a5a30" roughness="1"></a-plane>
+  <a-plane position=" 2 0.01 -14" rotation="-90 0 0" width="10" height="10" color="#324828" roughness="1"></a-plane>
+
+  <!-- ────────────────────────────────────────────────
+       CANDI BOROBUDUR — Placeholder Geometry Scene
+       ──────────────────────────────────────────────── -->
+
+  <!-- Dasar Candi: Kamadhatu — Limas Segiempat -->
+  <a-box
+    id="obj-dasar" class="wbn-object"
+    position="0 0.3 -8"
+    width="8" height="0.6" depth="8"
+    color="#4a4a40" roughness="0.9"
+    data-geo="Limas Segiempat"
+    data-geo-en="Square Pyramid"
+    data-sisi="5" data-rusuk="8" data-titik="5"
+    data-volume="⅓ × Luas alas × t"
+    data-luas="Luas alas + Σ luas sisi tegak"
+    data-element="Dasar Kamadhatu"
+    data-context="Fondasi candi merepresentasikan Kamadhatu (alam keinginan). Terdapat 160 panel relief tersembunyi yang menggambarkan hukum karma."
+    data-conf="88"
+    event-set__mouseenter="color:#5a6a5a"
+    event-set__mouseleave="color:#4a4a40"
+  ></a-box>
+
+  <!-- Teras 1 — Rupadhatu: Balok -->
+  <a-box
+    id="obj-teras1" class="wbn-object"
+    position="0 1.1 -8"
+    width="6.5" height="0.8" depth="6.5"
+    color="#5a5a50" roughness="0.85"
+    data-geo="Balok"
+    data-geo-en="Rectangular Prism"
+    data-sisi="6" data-rusuk="12" data-titik="8"
+    data-volume="p × l × t"
+    data-luas="2(pl + pt + lt)"
+    data-element="Teras Rupadhatu I"
+    data-context="Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma."
+    data-conf="94"
+    event-set__mouseenter="color:#6a7a6a"
+    event-set__mouseleave="color:#5a5a50"
+  ></a-box>
+
+  <!-- Teras 2 -->
+  <a-box position="0 1.9 -8" width="5"   height="0.7" depth="5"   color="#5f5f55" roughness="0.85"></a-box>
+  <!-- Teras 3 -->
+  <a-box position="0 2.5 -8" width="3.8" height="0.6" depth="3.8" color="#656560" roughness="0.85"></a-box>
+
+  <!-- Stupa Utama — Setengah Bola (Arupadhatu) -->
+  <a-sphere
+    id="obj-stupa" class="wbn-object"
+    position="0 3.8 -8"
+    radius="1.5" theta-length="90"
+    color="#6a7a65" roughness="0.7"
+    data-geo="Setengah Bola"
+    data-geo-en="Hemisphere"
+    data-sisi="1" data-rusuk="0" data-titik="0"
+    data-volume="⅔ × π × r³"
+    data-luas="3πr²"
+    data-element="Stupa Utama Arupadhatu"
+    data-context="Stupa utama melambangkan Arupadhatu — pencapaian spiritual tertinggi dalam kosmologi Buddha. Berdiameter sekitar 11 meter dengan puncak menjulang setinggi 35 meter."
+    data-conf="97"
+    event-set__mouseenter="color:#7a9a75"
+    event-set__mouseleave="color:#6a7a65"
+  ></a-sphere>
+
+  <!-- Finial puncak stupa -->
+  <a-cylinder position="0 5.1 -8" radius="0.15" height="1.2" color="#7a8a70"></a-cylinder>
+
+  <!-- Stupa Kecil Berlubang — Tabung + Setengah Bola -->
+  <a-cylinder
+    id="obj-stupa-kecil" class="wbn-object"
+    position="-2.2 3.2 -8"
+    radius="0.6" height="1.2"
+    color="#5a6a55" roughness="0.8"
+    data-geo="Tabung"
+    data-geo-en="Cylinder"
+    data-sisi="3" data-rusuk="2" data-titik="0"
+    data-volume="π × r² × t"
+    data-luas="2πr² + 2πrt"
+    data-element="Stupa Berlubang"
+    data-context="72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana)."
+    data-conf="91"
+    event-set__mouseenter="color:#6a8a65"
+    event-set__mouseleave="color:#5a6a55"
+  ></a-cylinder>
+  <a-sphere position="-2.2 4 -8" radius="0.55" color="#5a6a55" theta-length="90"></a-sphere>
+
+  <!-- Stupa kecil mirror -->
+  <a-cylinder position=" 2.2 3.2 -8" radius="0.6" height="1.2" color="#5a6a55"></a-cylinder>
+  <a-sphere   position=" 2.2 4   -8" radius="0.55" color="#5a6a55" theta-length="90"></a-sphere>
+  <a-cylinder position="0 3.2 -5.8"  radius="0.6" height="1.2" color="#5a6a55"></a-cylinder>
+  <a-sphere   position="0 4   -5.8"  radius="0.55" color="#5a6a55" theta-length="90"></a-sphere>
+
+  <!-- Pilar Gapura — Tabung -->
+  <a-cylinder
+    id="obj-pilar" class="wbn-object"
+    position="4.5 1.5 -5"
+    radius="0.3" height="3"
+    color="#6a6050" roughness="0.9"
+    data-geo="Tabung"
+    data-geo-en="Cylinder"
+    data-sisi="3" data-rusuk="2" data-titik="0"
+    data-volume="π × r² × t"
+    data-luas="2πr² + 2πrt"
+    data-element="Pilar Gapura Kala-Makara"
+    data-context="Pilar-pilar silinder pada gapura Kala-Makara berfungsi sebagai penyangga struktural sekaligus elemen estetika arsitektur Jawa Kuno abad ke-8 Masehi."
+    data-conf="91"
+    event-set__mouseenter="color:#8a7a60"
+    event-set__mouseleave="color:#6a6050"
+  ></a-cylinder>
+
+  <!-- Pilar 2 + balok lintel -->
+  <a-cylinder position="4.5 1.5 -11" radius="0.3" height="3"   color="#6a6050"></a-cylinder>
+  <a-box      position="4.5 3.2  -8" width="0.8" height="0.5" depth="6.5" color="#5a5040"></a-box>
+
+  <!-- Tangga Masuk — Prisma Segitiga -->
+  <a-box
+    id="obj-tangga" class="wbn-object"
+    position="0 0.5 -4"
+    width="2.2" height="0.4" depth="1.5"
+    color="#5a5a48" roughness="0.9"
+    data-geo="Prisma Segitiga"
+    data-geo-en="Triangular Prism"
+    data-sisi="5" data-rusuk="9" data-titik="6"
+    data-volume="Luas alas × t"
+    data-luas="2 × Luas alas + Keliling alas × t"
+    data-element="Tangga Masuk Candi"
+    data-context="Tangga menuju tingkat atas candi melambangkan perjalanan spiritual dari dunia fana (Kamadhatu) menuju pencerahan (Arupadhatu)."
+    data-conf="87"
+    event-set__mouseenter="color:#6a6a58"
+    event-set__mouseleave="color:#5a5a48"
+  ></a-box>
+  <a-box position="0 0.3 -3.2" width="2.2" height="0.25" depth="1" color="#5a5a48"></a-box>
+
+  <!-- Ornamen Kerucut -->
+  <a-cone
+    id="obj-kerucut" class="wbn-object"
+    position="-4.5 1.5 -6"
+    radius-bottom="0.5" radius-top="0.02" height="2"
+    color="#6a6a55" roughness="0.8"
+    data-geo="Kerucut"
+    data-geo-en="Cone"
+    data-sisi="2" data-rusuk="1" data-titik="1"
+    data-volume="⅓ × π × r² × t"
+    data-luas="πr² + πrs"
+    data-element="Ornamen Puncak Gapura"
+    data-context="Ornamen berbentuk kerucut (ratna/antefix) menghiasi puncak gapura dan stupa kecil. Simbolisasi gunung suci Mahameru sebagai pusat kosmologi Hindu-Buddha."
+    data-conf="85"
+    event-set__mouseenter="color:#7a8a65"
+    event-set__mouseleave="color:#6a6a55"
+  ></a-cone>
+
+  <!-- Kerucut miror -->
+  <a-cone position="-4.5 1.5 -10" radius-bottom="0.5" radius-top="0.02" height="2" color="#6a6a55"></a-cone>
+  <a-cone position=" 4.5 3.8  -5" radius-bottom="0.3" radius-top="0.02" height="1.2" color="#7a7a60"></a-cone>
+  <a-cone position=" 4.5 3.8 -11" radius-bottom="0.3" radius-top="0.02" height="1.2" color="#7a7a60"></a-cone>
+
+  <!-- Dinding relief — Balok dekoratif -->
+  <a-box position="-3.3 1.1 -4.5" width="0.25" height="1.5" depth="7" color="#4a4840" roughness="0.95"></a-box>
+  <a-box position=" 3.3 1.1 -4.5" width="0.25" height="1.5" depth="7" color="#4a4840" roughness="0.95"></a-box>
+
+  <!-- Label floating -->
+  <a-entity position="0 7 -8">
+    <a-text value="CANDI BOROBUDUR"  align="center" color="#00e5ff" width="8"  opacity="0.55"></a-text>
+    <a-text value="Abad ke-8 Masehi" align="center" color="#ffffff" width="5"  position="0 -0.45 0" opacity="0.25"></a-text>
+  </a-entity>
+
+  <!-- Trees (dekoratif) -->
+  <a-cylinder position=" 11  1.5  -5"  radius="0.2"  height="3"   color="#3a2a1a"></a-cylinder>
+  <a-sphere   position=" 11  3.5  -5"  radius="1.3"  color="#2a5a2a" roughness="1"></a-sphere>
+  <a-cylinder position="-11  1.2 -10"  radius="0.16" height="2.4"  color="#3a2a1a"></a-cylinder>
+  <a-sphere   position="-11  2.8 -10"  radius="1.1"  color="#2a5a2a" roughness="1"></a-sphere>
+  <a-cylinder position="  8  1    3"   radius="0.18" height="2"    color="#3a2a1a"></a-cylinder>
+  <a-sphere   position="  8  2.4  3"   radius="1"    color="#2a5a2a" roughness="1"></a-sphere>
+  <a-cylinder position=" -9  1.3 -2"   radius="0.2"  height="2.6"  color="#3a2a1a"></a-cylinder>
+  <a-sphere   position=" -9  3    -2"  radius="1.2"  color="#2a5a2a" roughness="1"></a-sphere>
+
+  <!-- Instruction text on ground -->
+  <a-text
+    value="Arahkan kursor ke objek berwarna · tahan 1.5 detik · identifikasi geometri"
+    align="center" color="#ffffff" width="7" opacity="0.2"
+    position="0 0.05 -2" rotation="-90 0 0"
+  ></a-text>
+
+  <!-- ── Camera Rig ──────────────────────────────────── -->
+  <a-entity id="rig" movement-controls="speed:0.15" position="0 0 2">
+    <a-entity
+      camera
+      look-controls="pointerLockEnabled:false"
+      position="0 1.6 0"
+    >
+      <!-- Gaze cursor (fuse-based, for headset & desktop) -->
+      <a-cursor
+        fuse="true"
+        fuse-timeout="1500"
+        color="#00e5ff"
+        opacity="0.8"
+        raycaster="objects:.wbn-object; far:25"
+        animation__fusing="property:scale; from:1 1 1; to:0.5 0.5 0.5; dur:1500; startEvents:fusing"
+        animation__defuse="property:scale; to:1 1 1; dur:200; startEvents:mouseleave"
+      ></a-cursor>
+    </a-entity>
+  </a-entity>
+
+</a-scene>
+
+<script src="../js/app.js"></script>
+</body>
+</html>

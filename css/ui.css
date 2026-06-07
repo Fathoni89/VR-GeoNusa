@@ -1,0 +1,157 @@
+/* VR-GeoNusa — UI Styles */
+
+* { box-sizing: border-box; }
+
+body { margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+/* ── Splash Screen ─────────────────────────────────── */
+#splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #0F2027 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.6s ease;
+}
+#splash.fade-out { opacity: 0; pointer-events: none; }
+
+#splash .logo-wrap { margin-bottom: 8px; }
+#splash .logo-wrap svg { width: 64px; height: 64px; opacity: 0.9; }
+
+#splash h1 {
+  font-size: 2.8em; font-weight: 900; margin: 0;
+  background: linear-gradient(90deg, #38BDF8, #818CF8, #A78BFA);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+}
+#splash .tagline { color: #94A3B8; font-size: 1em; margin: 6px 0 28px; text-align: center; }
+
+#splash .scene-list {
+  display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; justify-content: center;
+}
+#splash .scene-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(129,140,248,0.2);
+  border-radius: 12px; padding: 12px 18px; cursor: pointer;
+  transition: background 0.2s, border-color 0.2s; text-align: center;
+}
+#splash .scene-card:hover,
+#splash .scene-card.active { background: rgba(129,140,248,0.12); border-color: #818CF8; }
+#splash .scene-card .sc-name { color: #E2E8F0; font-weight: 700; font-size: 0.95em; }
+#splash .scene-card .sc-loc  { color: #64748B; font-size: 0.75em; margin-top: 2px; }
+
+#splash button {
+  padding: 14px 48px; border-radius: 14px; border: 2px solid #818CF8;
+  background: linear-gradient(135deg, #312E81, #4338CA);
+  color: #C7D2FE; font-size: 1.1em; font-weight: 700; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+}
+#splash button:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(99,102,241,0.45); }
+
+#splash .meta { color: #475569; font-size: 0.72em; margin-top: 18px; text-align: center; line-height: 1.8; }
+
+/* ── HUD (top-left) ────────────────────────────────── */
+#hud {
+  position: fixed; top: 16px; left: 16px; z-index: 100;
+  pointer-events: none; font-family: inherit;
+}
+#hud-scene {
+  background: rgba(0,0,0,0.55); border-radius: 12px; padding: 10px 16px;
+  border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(10px);
+}
+#hud-scene .hud-label { color: #00e5ff; font-size: 9px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; }
+#hud-scene .hud-name  { color: #fff; font-size: 16px; font-weight: 700; margin-top: 2px; }
+#hud-scene .hud-loc   { color: rgba(255,255,255,0.35); font-size: 11px; margin-top: 1px; }
+
+/* ── Controls hint (bottom) ───────────────────────── */
+#controls-hint {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 100; pointer-events: none;
+  background: rgba(0,0,0,0.45); border-radius: 10px; padding: 6px 16px;
+  border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(8px);
+  color: rgba(255,255,255,0.3); font-size: 11px; white-space: nowrap;
+  transition: opacity 0.5s;
+}
+#controls-hint.hidden { opacity: 0; }
+
+/* ── Info Overlay Panel ───────────────────────────── */
+#info-overlay {
+  position: fixed; top: 50%; right: 20px; transform: translateY(-50%);
+  z-index: 200; width: 290px;
+  background: rgba(0, 8, 20, 0.94); border-radius: 18px;
+  padding: 22px; border: 1px solid rgba(0,229,255,0.18);
+  backdrop-filter: blur(16px);
+  display: none;
+  animation: slideIn 0.25s ease;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-50%) translateX(16px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+#info-overlay .close {
+  position: absolute; top: 10px; right: 14px;
+  background: rgba(255,255,255,0.06); border: none;
+  color: rgba(255,255,255,0.4); font-size: 18px; cursor: pointer;
+  pointer-events: auto; border-radius: 6px; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+#info-overlay .close:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+#info-overlay .panel-label {
+  color: #00e5ff; font-size: 9px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase;
+}
+#info-overlay .geo-name { color: #fff; font-size: 22px; font-weight: 800; margin: 4px 0 1px; }
+#info-overlay .geo-sub  { color: rgba(255,255,255,0.4); font-size: 12px; font-style: italic; }
+
+#info-overlay .conf-bar  { height: 4px; border-radius: 3px; background: rgba(255,255,255,0.08); margin: 12px 0 0; }
+#info-overlay .conf-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease, background 0.6s; }
+#info-overlay .conf-row  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+#info-overlay .conf-title { color: rgba(255,255,255,0.3); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+#info-overlay .conf-text  { font-size: 11px; font-weight: 700; }
+
+#info-overlay .props {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+  background: rgba(0,229,255,0.05); border-radius: 10px;
+  padding: 12px 8px; margin: 12px 0;
+  border: 1px solid rgba(0,229,255,0.08);
+}
+#info-overlay .prop-val   { color: #00e5ff; font-size: 22px; font-weight: 800; text-align: center; }
+#info-overlay .prop-label { color: rgba(255,255,255,0.28); font-size: 9px; text-align: center; margin-top: 2px; }
+
+#info-overlay .formula-block { margin: 8px 0; }
+#info-overlay .formula { color: #e0e0e0; font-size: 12px; line-height: 1.8; }
+#info-overlay .formula b { color: #00e5ff; }
+
+#info-overlay .context {
+  color: rgba(255,255,255,0.48); font-size: 11px; line-height: 1.65;
+  border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; margin-top: 10px;
+}
+#info-overlay .ctx-label {
+  color: rgba(255,255,255,0.25); font-size: 9px; letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 5px;
+}
+#info-overlay .element-tag {
+  display: inline-block; background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.2);
+  color: #A78BFA; font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  border-radius: 6px; padding: 2px 8px; margin-bottom: 10px;
+}
+
+/* ── Loading indicator ────────────────────────────── */
+#loading-bar {
+  position: fixed; top: 0; left: 0; width: 0%; height: 3px;
+  background: linear-gradient(90deg, #38BDF8, #818CF8);
+  z-index: 10000; transition: width 0.3s ease;
+}
+
+/* ── Scene selector button (in-app) ───────────────── */
+#scene-btn {
+  position: fixed; bottom: 16px; right: 16px; z-index: 100;
+  background: rgba(0,0,0,0.55); border: 1px solid rgba(129,140,248,0.25);
+  color: #818CF8; border-radius: 10px; padding: 8px 14px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  backdrop-filter: blur(8px); pointer-events: auto;
+  transition: background 0.2s;
+  display: none;
+}
+#scene-btn:hover { background: rgba(129,140,248,0.15); }

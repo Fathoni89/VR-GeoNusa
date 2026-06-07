@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VR-GeoNusa — Admin Panel</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0F172A; --surface: #1E293B; --surface2: #273549;
+      --border: rgba(255,255,255,0.07); --accent: #38BDF8; --accent2: #818CF8;
+      --green: #00e676; --yellow: #ffd700; --red: #ff5252; --text: #E2E8F0;
+      --muted: #64748B; --radius: 12px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+
+    /* ── LOGIN PAGE ── */
+    #login-page {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    }
+    .login-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      padding: 40px; width: 380px; max-width: 95vw;
+    }
+    .login-logo { font-weight: 900; font-size: 1.5em; text-align: center; margin-bottom: 4px;
+      background: linear-gradient(90deg, #38BDF8, #818CF8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .login-sub { color: var(--muted); font-size: 12px; text-align: center; margin-bottom: 28px; }
+    .login-field { margin-bottom: 14px; }
+    .login-field label { display: block; font-size: 11px; font-weight: 700; color: var(--muted);
+      letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px; }
+    .login-field input {
+      width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); padding: 10px 14px; font-size: 14px; outline: none;
+      transition: border-color .15s;
+    }
+    .login-field input:focus { border-color: var(--accent2); }
+    .login-btn {
+      width: 100%; padding: 12px; border-radius: 10px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, #3730A3, #4338CA); color: #C7D2FE;
+      font-size: 14px; font-weight: 700; margin-top: 8px; transition: opacity .2s;
+    }
+    .login-btn:hover { opacity: .85; }
+    .login-err { color: var(--red); font-size: 12px; text-align: center; margin-top: 10px; min-height: 18px; }
+    .login-hint { color: var(--muted); font-size: 11px; text-align: center; margin-top: 16px; }
+
+    /* ── APP LAYOUT ── */
+    #app-page { display: none; }
+    .app { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 56px 1fr; min-height: 100vh; }
+    .topbar {
+      grid-column: 1/-1; background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px; gap: 12px;
+    }
+    .topbar .logo { font-weight: 900; font-size: 1.05em;
+      background: linear-gradient(90deg, #38BDF8, #818CF8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .topbar .badge { background: rgba(56,189,248,.12); border: 1px solid rgba(56,189,248,.2);
+      color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+    .topbar .spacer { flex: 1; }
+    .topbar .user-info { color: var(--muted); font-size: 12px; }
+    .topbar a { color: var(--muted); text-decoration: none; font-size: 12px; }
+    .topbar a:hover { color: var(--accent); }
+    .logout-btn {
+      padding: 5px 14px; border-radius: 7px; border: 1px solid var(--border);
+      background: rgba(255,82,82,.08); color: var(--red); font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: background .15s;
+    }
+    .logout-btn:hover { background: rgba(255,82,82,.15); }
+
+    .sidebar {
+      background: var(--surface); border-right: 1px solid var(--border);
+      padding: 16px 10px; display: flex; flex-direction: column; gap: 3px;
+    }
+    .sidebar .section-label { color: var(--muted); font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 12px 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 8px;
+      cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 500; transition: background .15s, color .15s;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: rgba(56,189,248,.1); color: var(--accent); }
+    .nav-item .icon { font-size: 15px; width: 20px; text-align: center; }
+
+    .main { padding: 24px; overflow-y: auto; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 12px; }
+    .page-header h1 { font-size: 1.3em; font-weight: 800; }
+    .page-header .sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+    /* ── Buttons ── */
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; transition: opacity .15s, transform .1s; }
+    .btn:hover { opacity: .85; transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(135deg, #3730A3, #4338CA); color: #C7D2FE; }
+    .btn-success { background: rgba(0,230,118,.15); color: var(--green); border: 1px solid rgba(0,230,118,.25); }
+    .btn-danger  { background: rgba(255,82,82,.12); color: var(--red); border: 1px solid rgba(255,82,82,.2); }
+    .btn-ghost   { background: rgba(255,255,255,.05); color: var(--text); border: 1px solid var(--border); }
+    .btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 6px; }
+    .btn-warning { background: rgba(255,215,0,.12); color: var(--yellow); border: 1px solid rgba(255,215,0,.25); }
+
+    /* ── Scene tabs ── */
+    .scene-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .scene-tab {
+      padding: 7px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px;
+      background: var(--surface2); color: var(--muted); border: 1px solid var(--border); transition: all .15s;
+    }
+    .scene-tab.active { background: rgba(56,189,248,.12); color: var(--accent); border-color: rgba(56,189,248,.3); }
+
+    /* ── Stats ── */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .stat-card .val { font-size: 1.8em; font-weight: 900; color: var(--accent); }
+    .stat-card .lbl { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+    /* ── Table ── */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+    .table-toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .table-toolbar h2 { font-size: 13px; font-weight: 700; flex: 1; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 9px 14px; text-align: left; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); background: var(--surface2); }
+    td { padding: 9px 14px; border-top: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .badge-geo { background: rgba(129,140,248,.12); color: var(--accent2); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+    .badge-interactive { background: rgba(0,230,118,.1); color: var(--green); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; }
+    .badge-static { background: rgba(100,116,139,.15); color: var(--muted); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; }
+    .badge-model { background: rgba(56,189,248,.1); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; }
+    .conf-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+    /* ── Scene cards grid ── */
+    .scene-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .scene-info-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+    }
+    .scene-info-card .sc-thumb {
+      height: 120px; overflow: hidden; position: relative;
+    }
+    .scene-info-card .sc-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; filter: brightness(.75); }
+    .scene-info-card .sc-thumb .sc-thumb-fallback {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-size: 2.5em;
+    }
+    .scene-info-card .sc-body { padding: 14px; }
+    .scene-info-card .sc-name { font-weight: 800; font-size: 1em; margin-bottom: 2px; }
+    .scene-info-card .sc-loc { color: var(--muted); font-size: 11px; margin-bottom: 10px; }
+    .scene-info-card .sc-stats { display: flex; gap: 12px; margin-bottom: 12px; }
+    .scene-info-card .sc-stat { text-align: center; }
+    .scene-info-card .sc-stat-val { font-weight: 800; color: var(--accent); font-size: 1.1em; }
+    .scene-info-card .sc-stat-lbl { color: var(--muted); font-size: 10px; }
+    .scene-info-card .sc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .sc-default-badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,.6);
+      color: var(--accent); border: 1px solid rgba(56,189,248,.3); border-radius: 5px;
+      font-size: 9px; font-weight: 800; padding: 2px 7px; letter-spacing: .5px; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+      width: 640px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 26px;
+      position: relative; transform: translateY(16px); transition: transform .2s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal h2 { font-size: 1.1em; font-weight: 800; margin-bottom: 18px; }
+    .modal .close-btn {
+      position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,.06);
+      border: none; color: var(--muted); width: 28px; height: 28px; border-radius: 7px;
+      cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+    }
+    .modal .close-btn:hover { background: rgba(255,255,255,.1); color: var(--text); }
+
+    /* ── Form ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-grid .full { grid-column: 1/-1; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
+    .form-group input, .form-group select, .form-group textarea {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); padding: 8px 12px; font-size: 13px; outline: none; transition: border-color .15s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent2); }
+    .form-group textarea { resize: vertical; min-height: 65px; font-family: inherit; }
+    .form-group small { color: var(--muted); font-size: 10px; }
+    .form-divider { grid-column: 1/-1; border: none; border-top: 1px solid var(--border); }
+    .form-section { grid-column: 1/-1; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent2); }
+
+    /* ── Export box ── */
+    .export-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 14px; }
+    .export-box pre { font-size: 11px; color: var(--muted); white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow-y: auto; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 20px; font-size: 13px; font-weight: 600; z-index: 9999;
+      opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+    #toast.success { border-color: rgba(0,230,118,.3); color: var(--green); }
+    #toast.error   { border-color: rgba(255,82,82,.3); color: var(--red); }
+    #toast.info    { border-color: rgba(56,189,248,.3); color: var(--accent); }
+
+    /* ── Password change ── */
+    .pwd-form { background: var(--surface2); border-radius: 10px; padding: 18px; margin-top: 14px; }
+    .pwd-form h3 { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN PAGE
+══════════════════════════════════════════ -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">VR-GeoNusa</div>
+    <div class="login-sub">Admin Panel — Masuk dengan akun Anda</div>
+    <form onsubmit="doLogin(event)">
+      <div class="login-field">
+        <label>Username</label>
+        <input id="login-username" type="text" placeholder="admin" autocomplete="username" required>
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="login-btn">Masuk →</button>
+    </form>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-hint">Default: admin / geonusa2026</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     APP PANEL
+══════════════════════════════════════════ -->
+<div id="app-page">
+<div class="app">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <span class="logo">VR-GeoNusa</span>
+    <span class="badge">Admin</span>
+    <div class="spacer"></div>
+    <span class="user-info" id="topbar-user"></span>
+    <a href="/" target="_blank" style="margin:0 12px">↗ Portal</a>
+    <button class="logout-btn" onclick="doLogout()">Keluar</button>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="section-label">Konten</div>
+    <div class="nav-item active" onclick="showPage('objects')">
+      <span class="icon">🏛️</span> Objek Scene
+    </div>
+    <div class="nav-item" onclick="showPage('scenes')">
+      <span class="icon">🗺️</span> Kelola Scene
+    </div>
+    <div class="section-label" style="margin-top:8px">Referensi</div>
+    <div class="nav-item" onclick="showPage('geometri')">
+      <span class="icon">📐</span> Katalog Geometri
+    </div>
+    <div class="nav-item" onclick="showPage('export')">
+      <span class="icon">📤</span> Export / Backup
+    </div>
+    <div class="section-label" style="margin-top:8px">Konten Lain</div>
+    <div class="nav-item" onclick="showPage('team')">
+      <span class="icon">👥</span> Tim Peneliti
+    </div>
+    <div class="section-label" style="margin-top:8px">Akun</div>
+    <div class="nav-item" onclick="showPage('settings')">
+      <span class="icon">⚙️</span> Pengaturan
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main" id="main-content"></main>
+</div>
+</div>
+
+<!-- ══ Modal Tambah/Edit Objek ══ -->
+<div class="modal-overlay" id="obj-modal">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal('obj-modal')">×</button>
+    <h2 id="obj-modal-title">Tambah Objek Baru</h2>
+    <form id="obj-form" onsubmit="saveObject(event)">
+      <div class="form-grid">
+        <div class="form-section">Identitas</div>
+        <div class="form-group">
+          <label>ID Unik *</label>
+          <input name="id" placeholder="obj-nama-unik" required>
+        </div>
+        <div class="form-group">
+          <label>Nama Elemen *</label>
+          <input name="element" placeholder="Stupa Utama" required>
+        </div>
+        <div class="form-group">
+          <label>Tipe Bentuk *</label>
+          <select name="type" onchange="updateGeomFields(this.value)" required>
+            <option value="box">Box (Kotak/Balok)</option>
+            <option value="sphere">Sphere (Bola)</option>
+            <option value="cylinder">Cylinder (Tabung)</option>
+            <option value="cone">Cone (Kerucut/Limas)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Interaktif?</label>
+          <select name="interactive">
+            <option value="true">Ya — tampilkan info geometri</option>
+            <option value="false">Tidak — dekoratif</option>
+          </select>
+        </div>
+        <hr class="form-divider">
+        <div class="form-section">Posisi & Tampilan</div>
+        <div class="form-group full"><label>Posisi (x y z)</label><input name="position" placeholder="0 0 -8" value="0 0 -8"></div>
+        <div class="form-group full"><label>Rotasi (x y z°)</label><input name="rotation" placeholder="0 0 0" value="0 0 0"></div>
+        <div class="form-group full"><label>Scale (x y z)</label><input name="scale" placeholder="1 1 1" value="1 1 1"></div>
+        <div class="form-group"><label>Warna Normal</label><input name="color" type="color" value="#5a5a50"></div>
+        <div class="form-group"><label>Warna Hover</label><input name="color_hover" type="color" value="#6a6a60"></div>
+        <div id="fields-box"  class="form-group"><label>Lebar</label><input name="width" value="2"></div>
+        <div id="fields-box2" class="form-group"><label>Tinggi</label><input name="height" value="2"></div>
+        <div id="fields-box3" class="form-group full"><label>Kedalaman</label><input name="depth" value="2"></div>
+        <div id="fields-sphere"  class="form-group" style="display:none"><label>Radius</label><input name="radius_s" value="1"></div>
+        <div id="fields-sphere2" class="form-group" style="display:none"><label>Theta Length (90=setengah)</label><input name="theta_length" value="180"></div>
+        <div id="fields-cyl"  class="form-group" style="display:none"><label>Radius</label><input name="radius_c" value="0.5"></div>
+        <div id="fields-cyl2" class="form-group" style="display:none"><label>Tinggi</label><input name="height_c" value="2"></div>
+        <div id="fields-cone"  class="form-group" style="display:none"><label>Radius Bawah</label><input name="radius_bottom" value="1"></div>
+        <div id="fields-cone2" class="form-group" style="display:none"><label>Radius Atas (0=runcing)</label><input name="radius_top" value="0.02"></div>
+        <div id="fields-cone3" class="form-group" style="display:none"><label>Tinggi</label><input name="height_cone" value="2"></div>
+        <div id="fields-cone4" class="form-group" style="display:none"><label>Segments (4=limas)</label><input name="segments_radial" value="36"></div>
+        <hr class="form-divider">
+        <div class="form-section">Model 3D (Tahun 2)</div>
+        <div class="form-group full">
+          <label>Path Model GLTF/GLB</label>
+          <input name="model_src" placeholder="../assets/models/nama-objek.glb">
+          <small>Kosongkan untuk pakai bentuk primitif di atas.</small>
+        </div>
+        <hr class="form-divider">
+        <div class="form-section">Data Geometri Matematika</div>
+        <div class="form-group"><label>Nama Geometri (ID) *</label><input name="geo" placeholder="Setengah Bola"></div>
+        <div class="form-group"><label>Nama Geometri (EN)</label><input name="geo_en" placeholder="Hemisphere"></div>
+        <div class="form-group"><label>Jumlah Sisi</label><input name="sisi" type="number" value="0"></div>
+        <div class="form-group"><label>Jumlah Rusuk</label><input name="rusuk" type="number" value="0"></div>
+        <div class="form-group full"><label>Titik Sudut</label><input name="titik" type="number" value="0"></div>
+        <div class="form-group full"><label>Rumus Volume</label><input name="volume" placeholder="⅔ × π × r³"></div>
+        <div class="form-group full"><label>Rumus Luas Permukaan</label><input name="luas" placeholder="3πr²"></div>
+        <div class="form-group"><label>Confidence ML (%)</label><input name="conf" type="number" min="0" max="100" value="90"></div>
+        <div class="form-group full"><label>Konteks Budaya</label><textarea name="context" placeholder="Deskripsi makna budaya..."></textarea></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('obj-modal')">Batal</button>
+        <button type="submit" class="btn btn-primary">💾 Simpan Objek</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══ Modal Tambah Scene Baru ══ -->
+<div class="modal-overlay" id="scene-modal">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal('scene-modal')">×</button>
+    <h2>Tambah Scene Baru</h2>
+    <form id="scene-form" onsubmit="saveNewScene(event)">
+      <div class="form-grid">
+        <div class="form-section">Identitas Scene</div>
+        <div class="form-group">
+          <label>Scene ID *</label>
+          <input name="scene_id" placeholder="keraton-yogyakarta" required>
+          <small>Huruf kecil, tanpa spasi. Contoh: keraton-yogyakarta</small>
+        </div>
+        <div class="form-group">
+          <label>Nama Tampilan *</label>
+          <input name="name" placeholder="Keraton Yogyakarta" required>
+        </div>
+        <div class="form-group">
+          <label>Lokasi</label>
+          <input name="location" placeholder="Yogyakarta, DI Yogyakarta">
+        </div>
+        <div class="form-group">
+          <label>Era / Abad</label>
+          <input name="era" placeholder="Abad ke-18 Masehi">
+        </div>
+        <div class="form-group">
+          <label>Foto Thumbnail</label>
+          <input name="thumbnail" placeholder="/assets/images/keratonyogya.jpg">
+          <small>Path relatif dari root. Kosongkan jika belum ada.</small>
+        </div>
+        <div class="form-group">
+          <label>Warna Kursor VR</label>
+          <input name="cursor_color" type="color" value="#00e5ff">
+        </div>
+        <hr class="form-divider">
+        <div class="form-section">Tampilan Scene VR</div>
+        <div class="form-group">
+          <label>Warna Langit</label>
+          <input name="sky_color" type="color" value="#1a2744">
+        </div>
+        <div class="form-group">
+          <label>Warna Tanah</label>
+          <input name="ground_color" type="color" value="#2d4a2a">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('scene-modal')">Batal</button>
+        <button type="submit" class="btn btn-primary">🗺️ Buat Scene</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══ Modal Tambah/Edit Anggota Tim ══ -->
+<div class="modal-overlay" id="team-modal">
+  <div class="modal" style="width:700px">
+    <button class="close-btn" onclick="closeModal('team-modal')">×</button>
+    <h2 id="team-modal-title">Tambah Anggota Tim</h2>
+    <form id="team-form" onsubmit="saveMember(event)">
+      <div class="form-grid">
+        <div class="form-section">Identitas</div>
+        <div class="form-group">
+          <label>ID Unik *</label>
+          <input name="id" placeholder="nama-lengkap-tanpa-spasi" required>
+          <small>Contoh: fitria-sulistyowati</small>
+        </div>
+        <div class="form-group">
+          <label>Nama Lengkap *</label>
+          <input name="name" placeholder="Dr. Nama Lengkap, M.Pd." required>
+        </div>
+        <div class="form-group">
+          <label>Jabatan / Peran *</label>
+          <input name="role" placeholder="Ketua Pengusul" required>
+        </div>
+        <div class="form-group">
+          <label>Tipe</label>
+          <select name="role_type">
+            <option value="peneliti">Peneliti / Dosen</option>
+            <option value="mahasiswa">Mahasiswa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Institusi *</label>
+          <input name="institution" placeholder="Universitas Sarjanawiyata Tamansiswa">
+        </div>
+        <div class="form-group">
+          <label>Departemen / Prodi</label>
+          <input name="department" placeholder="Pendidikan Matematika">
+        </div>
+        <div class="form-group full">
+          <label>Bio / Deskripsi</label>
+          <textarea name="bio" placeholder="Deskripsi singkat peneliti, keahlian, dan kontribusi dalam proyek..." style="min-height:80px"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Keahlian (pisah dengan koma)</label>
+          <input name="expertise" placeholder="WebXR, A-Frame, Pengembangan Web">
+        </div>
+        <hr class="form-divider">
+        <div class="form-section">Identitas Akademik</div>
+        <div class="form-group">
+          <label>Email</label>
+          <input name="email" type="email" placeholder="email@institusi.ac.id">
+        </div>
+        <div class="form-group">
+          <label>SINTA ID</label>
+          <input name="sinta_id" placeholder="6789012">
+        </div>
+        <div class="form-group full">
+          <label>ORCID</label>
+          <input name="orcid" placeholder="0000-0000-0000-0000">
+        </div>
+        <hr class="form-divider">
+        <div class="form-section">Urutan Tampil</div>
+        <div class="form-group">
+          <label>Nomor Urut</label>
+          <input name="order" type="number" min="1" value="1">
+          <small>Angka lebih kecil tampil lebih dulu</small>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('team-modal')">Batal</button>
+        <button type="submit" class="btn btn-primary">💾 Simpan Anggota</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// STATE & CONFIG
+// ══════════════════════════════════════════════════════
+const API = '';  // same origin
+let state = {
+  token: localStorage.getItem('vgn_token') || '',
+  username: localStorage.getItem('vgn_user') || '',
+  currentScene: localStorage.getItem('vgn_scene') || 'borobudur',
+  scenes: {},
+  sceneList: [],
+  team: [],
+  editingObjId: null,
+  editingMemberId: null,
+  currentPage: 'objects',
+};
+
+// ══════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════
+async function doLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('login-username').value;
+  const password = document.getElementById('login-password').value;
+  document.getElementById('login-err').textContent = '';
+  try {
+    const res  = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username,password}) });
+    const json = await res.json();
+    if (!json.success) { document.getElementById('login-err').textContent = json.message; return; }
+    state.token    = json.token;
+    state.username = json.username;
+    localStorage.setItem('vgn_token', json.token);
+    localStorage.setItem('vgn_user', json.username);
+    showApp();
+  } catch (err) {
+    document.getElementById('login-err').textContent = 'Gagal terhubung ke server';
+  }
+}
+
+async function checkAuth() {
+  if (!state.token) { showLogin(); return; }
+  try {
+    const res  = await fetch('/api/auth/verify', { headers:{ Authorization:'Bearer '+state.token } });
+    const json = await res.json();
+    if (!json.success) { showLogin(); return; }
+    state.username = json.username;
+    showApp();
+  } catch { showLogin(); }
+}
+
+function doLogout() {
+  localStorage.removeItem('vgn_token');
+  localStorage.removeItem('vgn_user');
+  state.token = ''; state.username = '';
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('app-page').style.display   = 'none';
+}
+
+async function showApp() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app-page').style.display   = 'block';
+  document.getElementById('topbar-user').textContent  = '👤 ' + state.username;
+  await loadAllScenes();
+  showPage(state.currentPage);
+}
+
+// ══════════════════════════════════════════════════════
+// DATA LOADING
+// ══════════════════════════════════════════════════════
+async function loadAllScenes() {
+  try {
+    const [scenesRes, teamRes] = await Promise.all([
+      apiFetch('/api/scenes'),
+      apiFetch('/api/team'),
+    ]);
+    const scenesJson = await scenesRes.json();
+    const teamJson   = await teamRes.json();
+    state.sceneList = scenesJson.data || [];
+    state.team      = (teamJson.data || []).sort((a,b) => (a.order||99)-(b.order||99));
+    await Promise.all(state.sceneList.map(s => loadSceneDetail(s.scene_id)));
+  } catch(e) { toast('Gagal load data: '+e.message, 'error'); }
+}
+
+async function loadSceneDetail(id) {
+  try {
+    const res  = await apiFetch(`/api/scenes/${id}`);
+    const json = await res.json();
+    if (json.success) state.scenes[id] = json.data;
+  } catch {}
+}
+
+function apiFetch(url, options={}) {
+  return fetch(url, { ...options, headers: { 'Content-Type':'application/json', Authorization:'Bearer '+state.token, ...(options.headers||{}) } });
+}
+
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
+function showPage(page) {
+  state.currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => {
+    const map = { objects:'Objek', scenes:'Kelola', geometri:'Katalog', export:'Export', settings:'Pengaturan' };
+    if (el.textContent.trim().includes(map[page])) el.classList.add('active');
+  });
+  const main = document.getElementById('main-content');
+  const pages = { objects: renderObjectsPage, scenes: renderScenesPage, geometri: renderGeometriPage, export: renderExportPage, settings: renderSettingsPage, team: renderTeamPage };
+  if (pages[page]) pages[page](main);
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: OBJECTS
+// ══════════════════════════════════════════════════════
+function renderObjectsPage(main) {
+  const scene = state.scenes[state.currentScene] || { objects:[] };
+  const interactive = scene.objects.filter(o=>o.interactive).length;
+  const withModel   = scene.objects.filter(o=>o.model_src).length;
+  const tabs = state.sceneList.map(s =>
+    `<div class="scene-tab ${s.scene_id===state.currentScene?'active':''}" onclick="switchScene('${s.scene_id}')">${s.name}</div>`
+  ).join('');
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Manajemen Objek Scene</h1><div class="sub">Tambah, edit, atau hapus objek geometri dalam scene VR</div></div>
+      <button class="btn btn-primary" onclick="openAddObjModal()">+ Tambah Objek</button>
+    </div>
+    <div class="scene-tabs">${tabs}</div>
+    <div class="stats">
+      <div class="stat-card"><div class="val">${scene.objects.length}</div><div class="lbl">Total Objek</div></div>
+      <div class="stat-card"><div class="val">${interactive}</div><div class="lbl">Interaktif</div></div>
+      <div class="stat-card"><div class="val">${scene.objects.length-interactive}</div><div class="lbl">Dekoratif</div></div>
+      <div class="stat-card"><div class="val">${withModel||'—'}</div><div class="lbl">Model GLTF</div></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <h2>Daftar Objek — ${scene.name||state.currentScene}</h2>
+        <a href="/vr/${state.currentScene}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka VR</a>
+      </div>
+      <table>
+        <thead><tr><th>ID</th><th>Elemen</th><th>Tipe</th><th>Geometri</th><th>Conf.</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody>
+          ${scene.objects.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Belum ada objek — klik "+ Tambah Objek"</td></tr>` : ''}
+          ${scene.objects.map(obj => `
+            <tr>
+              <td style="font-family:monospace;font-size:11px;color:var(--muted)">${obj.id}</td>
+              <td style="font-weight:600">${obj.element||'—'}</td>
+              <td><code style="font-size:11px;color:var(--accent2)">${obj.type}</code></td>
+              <td>${obj.geo?`<span class="badge-geo">${obj.geo}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+              <td>${obj.conf&&obj.interactive?confPill(obj.conf):'—'}</td>
+              <td>
+                ${obj.interactive?'<span class="badge-interactive">Interaktif</span>':'<span class="badge-static">Dekoratif</span>'}
+                ${obj.model_src?'<span class="badge-model" style="margin-left:4px">GLTF</span>':''}
+              </td>
+              <td>
+                <button class="btn btn-ghost btn-sm" onclick="openEditObjModal('${obj.id}')">✏️ Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteObj('${obj.id}')" style="margin-left:4px">🗑</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function switchScene(id) { state.currentScene = id; localStorage.setItem('vgn_scene',id); renderObjectsPage(document.getElementById('main-content')); }
+function confPill(conf) {
+  const c=parseInt(conf), bg=c>=93?'rgba(0,230,118,.1)':c>=87?'rgba(255,215,0,.1)':'rgba(255,82,82,.1)', cl=c>=93?'var(--green)':c>=87?'var(--yellow)':'var(--red)';
+  return `<span class="conf-pill" style="background:${bg};color:${cl}">${c}%</span>`;
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: SCENES
+// ══════════════════════════════════════════════════════
+function renderScenesPage(main) {
+  const cards = state.sceneList.map(s => {
+    const sc = state.scenes[s.scene_id] || {};
+    const isDefault = ['borobudur','prambanan'].includes(s.scene_id);
+    const thumbPath = `/assets/images/${s.scene_id}.jpg`;
+    return `
+      <div class="scene-info-card">
+        <div class="sc-thumb">
+          <img src="${thumbPath}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+          <div class="sc-thumb-fallback" style="display:none;background:linear-gradient(135deg,#1a2744,#2d4a2a)">🏛️</div>
+          ${isDefault?'<span class="sc-default-badge">DEFAULT</span>':''}
+        </div>
+        <div class="sc-body">
+          <div class="sc-name">${s.name}</div>
+          <div class="sc-loc">📍 ${s.location||'—'} · ${sc.era||'—'}</div>
+          <div class="sc-stats">
+            <div class="sc-stat"><div class="sc-stat-val">${s.obj_count}</div><div class="sc-stat-lbl">Objek</div></div>
+            <div class="sc-stat"><div class="sc-stat-val">${(sc.objects||[]).filter(o=>o.interactive).length}</div><div class="sc-stat-lbl">Interaktif</div></div>
+          </div>
+          <div class="sc-actions">
+            <button class="btn btn-ghost btn-sm" onclick="switchScene('${s.scene_id}'); showPage('objects')">📋 Kelola Objek</button>
+            <a href="/vr/${s.scene_id}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka VR</a>
+            ${!isDefault?`<button class="btn btn-danger btn-sm" onclick="deleteScene('${s.scene_id}')">🗑 Hapus</button>`:''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Kelola Scene</h1><div class="sub">Tambah destinasi baru, kelola scene yang ada</div></div>
+      <button class="btn btn-primary" onclick="openSceneModal()">+ Tambah Scene</button>
+    </div>
+    <div class="scene-cards">${cards}</div>
+    <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:14px;font-size:12px;color:var(--muted)">
+      💡 <strong style="color:var(--accent)">Cara menambah scene baru:</strong>
+      Klik "+ Tambah Scene" → isi form → scene VR otomatis dibuat → tambahkan objek via tab "Objek Scene".
+      Upload foto ke <code>public/assets/images/[scene_id].jpg</code> agar thumbnail muncul.
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: GEOMETRI CATALOG
+// ══════════════════════════════════════════════════════
+function renderGeometriPage(main) {
+  const catalog = [
+    {name:'Kubus',en:'Cube',sisi:6,rusuk:12,titik:8,v:'s³',l:'6s²'},
+    {name:'Balok',en:'Rectangular Prism',sisi:6,rusuk:12,titik:8,v:'p×l×t',l:'2(pl+pt+lt)'},
+    {name:'Tabung',en:'Cylinder',sisi:3,rusuk:2,titik:0,v:'π·r²·t',l:'2πr²+2πrt'},
+    {name:'Kerucut',en:'Cone',sisi:2,rusuk:1,titik:1,v:'⅓·π·r²·t',l:'πr²+πrs'},
+    {name:'Bola',en:'Sphere',sisi:1,rusuk:0,titik:0,v:'⁴⁄₃·π·r³',l:'4πr²'},
+    {name:'Setengah Bola',en:'Hemisphere',sisi:1,rusuk:0,titik:0,v:'⅔·π·r³',l:'3πr²'},
+    {name:'Limas Segitiga',en:'Triangular Pyramid',sisi:4,rusuk:6,titik:4,v:'⅓·A·t',l:'A+Σsisi'},
+    {name:'Limas Segiempat',en:'Square Pyramid',sisi:5,rusuk:8,titik:5,v:'⅓·A·t',l:'A+Σsisi'},
+    {name:'Prisma Segitiga',en:'Triangular Prism',sisi:5,rusuk:9,titik:6,v:'A·t',l:'2A+K·t'},
+    {name:'Prisma Segi-6',en:'Hexagonal Prism',sisi:8,rusuk:18,titik:12,v:'A·t',l:'2A+K·t'},
+  ];
+  main.innerHTML = `
+    <div class="page-header"><div><h1>Katalog Geometri</h1><div class="sub">Referensi cepat saat mengisi form objek</div></div></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Nama Indonesia</th><th>English</th><th>Sisi</th><th>Rusuk</th><th>Titik Sudut</th><th>Rumus V</th><th>Rumus L</th></tr></thead>
+      <tbody>${catalog.map(g=>`<tr>
+        <td><span class="badge-geo">${g.name}</span></td>
+        <td style="color:var(--muted);font-style:italic">${g.en}</td>
+        <td style="color:var(--accent);font-weight:700">${g.sisi}</td>
+        <td style="color:var(--accent);font-weight:700">${g.rusuk}</td>
+        <td style="color:var(--accent);font-weight:700">${g.titik}</td>
+        <td style="font-size:12px">${g.v}</td>
+        <td style="font-size:12px">${g.l}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: EXPORT
+// ══════════════════════════════════════════════════════
+function renderExportPage(main) {
+  main.innerHTML = `
+    <div class="page-header"><div><h1>Export & Backup</h1><div class="sub">Download JSON untuk backup atau deploy GitHub Pages</div></div></div>
+    ${state.sceneList.map(s=>`
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px">
+        <div style="font-weight:700;margin-bottom:10px">${s.name} <code style="font-size:11px;color:var(--muted);margin-left:8px">data/${s.scene_id}.json</code></div>
+        <div class="export-box"><pre>${JSON.stringify(state.scenes[s.scene_id]||{},null,2).slice(0,500)}...</pre></div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-success" onclick="downloadJSON('${s.scene_id}')">⬇️ Download JSON</button>
+          <button class="btn btn-ghost" onclick="copyJSON('${s.scene_id}')">📋 Copy</button>
+        </div>
+      </div>`).join('')}`;
+}
+function downloadJSON(id) {
+  const data=JSON.stringify(state.scenes[id],null,2);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data],{type:'application/json'})); a.download=id+'.json'; a.click();
+  toast('Download '+id+'.json dimulai','success');
+}
+function copyJSON(id) { navigator.clipboard.writeText(JSON.stringify(state.scenes[id],null,2)); toast('JSON disalin','success'); }
+
+// ══════════════════════════════════════════════════════
+// PAGE: SETTINGS
+// ══════════════════════════════════════════════════════
+function renderSettingsPage(main) {
+  main.innerHTML = `
+    <div class="page-header"><div><h1>Pengaturan</h1><div class="sub">Kelola akun admin</div></div></div>
+    <div class="table-wrap" style="padding:20px">
+      <div style="font-weight:700;margin-bottom:4px">Akun Admin</div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:16px">Username: <strong style="color:var(--accent)">${state.username}</strong></div>
+      <div class="pwd-form">
+        <h3>🔑 Ganti Password</h3>
+        <div class="form-grid">
+          <div class="form-group full"><label>Password Lama</label><input id="pwd-old" type="password" placeholder="••••••••"></div>
+          <div class="form-group"><label>Password Baru</label><input id="pwd-new" type="password" placeholder="min. 6 karakter"></div>
+          <div class="form-group"><label>Konfirmasi</label><input id="pwd-confirm" type="password" placeholder="ulangi password baru"></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:14px" onclick="changePassword()">Simpan Password</button>
+      </div>
+    </div>`;
+}
+async function changePassword() {
+  const old=document.getElementById('pwd-old').value, nw=document.getElementById('pwd-new').value, cf=document.getElementById('pwd-confirm').value;
+  if (!old||!nw) { toast('Isi semua field','error'); return; }
+  if (nw!==cf) { toast('Konfirmasi password tidak cocok','error'); return; }
+  if (nw.length<6) { toast('Password minimal 6 karakter','error'); return; }
+  const res=await apiFetch('/api/auth/change-password',{method:'POST',body:JSON.stringify({old_password:old,new_password:nw})});
+  const json=await res.json();
+  if (json.success) { toast('Password berhasil diubah ✓','success'); renderSettingsPage(document.getElementById('main-content')); }
+  else toast(json.message,'error');
+}
+
+// ══════════════════════════════════════════════════════
+// CRUD OBJEK
+// ══════════════════════════════════════════════════════
+function openAddObjModal() {
+  state.editingObjId = null;
+  document.getElementById('obj-modal-title').textContent = `Tambah Objek — ${state.scenes[state.currentScene]?.name||state.currentScene}`;
+  document.getElementById('obj-form').reset();
+  updateGeomFields('box');
+  document.getElementById('obj-modal').classList.add('open');
+}
+function openEditObjModal(id) {
+  const obj = (state.scenes[state.currentScene]?.objects||[]).find(o=>o.id===id);
+  if (!obj) return;
+  state.editingObjId = id;
+  document.getElementById('obj-modal-title').textContent = 'Edit Objek: '+(obj.element||id);
+  const f = document.getElementById('obj-form');
+  const set=(n,v)=>{ const e=f.elements[n]; if(e) e.value=v??''; };
+  set('id',obj.id); set('element',obj.element); set('type',obj.type);
+  f.elements['interactive'].value = obj.interactive?'true':'false';
+  set('position',obj.position); set('rotation',obj.rotation); set('scale',obj.scale||'1 1 1');
+  f.elements['color'].value=obj.color||'#5a5a50'; f.elements['color_hover'].value=obj.color_hover||'#6a6a60';
+  set('width',obj.width); set('height',obj.height); set('depth',obj.depth);
+  set('radius_s',obj.radius); set('theta_length',obj.theta_length);
+  set('radius_c',obj.radius); set('height_c',obj.height);
+  set('radius_bottom',obj.radius_bottom); set('radius_top',obj.radius_top);
+  set('height_cone',obj.height); set('segments_radial',obj.segments_radial);
+  set('model_src',obj.model_src); set('geo',obj.geo); set('geo_en',obj.geo_en);
+  set('sisi',obj.sisi); set('rusuk',obj.rusuk); set('titik',obj.titik);
+  set('volume',obj.volume); set('luas',obj.luas); set('conf',obj.conf); set('context',obj.context);
+  updateGeomFields(obj.type);
+  document.getElementById('obj-modal').classList.add('open');
+}
+async function saveObject(e) {
+  e.preventDefault();
+  const f=e.target, get=n=>f.elements[n]?.value??'', type=get('type');
+  const obj={ id:get('id').trim().replace(/\s+/g,'-'), type, position:get('position')||'0 0 0',
+    scale:get('scale')||'1 1 1', rotation:get('rotation')||'0 0 0', color:get('color'),
+    color_hover:get('color_hover'), roughness:'0.85', model_src:get('model_src').trim(),
+    geo:get('geo'), geo_en:get('geo_en'), sisi:get('sisi'), rusuk:get('rusuk'), titik:get('titik'),
+    volume:get('volume'), luas:get('luas'), element:get('element'), context:get('context'),
+    conf:get('conf'), interactive:get('interactive')==='true',
+  };
+  if(type==='box')      { obj.width=get('width');obj.height=get('height');obj.depth=get('depth'); }
+  if(type==='sphere')   { obj.radius=get('radius_s');obj.theta_length=get('theta_length'); }
+  if(type==='cylinder') { obj.radius=get('radius_c');obj.height=get('height_c'); }
+  if(type==='cone')     { obj.radius_bottom=get('radius_bottom');obj.radius_top=get('radius_top');obj.height=get('height_cone');obj.segments_radial=get('segments_radial'); }
+
+  const id=state.currentScene, isEdit=!!state.editingObjId;
+  const url=isEdit?`/api/scenes/${id}/objects/${state.editingObjId}`:`/api/scenes/${id}/objects`;
+  const res=await apiFetch(url,{method:isEdit?'PUT':'POST',body:JSON.stringify(obj)});
+  const json=await res.json();
+  if(!json.success){ toast(json.message,'error'); return; }
+  await loadSceneDetail(id);
+  closeModal('obj-modal');
+  toast(isEdit?'Objek diupdate ✓':'Objek ditambahkan ✓','success');
+  renderObjectsPage(document.getElementById('main-content'));
+}
+async function deleteObj(objId) {
+  if(!confirm(`Hapus objek "${objId}"?`)) return;
+  const res=await apiFetch(`/api/scenes/${state.currentScene}/objects/${objId}`,{method:'DELETE'});
+  const json=await res.json();
+  if(!json.success){ toast(json.message,'error'); return; }
+  await loadSceneDetail(state.currentScene);
+  toast('Objek dihapus ✓','success');
+  renderObjectsPage(document.getElementById('main-content'));
+}
+
+// ══════════════════════════════════════════════════════
+// CRUD SCENE
+// ══════════════════════════════════════════════════════
+function openSceneModal() {
+  document.getElementById('scene-form').reset();
+  document.getElementById('scene-modal').classList.add('open');
+}
+async function saveNewScene(e) {
+  e.preventDefault();
+  const f=e.target, get=n=>f.elements[n]?.value??'';
+  const payload={ scene_id:get('scene_id'), name:get('name'), location:get('location'),
+    era:get('era'), sky_color:get('sky_color'), ground_color:get('ground_color'),
+    cursor_color:get('cursor_color'), thumbnail:get('thumbnail') };
+  const res=await apiFetch('/api/scenes',{method:'POST',body:JSON.stringify(payload)});
+  const json=await res.json();
+  if(!json.success){ toast(json.message,'error'); return; }
+  await loadAllScenes();
+  closeModal('scene-modal');
+  toast(`Scene "${json.data.name}" berhasil dibuat ✓ — VR page: ${json.vr_url}`,'success');
+  // Update landing page scene list juga
+  state.currentScene = json.data.scene_id;
+  renderScenesPage(document.getElementById('main-content'));
+}
+async function deleteScene(id) {
+  if(!confirm(`Hapus scene "${id}"? Semua data dan VR page akan terhapus.`)) return;
+  const res=await apiFetch(`/api/scenes/${id}`,{method:'DELETE'});
+  const json=await res.json();
+  if(!json.success){ toast(json.message,'error'); return; }
+  await loadAllScenes();
+  if(state.currentScene===id) state.currentScene='borobudur';
+  toast(`Scene "${id}" dihapus ✓`,'success');
+  renderScenesPage(document.getElementById('main-content'));
+}
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+function updateGeomFields(type) {
+  const hide=ids=>ids.forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display='none'; });
+  const show=ids=>ids.forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display=''; });
+  hide(['fields-box','fields-box2','fields-box3','fields-sphere','fields-sphere2','fields-cyl','fields-cyl2','fields-cone','fields-cone2','fields-cone3','fields-cone4']);
+  if(type==='box')      show(['fields-box','fields-box2','fields-box3']);
+  if(type==='sphere')   show(['fields-sphere','fields-sphere2']);
+  if(type==='cylinder') show(['fields-cyl','fields-cyl2']);
+  if(type==='cone')     show(['fields-cone','fields-cone2','fields-cone3','fields-cone4']);
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); }));
+
+let toastTimer;
+function toast(msg, type='success') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='show '+type;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.className='',3500);
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: TIM PENELITI
+// ══════════════════════════════════════════════════════
+function renderTeamPage(main) {
+  const researchers = state.team.filter(m => m.role_type === 'peneliti');
+  const students    = state.team.filter(m => m.role_type === 'mahasiswa');
+
+  const memberCard = (m) => {
+    const photoHtml = m.photo
+      ? `<img src="${m.photo}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : '';
+    const fallbackEmoji = m.role_type === 'mahasiswa' ? '👨‍🎓' : '👩‍🔬';
+    const expertiseTags = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(e=>e.trim()).filter(Boolean))
+      .map(e => `<span style="background:rgba(200,150,62,.1);border:1px solid rgba(200,150,62,.2);color:#C8963E;border-radius:3px;padding:1px 7px;font-size:10px;font-weight:600">${e}</span>`).join('');
+    const links = [
+      m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${m.sinta_id}" target="_blank" style="color:var(--accent);font-size:11px">SINTA ↗</a>` : '',
+      m.orcid    ? `<a href="https://orcid.org/${m.orcid}" target="_blank" style="color:var(--accent);font-size:11px">ORCID ↗</a>` : '',
+      m.email    ? `<a href="mailto:${m.email}" style="color:var(--muted);font-size:11px">✉ Email</a>` : '',
+    ].filter(Boolean).join('<span style="color:var(--border);margin:0 4px">|</span>');
+
+    return `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
+        <!-- Foto -->
+        <div style="height:160px;background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center" id="photo-wrap-${m.id}">
+          ${photoHtml}
+          <div style="${m.photo?'display:none;':''}width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3em;color:var(--muted)" id="photo-fallback-${m.id}">${fallbackEmoji}</div>
+          <!-- Upload button overlay -->
+          <label for="upload-${m.id}" title="Ganti foto"
+            style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.15);
+                   border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;z-index:2">
+            📷 Ganti Foto
+          </label>
+          <input type="file" id="upload-${m.id}" accept="image/jpeg,image/png,image/webp"
+            style="display:none" onchange="uploadPhoto('${m.id}', this)">
+        </div>
+        <!-- Info -->
+        <div style="padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:6px">
+          <div style="font-weight:800;font-size:.95rem;color:var(--text)">${m.name}</div>
+          <div style="color:var(--gold);font-size:.75rem;font-weight:700;letter-spacing:.3px">${m.role}</div>
+          <div style="color:var(--muted);font-size:.75rem">${m.institution}</div>
+          ${m.bio ? `<div style="color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:4px;flex:1">${m.bio.slice(0,120)}${m.bio.length>120?'…':''}</div>` : ''}
+          ${expertiseTags ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${expertiseTags}</div>` : ''}
+          ${links ? `<div style="display:flex;gap:0;margin-top:6px;align-items:center">${links}</div>` : ''}
+          <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openEditMemberModal('${m.id}')">✏️ Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')">🗑</button>
+          </div>
+        </div>
+      </div>`;
+  };
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Tim Peneliti</h1><div class="sub">Kelola profil, foto, dan informasi anggota tim</div></div>
+      <button class="btn btn-primary" onclick="openAddMemberModal()">+ Tambah Anggota</button>
+    </div>
+
+    <div style="background:rgba(200,150,62,.06);border:1px solid rgba(200,150,62,.15);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--muted)">
+      💡 <strong style="color:var(--gold)">Cara upload foto:</strong>
+      Klik tombol <strong>📷 Ganti Foto</strong> di kartu anggota. Format JPG/PNG/WebP, maksimal 3MB.
+      Foto langsung tampil di halaman portal.
+    </div>
+
+    <!-- Peneliti -->
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">
+      Peneliti & Dosen (${researchers.length})
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:28px">
+      ${researchers.map(memberCard).join('') || '<div style="color:var(--muted);padding:20px">Belum ada peneliti.</div>'}
+    </div>
+
+    <!-- Mahasiswa -->
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">
+      Mahasiswa (${students.length})
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
+      ${students.map(memberCard).join('') || '<div style="color:var(--muted);padding:20px">Belum ada mahasiswa.</div>'}
+    </div>`;
+}
+
+function openAddMemberModal() {
+  state.editingMemberId = null;
+  document.getElementById('team-modal-title').textContent = 'Tambah Anggota Tim';
+  document.getElementById('team-form').reset();
+  document.getElementById('team-modal').classList.add('open');
+}
+
+function openEditMemberModal(id) {
+  const m = state.team.find(t => t.id === id);
+  if (!m) return;
+  state.editingMemberId = id;
+  document.getElementById('team-modal-title').textContent = 'Edit: ' + m.name;
+  const f = document.getElementById('team-form');
+  const set = (n,v) => { const e=f.elements[n]; if(e) e.value = v??''; };
+  set('id', m.id);
+  set('name', m.name);
+  set('role', m.role);
+  f.elements['role_type'].value = m.role_type || 'peneliti';
+  set('institution', m.institution);
+  set('department', m.department);
+  set('bio', m.bio);
+  set('expertise', Array.isArray(m.expertise) ? m.expertise.join(', ') : (m.expertise||''));
+  set('email', m.email);
+  set('sinta_id', m.sinta_id);
+  set('orcid', m.orcid);
+  set('order', m.order);
+  document.getElementById('team-modal').classList.add('open');
+}
+
+async function saveMember(e) {
+  e.preventDefault();
+  const f   = e.target;
+  const get = n => f.elements[n]?.value ?? '';
+  const rawExp = get('expertise');
+  const member = {
+    id:          get('id').trim().replace(/\s+/g,'-').toLowerCase(),
+    name:        get('name').trim(),
+    role:        get('role').trim(),
+    role_type:   get('role_type'),
+    institution: get('institution').trim(),
+    department:  get('department').trim(),
+    bio:         get('bio').trim(),
+    expertise:   rawExp ? rawExp.split(',').map(s=>s.trim()).filter(Boolean) : [],
+    email:       get('email').trim(),
+    sinta_id:    get('sinta_id').trim(),
+    orcid:       get('orcid').trim(),
+    order:       parseInt(get('order')) || 99,
+    photo:       state.team.find(t=>t.id===(state.editingMemberId||get('id')))?.photo || '',
+  };
+
+  const isEdit = !!state.editingMemberId;
+  const url    = isEdit ? `/api/team/${state.editingMemberId}` : '/api/team';
+  const method = isEdit ? 'PUT' : 'POST';
+  const res    = await apiFetch(url, { method, body: JSON.stringify(member) });
+  const json   = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+
+  // Refresh
+  const teamRes = await apiFetch('/api/team');
+  const teamJson = await teamRes.json();
+  state.team = (teamJson.data||[]).sort((a,b)=>(a.order||99)-(b.order||99));
+  closeModal('team-modal');
+  toast(isEdit ? 'Profil diupdate ✓' : 'Anggota ditambahkan ✓', 'success');
+  renderTeamPage(document.getElementById('main-content'));
+}
+
+async function deleteMember(id) {
+  const m = state.team.find(t => t.id === id);
+  if (!confirm(`Hapus "${m?.name || id}" dari tim?`)) return;
+  const res  = await apiFetch(`/api/team/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  state.team = state.team.filter(t => t.id !== id);
+  toast('Anggota dihapus ✓', 'success');
+  renderTeamPage(document.getElementById('main-content'));
+}
+
+async function uploadPhoto(memberId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 3*1024*1024) { toast('Foto maksimal 3MB', 'error'); return; }
+  toast('Mengupload foto...', 'info');
+
+  const res = await fetch(`/api/team/${memberId}/photo`, {
+    method: 'POST',
+    headers: { 'Content-Type': file.type, Authorization: 'Bearer ' + state.token },
+    body: file,
+  });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+
+  // Update state dan tampilkan foto baru
+  const idx = state.team.findIndex(t => t.id === memberId);
+  if (idx >= 0) state.team[idx].photo = json.photo + '?t=' + Date.now();
+
+  // Update gambar di card langsung tanpa reload halaman
+  const wrap = document.getElementById(`photo-wrap-${memberId}`);
+  if (wrap) {
+    let img = wrap.querySelector('img');
+    if (!img) { img = document.createElement('img'); img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:10px'; wrap.prepend(img); }
+    img.src = json.photo + '?t=' + Date.now();
+    img.style.display = '';
+    const fb = document.getElementById(`photo-fallback-${memberId}`);
+    if (fb) fb.style.display = 'none';
+  }
+  toast('Foto berhasil diupload ✓', 'success');
+}
+
+// ── Boot ─────────────────────────────────────────────
+checkAuth();
+</script>
+</body>
+</html>
