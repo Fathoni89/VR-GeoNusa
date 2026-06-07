@@ -6,6 +6,7 @@ const cors     = require('cors');
 const crypto   = require('crypto');
 const fs       = require('fs');
 const path     = require('path');
+const TEAM_FILE = path.join(__dirname, 'data', 'team.json');
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
@@ -384,6 +385,104 @@ app.delete('/api/scenes/:id/objects/:objId', requireAuth, (req, res) => {
     return res.status(404).json({ success: false, message: 'Objek tidak ditemukan' });
   writeScene(req.params.id, data);
   res.json({ success: true, message: `Objek "${req.params.objId}" berhasil dihapus` });
+});
+
+// ══════════════════════════════════════════════════════
+// REST API — TIM PENELITI
+// ══════════════════════════════════════════════════════
+
+function readTeam() {
+  if (!fs.existsSync(TEAM_FILE)) return [];
+  return JSON.parse(fs.readFileSync(TEAM_FILE, 'utf8'));
+}
+function writeTeam(data) {
+  fs.writeFileSync(TEAM_FILE, JSON.stringify(data, null, 2), 'utf8');
+  // Sync ke public/data/ untuk GitHub Pages
+  const pubFile = path.join(PUBLIC_DIR, 'data', 'team.json');
+  fs.writeFileSync(pubFile, JSON.stringify(data, null, 2), 'utf8');
+}
+
+// GET /api/team
+app.get('/api/team', (req, res) => {
+  res.json({ success: true, data: readTeam() });
+});
+
+// POST /api/team — tambah anggota
+app.post('/api/team', requireAuth, (req, res) => {
+  const team = readTeam();
+  const member = req.body;
+  if (!member.id || !member.name)
+    return res.status(400).json({ success: false, message: 'id dan name wajib diisi' });
+  if (team.find(m => m.id === member.id))
+    return res.status(409).json({ success: false, message: `ID "${member.id}" sudah ada` });
+  member.order = member.order ?? (team.length + 1);
+  team.push(member);
+  writeTeam(team);
+  res.status(201).json({ success: true, data: member });
+});
+
+// PUT /api/team/:id — update anggota
+app.put('/api/team/:id', requireAuth, (req, res) => {
+  const team = readTeam();
+  const idx = team.findIndex(m => m.id === req.params.id);
+  if (idx < 0) return res.status(404).json({ success: false, message: 'Anggota tidak ditemukan' });
+  team[idx] = { ...team[idx], ...req.body, id: req.params.id };
+  writeTeam(team);
+  res.json({ success: true, data: team[idx] });
+});
+
+// DELETE /api/team/:id
+app.delete('/api/team/:id', requireAuth, (req, res) => {
+  const team = readTeam();
+  const before = team.length;
+  const filtered = team.filter(m => m.id !== req.params.id);
+  if (filtered.length === before)
+    return res.status(404).json({ success: false, message: 'Anggota tidak ditemukan' });
+  writeTeam(filtered);
+  res.json({ success: true, message: `Anggota "${req.params.id}" dihapus` });
+});
+
+// PATCH /api/team/reorder — ubah urutan
+app.patch('/api/team/reorder', requireAuth, (req, res) => {
+  const { order } = req.body;
+  if (!Array.isArray(order)) return res.status(400).json({ success: false, message: 'Kirim array "order"' });
+  const team = readTeam();
+  team.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  team.forEach((m, i) => m.order = i + 1);
+  writeTeam(team);
+  res.json({ success: true, data: team });
+});
+
+// POST /api/team/:id/photo — upload foto anggota (multipart, max 2MB)
+app.post('/api/team/:id/photo', requireAuth, (req, res) => {
+  const team = readTeam();
+  const member = team.find(m => m.id === req.params.id);
+  if (!member) return res.status(404).json({ success: false, message: 'Anggota tidak ditemukan' });
+
+  const chunks = [];
+  req.on('data', chunk => chunks.push(chunk));
+  req.on('end', () => {
+    try {
+      const buf = Buffer.concat(chunks);
+      if (buf.length > 3 * 1024 * 1024)
+        return res.status(413).json({ success: false, message: 'Foto maksimal 3MB' });
+
+      const ct = req.headers['content-type'] || '';
+      const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : 'jpg';
+      const filename = `${req.params.id}.${ext}`;
+      const teamImgDir = path.join(PUBLIC_DIR, 'assets', 'images', 'team');
+      if (!fs.existsSync(teamImgDir)) fs.mkdirSync(teamImgDir, { recursive: true });
+      fs.writeFileSync(path.join(teamImgDir, filename), buf);
+
+      const photoPath = `/assets/images/team/${filename}`;
+      const idx = team.findIndex(m => m.id === req.params.id);
+      team[idx].photo = photoPath;
+      writeTeam(team);
+      res.json({ success: true, photo: photoPath });
+    } catch(e) {
+      res.status(500).json({ success: false, message: e.message });
+    }
+  });
 });
 
 // ── Health check ─────────────────────────────────────

@@ -467,20 +467,39 @@
     .team-card {
       background: var(--stone-700);
       border: 1px solid var(--border);
-      border-radius: 8px; padding: 14px 16px;
-      display: flex; gap: 12px; align-items: flex-start;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: border-color .2s, transform .2s;
     }
-    .team-avatar {
-      width: 38px; height: 38px; flex-shrink: 0;
+    .team-card:hover { border-color: var(--gold-border); transform: translateY(-2px); }
+    .team-photo {
+      width: 100%; aspect-ratio: 1/1;
       background: var(--stone-600);
-      border: 1px solid var(--gold-border);
-      border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
-      font-size: .9em;
+      overflow: hidden; flex-shrink: 0;
     }
-    .team-name { font-weight: 700; font-size: .85rem; color: var(--stone-200); margin-bottom: 2px; }
+    .team-photo img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+    }
+    .team-photo .team-avatar-fb {
+      font-size: 2.5em; color: var(--stone-500);
+    }
+    .team-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .team-name { font-weight: 700; font-size: .88rem; color: var(--stone-200); }
     .team-role { color: var(--gold); font-size: .72rem; font-weight: 700; letter-spacing: .3px; }
-    .team-inst { color: var(--stone-500); font-size: .72rem; margin-top: 2px; }
+    .team-inst { color: var(--stone-500); font-size: .72rem; }
+    .team-bio  { color: var(--stone-400); font-size: .75rem; line-height: 1.6; margin-top: 4px; }
+    .team-expertise { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .team-tag {
+      background: var(--gold-dim); border: 1px solid var(--gold-border);
+      color: var(--gold); border-radius: 3px; padding: 1px 6px;
+      font-size: .68rem; font-weight: 600;
+    }
+    .team-links { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .team-links a { color: var(--stone-500); font-size: .72rem; text-decoration: none; }
+    .team-links a:hover { color: var(--gold-light); }
 
     /* ── FOOTER ──────────────────────────────── */
     footer {
@@ -798,63 +817,8 @@
         Prototype Tahun 1 — Platform WebXR.
       </div>
     </div>
-    <div class="team-grid">
-      <div class="team-card">
-        <div class="team-avatar">👩‍🔬</div>
-        <div>
-          <div class="team-name">Fitria Sulistyowati</div>
-          <div class="team-role">Ketua Pengusul</div>
-          <div class="team-inst">UST</div>
-        </div>
-      </div>
-      <div class="team-card">
-        <div class="team-avatar">👩‍🏫</div>
-        <div>
-          <div class="team-name">Betty Kusumaningrum</div>
-          <div class="team-role">Anggota Peneliti</div>
-          <div class="team-inst">UST</div>
-        </div>
-      </div>
-      <div class="team-card">
-        <div class="team-avatar">👨‍💻</div>
-        <div>
-          <div class="team-name">Fathoni Mahardika</div>
-          <div class="team-role">Anggota — Informatika</div>
-          <div class="team-inst">Universitas Sebelas April</div>
-        </div>
-      </div>
-      <div class="team-card">
-        <div class="team-avatar">👨‍🎓</div>
-        <div>
-          <div class="team-name">Ahmad Taupik Paisal</div>
-          <div class="team-role">Mahasiswa Informatika</div>
-          <div class="team-inst">Universitas Sebelas April</div>
-        </div>
-      </div>
-      <div class="team-card">
-        <div class="team-avatar">👨‍🎓</div>
-        <div>
-          <div class="team-name">Moch. Sugih Nugraha</div>
-          <div class="team-role">Mahasiswa Informatika</div>
-          <div class="team-inst">Universitas Sebelas April</div>
-        </div>
-      </div>
-      <div class="team-card">
-        <div class="team-avatar">👩‍🎓</div>
-        <div>
-          <div class="team-name">Elisa Silvi Ardita</div>
-          <div class="team-role">Mahasiswa Pend. Matematika</div>
-          <div class="team-inst">UST</div>
-        </div>
-      </div>
-      <div class="team-card">
-        <div class="team-avatar">👩‍🎓</div>
-        <div>
-          <div class="team-name">Farah Luqen Nur Aini</div>
-          <div class="team-role">Mahasiswa Pend. Matematika</div>
-          <div class="team-inst">UST</div>
-        </div>
-      </div>
+    <div id="team-grid" class="team-grid">
+      <div style="color:var(--stone-500);font-size:.85rem;grid-column:1/-1">Memuat data tim…</div>
     </div>
   </div>
 </section>
@@ -901,7 +865,7 @@ window.addEventListener('scroll', () => {
 // Live stats dari API
 async function loadStats() {
   try {
-    const res  = await fetch('api/scenes');
+    const res = await fetch('api/scenes');
     if (!res.ok) return;
     const { data } = await res.json();
     const total = data.reduce((s,sc) => s + (sc.obj_count||0), 0);
@@ -909,7 +873,60 @@ async function loadStats() {
     document.getElementById('stat-objects').textContent = total;
   } catch(_) {}
 }
+
+// Load tim peneliti dari API/JSON
+async function loadTeam() {
+  const grid = document.getElementById('team-grid');
+  if (!grid) return;
+  try {
+    // Coba API backend dulu, fallback ke JSON statis
+    let members = [];
+    for (const url of ['api/team', 'data/team.json']) {
+      try {
+        const res  = await fetch(url);
+        const json = await res.json();
+        members = json.data ?? json;
+        if (Array.isArray(members) && members.length) break;
+      } catch(_) {}
+    }
+    if (!members.length) { grid.innerHTML = ''; return; }
+    members.sort((a,b) => (a.order||99)-(b.order||99));
+
+    const makeCard = m => {
+      const expertise = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(s=>s.trim()).filter(Boolean)).slice(0,3);
+      const links = [
+        m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${m.sinta_id}" target="_blank">SINTA ↗</a>` : '',
+        m.orcid    ? `<a href="https://orcid.org/${m.orcid}" target="_blank">ORCID ↗</a>` : '',
+        m.email    ? `<a href="mailto:${m.email}">✉</a>` : '',
+      ].filter(Boolean);
+      const fallback = m.role_type === 'mahasiswa' ? '👨‍🎓' : '👩‍🔬';
+      return `
+        <div class="team-card">
+          <div class="team-photo">
+            ${m.photo
+              ? `<img src="${m.photo}" alt="${m.name}" loading="lazy"
+                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+              : ''}
+            <div class="team-avatar-fb" style="${m.photo?'display:none':''}">${fallback}</div>
+          </div>
+          <div class="team-body">
+            <div class="team-name">${m.name}</div>
+            <div class="team-role">${m.role}</div>
+            <div class="team-inst">${m.institution}</div>
+            ${m.bio ? `<div class="team-bio">${m.bio.slice(0,100)}${m.bio.length>100?'…':''}</div>` : ''}
+            ${expertise.length ? `<div class="team-expertise">${expertise.map(e=>`<span class="team-tag">${e}</span>`).join('')}</div>` : ''}
+            ${links.length ? `<div class="team-links">${links.join('')}</div>` : ''}
+          </div>
+        </div>`;
+    };
+    grid.innerHTML = members.map(makeCard).join('');
+  } catch(e) {
+    grid.innerHTML = '<div style="color:var(--stone-500);font-size:.85rem;grid-column:1/-1">Gagal memuat data tim.</div>';
+  }
+}
+
 loadStats();
+loadTeam();
 </script>
 </body>
 </html>

@@ -271,6 +271,10 @@
     <div class="nav-item" onclick="showPage('export')">
       <span class="icon">📤</span> Export / Backup
     </div>
+    <div class="section-label" style="margin-top:8px">Konten Lain</div>
+    <div class="nav-item" onclick="showPage('team')">
+      <span class="icon">👥</span> Tim Peneliti
+    </div>
     <div class="section-label" style="margin-top:8px">Akun</div>
     <div class="nav-item" onclick="showPage('settings')">
       <span class="icon">⚙️</span> Pengaturan
@@ -412,6 +416,80 @@
   </div>
 </div>
 
+<!-- ══ Modal Tambah/Edit Anggota Tim ══ -->
+<div class="modal-overlay" id="team-modal">
+  <div class="modal" style="width:700px">
+    <button class="close-btn" onclick="closeModal('team-modal')">×</button>
+    <h2 id="team-modal-title">Tambah Anggota Tim</h2>
+    <form id="team-form" onsubmit="saveMember(event)">
+      <div class="form-grid">
+        <div class="form-section">Identitas</div>
+        <div class="form-group">
+          <label>ID Unik *</label>
+          <input name="id" placeholder="nama-lengkap-tanpa-spasi" required>
+          <small>Contoh: fitria-sulistyowati</small>
+        </div>
+        <div class="form-group">
+          <label>Nama Lengkap *</label>
+          <input name="name" placeholder="Dr. Nama Lengkap, M.Pd." required>
+        </div>
+        <div class="form-group">
+          <label>Jabatan / Peran *</label>
+          <input name="role" placeholder="Ketua Pengusul" required>
+        </div>
+        <div class="form-group">
+          <label>Tipe</label>
+          <select name="role_type">
+            <option value="peneliti">Peneliti / Dosen</option>
+            <option value="mahasiswa">Mahasiswa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Institusi *</label>
+          <input name="institution" placeholder="Universitas Sarjanawiyata Tamansiswa">
+        </div>
+        <div class="form-group">
+          <label>Departemen / Prodi</label>
+          <input name="department" placeholder="Pendidikan Matematika">
+        </div>
+        <div class="form-group full">
+          <label>Bio / Deskripsi</label>
+          <textarea name="bio" placeholder="Deskripsi singkat peneliti, keahlian, dan kontribusi dalam proyek..." style="min-height:80px"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Keahlian (pisah dengan koma)</label>
+          <input name="expertise" placeholder="WebXR, A-Frame, Pengembangan Web">
+        </div>
+        <hr class="form-divider">
+        <div class="form-section">Identitas Akademik</div>
+        <div class="form-group">
+          <label>Email</label>
+          <input name="email" type="email" placeholder="email@institusi.ac.id">
+        </div>
+        <div class="form-group">
+          <label>SINTA ID</label>
+          <input name="sinta_id" placeholder="6789012">
+        </div>
+        <div class="form-group full">
+          <label>ORCID</label>
+          <input name="orcid" placeholder="0000-0000-0000-0000">
+        </div>
+        <hr class="form-divider">
+        <div class="form-section">Urutan Tampil</div>
+        <div class="form-group">
+          <label>Nomor Urut</label>
+          <input name="order" type="number" min="1" value="1">
+          <small>Angka lebih kecil tampil lebih dulu</small>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('team-modal')">Batal</button>
+        <button type="submit" class="btn btn-primary">💾 Simpan Anggota</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -426,7 +504,9 @@ let state = {
   currentScene: localStorage.getItem('vgn_scene') || 'borobudur',
   scenes: {},
   sceneList: [],
+  team: [],
   editingObjId: null,
+  editingMemberId: null,
   currentPage: 'objects',
 };
 
@@ -488,11 +568,16 @@ async function showApp() {
 // ══════════════════════════════════════════════════════
 async function loadAllScenes() {
   try {
-    const res  = await apiFetch('/api/scenes');
-    const json = await res.json();
-    state.sceneList = json.data || [];
+    const [scenesRes, teamRes] = await Promise.all([
+      apiFetch('/api/scenes'),
+      apiFetch('/api/team'),
+    ]);
+    const scenesJson = await scenesRes.json();
+    const teamJson   = await teamRes.json();
+    state.sceneList = scenesJson.data || [];
+    state.team      = (teamJson.data || []).sort((a,b) => (a.order||99)-(b.order||99));
     await Promise.all(state.sceneList.map(s => loadSceneDetail(s.scene_id)));
-  } catch(e) { toast('Gagal load scenes: '+e.message, 'error'); }
+  } catch(e) { toast('Gagal load data: '+e.message, 'error'); }
 }
 
 async function loadSceneDetail(id) {
@@ -518,7 +603,7 @@ function showPage(page) {
     if (el.textContent.trim().includes(map[page])) el.classList.add('active');
   });
   const main = document.getElementById('main-content');
-  const pages = { objects: renderObjectsPage, scenes: renderScenesPage, geometri: renderGeometriPage, export: renderExportPage, settings: renderSettingsPage };
+  const pages = { objects: renderObjectsPage, scenes: renderScenesPage, geometri: renderGeometriPage, export: renderExportPage, settings: renderSettingsPage, team: renderTeamPage };
   if (pages[page]) pages[page](main);
 }
 
@@ -830,6 +915,195 @@ function toast(msg, type='success') {
   const el=document.getElementById('toast');
   el.textContent=msg; el.className='show '+type;
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.className='',3500);
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: TIM PENELITI
+// ══════════════════════════════════════════════════════
+function renderTeamPage(main) {
+  const researchers = state.team.filter(m => m.role_type === 'peneliti');
+  const students    = state.team.filter(m => m.role_type === 'mahasiswa');
+
+  const memberCard = (m) => {
+    const photoHtml = m.photo
+      ? `<img src="${m.photo}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : '';
+    const fallbackEmoji = m.role_type === 'mahasiswa' ? '👨‍🎓' : '👩‍🔬';
+    const expertiseTags = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(e=>e.trim()).filter(Boolean))
+      .map(e => `<span style="background:rgba(200,150,62,.1);border:1px solid rgba(200,150,62,.2);color:#C8963E;border-radius:3px;padding:1px 7px;font-size:10px;font-weight:600">${e}</span>`).join('');
+    const links = [
+      m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${m.sinta_id}" target="_blank" style="color:var(--accent);font-size:11px">SINTA ↗</a>` : '',
+      m.orcid    ? `<a href="https://orcid.org/${m.orcid}" target="_blank" style="color:var(--accent);font-size:11px">ORCID ↗</a>` : '',
+      m.email    ? `<a href="mailto:${m.email}" style="color:var(--muted);font-size:11px">✉ Email</a>` : '',
+    ].filter(Boolean).join('<span style="color:var(--border);margin:0 4px">|</span>');
+
+    return `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
+        <!-- Foto -->
+        <div style="height:160px;background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center" id="photo-wrap-${m.id}">
+          ${photoHtml}
+          <div style="${m.photo?'display:none;':''}width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3em;color:var(--muted)" id="photo-fallback-${m.id}">${fallbackEmoji}</div>
+          <!-- Upload button overlay -->
+          <label for="upload-${m.id}" title="Ganti foto"
+            style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.15);
+                   border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;z-index:2">
+            📷 Ganti Foto
+          </label>
+          <input type="file" id="upload-${m.id}" accept="image/jpeg,image/png,image/webp"
+            style="display:none" onchange="uploadPhoto('${m.id}', this)">
+        </div>
+        <!-- Info -->
+        <div style="padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:6px">
+          <div style="font-weight:800;font-size:.95rem;color:var(--text)">${m.name}</div>
+          <div style="color:var(--gold);font-size:.75rem;font-weight:700;letter-spacing:.3px">${m.role}</div>
+          <div style="color:var(--muted);font-size:.75rem">${m.institution}</div>
+          ${m.bio ? `<div style="color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:4px;flex:1">${m.bio.slice(0,120)}${m.bio.length>120?'…':''}</div>` : ''}
+          ${expertiseTags ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${expertiseTags}</div>` : ''}
+          ${links ? `<div style="display:flex;gap:0;margin-top:6px;align-items:center">${links}</div>` : ''}
+          <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openEditMemberModal('${m.id}')">✏️ Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')">🗑</button>
+          </div>
+        </div>
+      </div>`;
+  };
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Tim Peneliti</h1><div class="sub">Kelola profil, foto, dan informasi anggota tim</div></div>
+      <button class="btn btn-primary" onclick="openAddMemberModal()">+ Tambah Anggota</button>
+    </div>
+
+    <div style="background:rgba(200,150,62,.06);border:1px solid rgba(200,150,62,.15);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--muted)">
+      💡 <strong style="color:var(--gold)">Cara upload foto:</strong>
+      Klik tombol <strong>📷 Ganti Foto</strong> di kartu anggota. Format JPG/PNG/WebP, maksimal 3MB.
+      Foto langsung tampil di halaman portal.
+    </div>
+
+    <!-- Peneliti -->
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">
+      Peneliti & Dosen (${researchers.length})
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:28px">
+      ${researchers.map(memberCard).join('') || '<div style="color:var(--muted);padding:20px">Belum ada peneliti.</div>'}
+    </div>
+
+    <!-- Mahasiswa -->
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">
+      Mahasiswa (${students.length})
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
+      ${students.map(memberCard).join('') || '<div style="color:var(--muted);padding:20px">Belum ada mahasiswa.</div>'}
+    </div>`;
+}
+
+function openAddMemberModal() {
+  state.editingMemberId = null;
+  document.getElementById('team-modal-title').textContent = 'Tambah Anggota Tim';
+  document.getElementById('team-form').reset();
+  document.getElementById('team-modal').classList.add('open');
+}
+
+function openEditMemberModal(id) {
+  const m = state.team.find(t => t.id === id);
+  if (!m) return;
+  state.editingMemberId = id;
+  document.getElementById('team-modal-title').textContent = 'Edit: ' + m.name;
+  const f = document.getElementById('team-form');
+  const set = (n,v) => { const e=f.elements[n]; if(e) e.value = v??''; };
+  set('id', m.id);
+  set('name', m.name);
+  set('role', m.role);
+  f.elements['role_type'].value = m.role_type || 'peneliti';
+  set('institution', m.institution);
+  set('department', m.department);
+  set('bio', m.bio);
+  set('expertise', Array.isArray(m.expertise) ? m.expertise.join(', ') : (m.expertise||''));
+  set('email', m.email);
+  set('sinta_id', m.sinta_id);
+  set('orcid', m.orcid);
+  set('order', m.order);
+  document.getElementById('team-modal').classList.add('open');
+}
+
+async function saveMember(e) {
+  e.preventDefault();
+  const f   = e.target;
+  const get = n => f.elements[n]?.value ?? '';
+  const rawExp = get('expertise');
+  const member = {
+    id:          get('id').trim().replace(/\s+/g,'-').toLowerCase(),
+    name:        get('name').trim(),
+    role:        get('role').trim(),
+    role_type:   get('role_type'),
+    institution: get('institution').trim(),
+    department:  get('department').trim(),
+    bio:         get('bio').trim(),
+    expertise:   rawExp ? rawExp.split(',').map(s=>s.trim()).filter(Boolean) : [],
+    email:       get('email').trim(),
+    sinta_id:    get('sinta_id').trim(),
+    orcid:       get('orcid').trim(),
+    order:       parseInt(get('order')) || 99,
+    photo:       state.team.find(t=>t.id===(state.editingMemberId||get('id')))?.photo || '',
+  };
+
+  const isEdit = !!state.editingMemberId;
+  const url    = isEdit ? `/api/team/${state.editingMemberId}` : '/api/team';
+  const method = isEdit ? 'PUT' : 'POST';
+  const res    = await apiFetch(url, { method, body: JSON.stringify(member) });
+  const json   = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+
+  // Refresh
+  const teamRes = await apiFetch('/api/team');
+  const teamJson = await teamRes.json();
+  state.team = (teamJson.data||[]).sort((a,b)=>(a.order||99)-(b.order||99));
+  closeModal('team-modal');
+  toast(isEdit ? 'Profil diupdate ✓' : 'Anggota ditambahkan ✓', 'success');
+  renderTeamPage(document.getElementById('main-content'));
+}
+
+async function deleteMember(id) {
+  const m = state.team.find(t => t.id === id);
+  if (!confirm(`Hapus "${m?.name || id}" dari tim?`)) return;
+  const res  = await apiFetch(`/api/team/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  state.team = state.team.filter(t => t.id !== id);
+  toast('Anggota dihapus ✓', 'success');
+  renderTeamPage(document.getElementById('main-content'));
+}
+
+async function uploadPhoto(memberId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 3*1024*1024) { toast('Foto maksimal 3MB', 'error'); return; }
+  toast('Mengupload foto...', 'info');
+
+  const res = await fetch(`/api/team/${memberId}/photo`, {
+    method: 'POST',
+    headers: { 'Content-Type': file.type, Authorization: 'Bearer ' + state.token },
+    body: file,
+  });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+
+  // Update state dan tampilkan foto baru
+  const idx = state.team.findIndex(t => t.id === memberId);
+  if (idx >= 0) state.team[idx].photo = json.photo + '?t=' + Date.now();
+
+  // Update gambar di card langsung tanpa reload halaman
+  const wrap = document.getElementById(`photo-wrap-${memberId}`);
+  if (wrap) {
+    let img = wrap.querySelector('img');
+    if (!img) { img = document.createElement('img'); img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:10px'; wrap.prepend(img); }
+    img.src = json.photo + '?t=' + Date.now();
+    img.style.display = '';
+    const fb = document.getElementById(`photo-fallback-${memberId}`);
+    if (fb) fb.style.display = 'none';
+  }
+  toast('Foto berhasil diupload ✓', 'success');
 }
 
 // ── Boot ─────────────────────────────────────────────
