@@ -2,7 +2,7 @@
 
 ## Prasyarat
 
-Pastikan **Node.js** sudah terinstal. Cek dengan membuka Terminal dan ketik:
+Pastikan **Node.js** dan **MySQL/MariaDB** sudah terinstal. Cek Node.js dengan membuka Terminal dan ketik:
 
 ```
 node --version
@@ -22,9 +22,21 @@ Di Mac: tekan **Cmd + Spasi**, ketik `Terminal`, lalu tekan Enter.
 
 ```bash
 cd ~/VR-GeoNusa
+npm install
 ```
 
-### 3. Jalankan Server
+### 3. Siapkan Database
+
+Buat database MySQL/MariaDB kosong beserta user-nya, lalu salin `.env.example` menjadi `.env` dan isi kredensialnya:
+
+```bash
+cp .env.example .env
+# edit .env — isi DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+```
+
+Tabel dan akun `admin` default dibuat **otomatis** saat server pertama kali jalan — tidak perlu import file `.sql` manual (kecuali untuk deploy produksi, lihat bagian bawah).
+
+### 4. Jalankan Server
 
 ```bash
 node server.js
@@ -33,13 +45,14 @@ node server.js
 Jika berhasil, akan muncul pesan seperti ini:
 
 ```
-🏛️  VR-GeoNusa Server v1.1
+🏛️  VR-GeoNusa Server v2.0 (MySQL + multi-sekolah + ML server-side)
    Portal   → http://localhost:4000
    Admin    → http://localhost:4000/admin
    API      → http://localhost:4000/api/scenes
+   DB       → nama_database@localhost
 ```
 
-### 4. Buka di Browser
+### 5. Buka di Browser
 
 | Halaman       | Alamat                          |
 |---------------|---------------------------------|
@@ -80,24 +93,41 @@ node server.js
 
 Pastikan URL-nya `http://` (bukan `https://`) dan port-nya `4000`.
 
+**Error koneksi database (`ECONNREFUSED` / `ER_ACCESS_DENIED_ERROR`)**
+
+Pastikan MySQL/MariaDB sedang jalan dan kredensial di `.env` (`DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) sudah benar dan database-nya sudah dibuat (boleh kosong — tabel dibuat otomatis).
+
 ---
 
 ## Deploy ke Rumahweb Medium (Hosting Produksi)
 
-Backend project ini (Express + SQLite — login admin, CRUD scene, log sesi siswa, kuis, laporan guru) butuh Node.js yang **jalan terus**, bukan cuma file statis. Paket **Rumahweb Unlimited S tidak mendukung ini** — hanya paket **Medium ke atas** yang menyediakan akses SSH + Node.js. Langkah umum setelah akun Medium aktif:
+Backend project ini (Express + MySQL/MariaDB — login multi-sekolah, CRUD scene, tur 360°, ML server-side, log sesi siswa, kuis, laporan guru) butuh Node.js yang **jalan terus** dan database MySQL, bukan cuma file statis. Paket **Rumahweb Unlimited S tidak mendukung ini** — hanya paket **Medium ke atas** yang menyediakan akses SSH + Node.js + MySQL. Langkah umum setelah akun Medium aktif:
 
-### 1. Upload kode ke server
+### 1. Buat database MySQL di cPanel
+
+Buat database + user MySQL lewat panel Rumahweb (MySQL Databases), lalu catat nama database, username, dan password-nya — dipakai di langkah 4.
+
+### 2. Upload kode ke server
 
 Lewat SSH (`git clone` repo ini) atau upload manual via File Manager/FTP. **Yang tidak perlu ikut diupload:** `MLTraining/venv/` dan `node_modules/` (besar, dan dibuat ulang di server), juga `Dataset/geometry_wbn/train|val|test/` (dataset training mentah, bukan bagian aplikasi yang jalan).
 
-### 2. Install dependency di server
+### 3. Install dependency di server
 
 ```bash
 cd vr-geonusa
 npm install --omit=dev
 ```
 
-### 3. Jalankan sebagai proses yang tidak mati
+### 4. Konfigurasi `.env`
+
+```bash
+cp .env.example .env
+# edit .env — isi DB_HOST, DB_USER, DB_PASSWORD, DB_NAME sesuai database yang dibuat di langkah 1
+```
+
+Tabel dibuat otomatis saat server pertama kali jalan (termasuk akun `super_admin` default `admin` / `geonusa2026` — **wajib ganti password-nya setelah login pertama**).
+
+### 5. Jalankan sebagai proses yang tidak mati
 
 Server biasa (`node server.js`) akan mati begitu koneksi SSH ditutup. Pakai **PM2** supaya tetap jalan di background dan otomatis restart kalau server reboot:
 
@@ -108,16 +138,16 @@ pm2 save
 pm2 startup   # ikuti instruksi yang muncul, sekali saja
 ```
 
-### 4. Sesuaikan port
+### 6. Sesuaikan port
 
 Rumahweb biasanya menetapkan port tertentu untuk aplikasi Node (lihat panel "Setup Node.js App" di cPanel Rumahweb). `server.js` sudah membaca `process.env.PORT`, jadi tinggal set env var itu sesuai yang diberikan panel — tidak perlu ubah kode.
 
-### 5. Data yang harus tetap ada di server (jangan ikut dihapus saat update kode)
+### 7. Yang harus dijaga saat update/deploy ulang
 
-- `data/geonusa.db` — database sesi siswa/kuis. **Backup berkala**, dan jangan pernah timpa dengan file kosong saat deploy ulang.
-- `config/admin.json` — kredensial admin (dibuat otomatis saat pertama kali `server.js` jalan kalau belum ada).
+- **Database MySQL** — bukan file lokal, jadi aman dari proses upload ulang kode. Tetap **backup berkala** (`mysqldump`) sebelum perubahan besar.
+- `.env` dan `config/jwt-secret.txt` — jangan pernah ikut ter-upload dari repo (sudah di-gitignore), dan jangan sampai tertimpa/terhapus saat deploy ulang — kalau `jwt-secret.txt` berubah, semua sesi login yang aktif akan otomatis logout.
 
-### 6. Asset yang perlu ikut ter-upload
+### 8. Asset yang perlu ikut ter-upload
 
 `public/assets/panorama/` (~13MB) dan `public/ml-model/` (~9MB) — keduanya file statis, tidak butuh Node untuk melayani, tapi harus ada di `public/` supaya tur 360° dan prediksi ML jalan.
 

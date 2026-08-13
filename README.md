@@ -20,107 +20,100 @@ Hibah Penelitian Fundamental — BIMA Kemenristekdikti 2026–2027
 
 ---
 
-## Prototype WebXR (Tahun 1)
+## Tentang Proyek
 
-**Demo langsung:** Buka `index.html` di browser atau akses via GitHub Pages.
+VR-GeoNusa adalah aplikasi web (Node.js + MySQL, bukan lagi situs statis) untuk membantu siswa SMP memahami geometri bangun ruang lewat eksplorasi Virtual Reality berbasis web (WebXR) di dua situs warisan budaya:
 
-### Cara Menjalankan Lokal
+- **Candi Borobudur** — tur 360° dari **foto panorama asli** (dokumentasi RICOH THETA V, 2018 — 12 area, 60 titik pandang), dengan identifikasi elemen geometri lewat Machine Learning.
+- **Candi Prambanan** — scene WebXR dengan objek geometri primitif interaktif.
+
+Di setiap titik, siswa bisa mengidentifikasi bentuk geometri elemen candi (stupa → setengah bola, teras → balok, pilar → tabung, dsb), melihat rumus & konteks budayanya, lalu menjawab kuis pemahaman. Sistem mendukung **login siswa sungguhan** (bukan cuma nama bebas), **multi-sekolah**, dan **dashboard guru** untuk memantau aktivitas dan hasil belajar kelasnya — dirancang untuk uji coba pilot ke beberapa sekolah dengan ratusan siswa.
+
+## Fitur Utama
+
+- **Tur 360° Borobudur** — navigasi node-to-node dari foto panorama asli, identifikasi geometri per titik, kuis pemahaman, kontrol keyboard/klik.
+- **Scene Prambanan** — eksplorasi WebXR objek geometri primitif (A-Frame), kuis pemahaman.
+- **Login siswa sungguhan** — nomor induk + password per sekolah (dibuat guru, bukan pendaftaran bebas), atau mode Tamu untuk demo publik tanpa akun. Siswa yang login bisa melihat kembali riwayat sesi & akurasi kuisnya sendiri ("Hasil Belajar Saya").
+- **Machine Learning identifikasi geometri** — inferensi berjalan di server (TensorFlow.js Node, model MobileNetV2 hasil transfer learning), dengan fallback ke model yang sama berjalan di browser kalau server tidak terjangkau.
+- **Dashboard Guru** — rekap sesi eksplorasi, akurasi kuis per soal, interaksi per elemen geometri, dan **rekomendasi tindak lanjut otomatis per konsep geometri** (mis. "siswa masih kesulitan dengan konsep Tabung, disarankan contoh konkret tambahan").
+- **Multi-sekolah & multi-peran** — `super_admin` (semua sekolah), `school_admin` (kelola guru & kelas di sekolahnya sendiri), `teacher`/guru (kelasnya sendiri), semuanya diskop dan ditegakkan di server, bukan cuma disembunyikan di tampilan.
+- **Admin panel** — kelola scene & objek geometri, tur 360°, kelas & siswa (termasuk impor massal), sekolah & akun guru, laporan, ekspor CSV, dan profil tim peneliti.
+
+## Cara Menjalankan Lokal
+
+**Prasyarat:** Node.js 18+ dan MySQL/MariaDB.
 
 ```bash
-# Python 3
-python3 -m http.server 8000
-# Buka: http://localhost:8000
+git clone https://github.com/Fathoni89/VR-GeoNusa.git
+cd VR-GeoNusa
+npm install
 ```
 
-Atau double-klik `index.html` langsung di browser. Tidak perlu install apapun.
+Buat database + user MySQL, lalu salin `.env.example` menjadi `.env` dan isi kredensialnya:
 
-### Akses di Meta Quest 3
+```bash
+cp .env.example .env
+# edit .env — isi DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+```
 
-1. Aktifkan GitHub Pages: Settings → Pages → Branch: main
-2. Buka URL GitHub Pages di Meta Quest Browser
-3. Klik "Masuk Eksplorasi" → klik ikon VR goggles untuk mode penuh
+Jalankan server (skema tabel dan akun `super_admin` default dibuat otomatis saat pertama kali jalan):
 
-### Kontrol
+```bash
+node server.js
+```
 
-| Platform | Gerak | Lihat | Identifikasi |
-|---|---|---|---|
-| Desktop | WASD | Mouse drag | Arahkan cursor, tahan 1.5 detik |
-| Quest 3 | Joystick kiri | Gerak kepala | Tatap objek 1.5 detik / Trigger |
+| Halaman | Alamat |
+|---|---|
+| Portal utama | http://localhost:4000 |
+| Tur 360° Borobudur | http://localhost:4000/vr/tour-borobudur.html |
+| Admin Panel | http://localhost:4000/admin (`admin` / `geonusa2026` — ganti setelah login pertama) |
 
----
+Untuk langkah lebih detail (troubleshooting, dan panduan deploy ke hosting produksi) lihat [`CARA-MENJALANKAN.md`](CARA-MENJALANKAN.md).
 
 ## Struktur Repository
 
 ```
 VR-GeoNusa/
-├── index.html              # Scene utama: Candi Borobudur (WebXR)
-├── scenes/
-│   └── prambanan.html      # Scene: Candi Prambanan (WebXR)
-├── css/ui.css              # Styling UI overlay
-├── js/app.js               # Logika interaksi & scene management
-├── api/
-│   └── ml-placeholder.json # Placeholder respons ML (Tahun 2)
-├── assets/
-│   ├── models/             # (Tahun 2) Model GLTF/GLB fotogrametri
-│   └── textures/           # (Tahun 2) Tekstur kustom
-└── README.md
+├── server.js                 # Backend Express — auth, API, admin, ML endpoint
+├── db/
+│   └── schema.mysql.sql      # Skema database MySQL/MariaDB
+├── ml/
+│   └── predict.js            # Inferensi ML server-side (TensorFlow.js Node)
+├── ml-model/                 # Model terlatih (MobileNetV2 hasil transfer learning)
+├── MLTraining/                # Pipeline training Python (dataset, train, convert ke TF.js)
+├── public/
+│   ├── index.html            # Portal utama
+│   ├── admin/index.html      # Admin panel (SPA)
+│   ├── vr/
+│   │   ├── tour-borobudur.html   # Tur 360° Borobudur
+│   │   └── prambanan.html        # Scene Prambanan (WebXR primitif)
+│   ├── js/
+│   │   ├── tour.js           # Logika tur 360° + ML client-side + kuis
+│   │   └── app.js            # Logika scene primitif (Prambanan)
+│   ├── css/ui.css            # Styling UI overlay
+│   ├── data/                 # Data scene/tur/kuis (JSON)
+│   └── assets/panorama/      # Foto panorama 360° Borobudur
+└── data/                     # Sumber data JSON (disinkron ke public/data/)
 ```
 
----
+## Stack Teknis
 
-## Objek Interaktif
-
-### Scene Borobudur (7 objek)
-| Objek | Geometri | Confidence |
-|---|---|---|
-| Stupa Utama | Setengah Bola | 97% |
-| Teras Rupadhatu | Balok | 94% |
-| Stupa Berlubang | Tabung | 91% |
-| Pilar Gapura | Tabung | 91% |
-| Dasar Kamadhatu | Limas Segiempat | 88% |
-| Tangga Masuk | Prisma Segitiga | 87% |
-| Ornamen Puncak | Kerucut | 85% |
-
-### Scene Prambanan (6 objek)
-| Objek | Geometri | Confidence |
-|---|---|---|
-| Menara Utama | Limas Segiempat | 93% |
-| Tubuh Candi | Balok | 91% |
-| Pilar Gapura | Tabung | 90% |
-| Candi Brahma/Wisnu | Balok | 89% |
-| Lingga Yoni | Tabung | 88% |
-| Antefix/Ornamen | Kerucut | 86% |
-
----
-
-## Stack Teknis (Tahun 1 — WebXR)
-
-- **Framework:** A-Frame 1.5.0 (WebXR)
-- **Movement:** aframe-extras movement-controls
-- **Kompatibel:** Chrome, Firefox, Edge, Quest Browser, Pico Browser
-- **Ukuran:** < 100KB — tidak perlu install, tidak perlu GPU dedicated
-
-## Stack Teknis (Tahun 2 — Unity, target)
-
-- **VR Engine:** Unity 2022 LTS + Universal Render Pipeline
-- **XR SDK:** Meta XR SDK / XR Interaction Toolkit
-- **ML Framework:** PyTorch 2.x → ONNX → Unity Barracuda
-- **3D Capture:** Agisoft Metashape + LiDAR
-- **Target Device:** Meta Quest 3 / Pico 4
-
----
+- **Backend:** Node.js + Express, MySQL/MariaDB (`mysql2`), autentikasi JWT + bcrypt, rate limiting.
+- **Frontend VR:** A-Frame 1.5.0 (WebXR) — kompatibel Chrome, Firefox, Edge, Quest Browser, Pico Browser.
+- **Machine Learning:** MobileNetV2 (transfer learning, dilatih offline dengan Python/Keras), dikonversi ke TensorFlow.js — inferensi server-side (`@tensorflow/tfjs-node`) dengan fallback client-side (`tfjs`) di browser.
+- **Target deployment:** hosting shared dengan dukungan Node.js + MySQL (mis. Rumahweb paket Medium ke atas) — lihat [`CARA-MENJALANKAN.md`](CARA-MENJALANKAN.md) untuk panduan deploy.
 
 ## Roadmap
 
-| Tahap | Target | Status |
-|---|---|---|
-| Prototype WebXR Tahun 1 | Juni 2026 | ✅ Selesai |
-| Scene Prambanan | Juni 2026 | ✅ Selesai |
-| Model 3D GLTF asli | Oktober 2026 | 🔲 Planned |
-| ML Integration API | Tahun 2 | 🔲 Planned |
-| Migrasi ke Unity XR | Tahun 2 | 🔲 Planned |
-| 25 Sekolah pilot | Tahun 2 | 🔲 Planned |
+| Tahap | Status |
+|---|---|
+| Prototype WebXR (scene Borobudur & Prambanan) | ✅ Selesai |
+| Tur 360° Borobudur dari foto panorama asli + identifikasi ML | ✅ Selesai |
+| Backend multi-sekolah, login siswa sungguhan, dashboard guru | ✅ Selesai |
+| Uji coba pilot beberapa sekolah | 🔲 Berjalan |
+| Model 3D fotogrametri / GLTF asli untuk situs lain | 🔲 Planned |
+| Migrasi ke Unity XR (Tahun 2) | 🔲 Planned |
 
 ---
 
-*Platform WebXR dipilih untuk Tahun 1 karena kendala device mahasiswa dan anggaran. Lihat `Analisis_Solusi_Teknis_Prototype.md` untuk justifikasi teknis lengkap.*
+*WebXR dipilih sebagai platform utama karena kendala perangkat mahasiswa dan anggaran penelitian — tidak butuh instalasi maupun GPU khusus, bisa diakses langsung lewat browser di laptop maupun smartphone peserta pilot.*
