@@ -70,6 +70,8 @@ node server.js
 
 Untuk langkah lebih detail (troubleshooting, dan panduan deploy ke hosting produksi) lihat [`CARA-MENJALANKAN.md`](CARA-MENJALANKAN.md).
 
+Untuk panduan penggunaan lengkap dengan screenshot tiap menu (portal, tur VR, dan admin panel) lihat [`PANDUAN-PENGGUNAAN.md`](PANDUAN-PENGGUNAAN.md).
+
 ## Struktur Repository
 
 ```
