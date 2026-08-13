@@ -8,8 +8,16 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.6.2",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.23.3",
+    "sharp": "^0.35.3"
   },
   "author": "Tim VR-GeoNusa — Universitas Sebelas April & UST",
   "license": "MIT"

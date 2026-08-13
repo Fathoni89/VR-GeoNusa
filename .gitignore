@@ -38,9 +38,15 @@ desktop.ini
 /MLTraining/output/
 /MLTraining/wandb/
 /MLTraining/__pycache__/
+/MLTraining/venv/
 *.pyc
 *.pth
 *.onnx
+
+# --- Database sesi siswa (data lokal, bukan untuk di-commit) ---
+/data/geonusa.db
+/data/geonusa.db-wal
+/data/geonusa.db-shm
 
 # --- Fotogrametri Raw (terlalu besar) ---
 /RawData/
@@ -67,3 +73,4 @@ node_modules/
 
 # --- Admin credentials (JANGAN commit ke GitHub) ---
 config/admin.json
+config/jwt-secret.txt

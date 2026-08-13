@@ -1,0 +1,2383 @@
+{
+  "_comment": "VR-GeoNusa — graph tur 360° Borobudur (real photos, RICOH THETA V). Node diurutkan per nomor file dalam tiap area, area diurutkan sesuai alur fisik candi (bukan hasil GPS otomatis — GPS pada set foto ini terlalu bising untuk dipakai posisi/jarak, hanya arah kompas per-foto (direction) yang dipakai untuk orientasi lokal).",
+  "tour_id": "borobudur-360",
+  "name": "Tur 360° Candi Borobudur",
+  "source": "Tim VR-GeoNusa — dokumentasi RICOH THETA V, 2018",
+  "folder_order": [
+    "Tambahan Halaman",
+    "Halaman 1",
+    "Undag",
+    "Lorong 1",
+    "Selasar",
+    "Lorong 2",
+    "Lorong 3",
+    "Lorong 4",
+    "Teras 1",
+    "Teras 2",
+    "Teras 3",
+    "Plateu"
+  ],
+  "start_node": "tambahan-halaman-00",
+  "nodes": [
+    {
+      "id": "tambahan-halaman-00",
+      "index": 0,
+      "folder": "Tambahan Halaman",
+      "area_label": "Halaman Depan",
+      "area_desc": "Area pendekatan menuju gerbang masuk kompleks Candi Borobudur.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Tambahan Halaman/Depan Halaman -001.jpg",
+      "image": "/assets/panorama/tambahan-halaman-00.jpg",
+      "lat": -7.607961666666666,
+      "lon": 110.205055,
+      "alt": 285.36,
+      "direction": 95.64,
+      "connections": [
+        {
+          "to": "tambahan-halaman-01",
+          "label": "Maju",
+          "local_angle": 0
+        }
+      ]
+    },
+    {
+      "id": "tambahan-halaman-01",
+      "index": 1,
+      "folder": "Tambahan Halaman",
+      "area_label": "Halaman Depan",
+      "area_desc": "Area pendekatan menuju gerbang masuk kompleks Candi Borobudur.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Tambahan Halaman/Depan Halaman-006.jpg",
+      "image": "/assets/panorama/tambahan-halaman-01.jpg",
+      "lat": -7.607916666666667,
+      "lon": 110.20498666666667,
+      "alt": 286.48,
+      "direction": 77.27,
+      "connections": [
+        {
+          "to": "tambahan-halaman-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "tambahan-halaman-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ]
+    },
+    {
+      "id": "tambahan-halaman-02",
+      "index": 2,
+      "folder": "Tambahan Halaman",
+      "area_label": "Halaman Depan",
+      "area_desc": "Area pendekatan menuju gerbang masuk kompleks Candi Borobudur.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Tambahan Halaman/Depan Halaman-011.jpg",
+      "image": "/assets/panorama/tambahan-halaman-02.jpg",
+      "lat": -7.6082,
+      "lon": 110.20490333333333,
+      "alt": 329.86,
+      "direction": 105.83,
+      "connections": [
+        {
+          "to": "tambahan-halaman-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "tambahan-halaman-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ]
+    },
+    {
+      "id": "tambahan-halaman-03",
+      "index": 3,
+      "folder": "Tambahan Halaman",
+      "area_label": "Halaman Depan",
+      "area_desc": "Area pendekatan menuju gerbang masuk kompleks Candi Borobudur.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Tambahan Halaman/Depan Halaman-016.jpg",
+      "image": "/assets/panorama/tambahan-halaman-03.jpg",
+      "lat": -7.607933333333333,
+      "lon": 110.20466166666667,
+      "alt": 283.47,
+      "direction": 104.54,
+      "connections": [
+        {
+          "to": "tambahan-halaman-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "tambahan-halaman-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ]
+    },
+    {
+      "id": "tambahan-halaman-04",
+      "index": 4,
+      "folder": "Tambahan Halaman",
+      "area_label": "Halaman Depan",
+      "area_desc": "Area pendekatan menuju gerbang masuk kompleks Candi Borobudur.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Tambahan Halaman/Depan Halaman-021.jpg",
+      "image": "/assets/panorama/tambahan-halaman-04.jpg",
+      "lat": -7.6079,
+      "lon": 110.204455,
+      "alt": 284.75,
+      "direction": 83.96,
+      "connections": [
+        {
+          "to": "halaman-1-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "tambahan-halaman-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ]
+    },
+    {
+      "id": "halaman-1-00",
+      "index": 5,
+      "folder": "Halaman 1",
+      "area_label": "Halaman Candi",
+      "area_desc": "Halaman dasar candi, titik awal perjalanan naik menuju Rupadhatu.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Halaman 1/Halaman -087.jpg",
+      "image": "/assets/panorama/halaman-1-00.jpg",
+      "lat": -7.607366666666667,
+      "lon": 110.20328833333333,
+      "alt": 284.37,
+      "direction": 316.5,
+      "connections": [
+        {
+          "to": "halaman-1-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "tambahan-halaman-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Limas Segiempat",
+        "geo_en": "Square Pyramid",
+        "sisi": 5,
+        "rusuk": 8,
+        "titik": 5,
+        "volume": "⅓ × Luas alas × t",
+        "luas": "Luas alas + Σ luas sisi tegak",
+        "element": "Dasar Kamadhatu",
+        "context": "Fondasi candi merepresentasikan Kamadhatu (alam keinginan). Terdapat 160 panel relief tersembunyi yang menggambarkan hukum karma.",
+        "conf": 88,
+        "local_angle": 40,
+        "class_id": "limas-segiempat"
+      }
+    },
+    {
+      "id": "halaman-1-01",
+      "index": 6,
+      "folder": "Halaman 1",
+      "area_label": "Halaman Candi",
+      "area_desc": "Halaman dasar candi, titik awal perjalanan naik menuju Rupadhatu.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Halaman 1/Halaman -099.jpg",
+      "image": "/assets/panorama/halaman-1-01.jpg",
+      "lat": -7.607345,
+      "lon": 110.20382166666667,
+      "alt": 285.76,
+      "direction": 357.74,
+      "connections": [
+        {
+          "to": "halaman-1-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "halaman-1-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Limas Segiempat",
+        "geo_en": "Square Pyramid",
+        "sisi": 5,
+        "rusuk": 8,
+        "titik": 5,
+        "volume": "⅓ × Luas alas × t",
+        "luas": "Luas alas + Σ luas sisi tegak",
+        "element": "Dasar Kamadhatu",
+        "context": "Fondasi candi merepresentasikan Kamadhatu (alam keinginan). Terdapat 160 panel relief tersembunyi yang menggambarkan hukum karma.",
+        "conf": 88,
+        "local_angle": 40,
+        "class_id": "limas-segiempat"
+      }
+    },
+    {
+      "id": "halaman-1-02",
+      "index": 7,
+      "folder": "Halaman 1",
+      "area_label": "Halaman Candi",
+      "area_desc": "Halaman dasar candi, titik awal perjalanan naik menuju Rupadhatu.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Halaman 1/Halaman -106.jpg",
+      "image": "/assets/panorama/halaman-1-02.jpg",
+      "lat": -7.607328333333333,
+      "lon": 110.20415,
+      "alt": 295.78,
+      "direction": 1.99,
+      "connections": [
+        {
+          "to": "halaman-1-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "halaman-1-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Limas Segiempat",
+        "geo_en": "Square Pyramid",
+        "sisi": 5,
+        "rusuk": 8,
+        "titik": 5,
+        "volume": "⅓ × Luas alas × t",
+        "luas": "Luas alas + Σ luas sisi tegak",
+        "element": "Dasar Kamadhatu",
+        "context": "Fondasi candi merepresentasikan Kamadhatu (alam keinginan). Terdapat 160 panel relief tersembunyi yang menggambarkan hukum karma.",
+        "conf": 88,
+        "local_angle": 40,
+        "class_id": "limas-segiempat"
+      }
+    },
+    {
+      "id": "halaman-1-03",
+      "index": 8,
+      "folder": "Halaman 1",
+      "area_label": "Halaman Candi",
+      "area_desc": "Halaman dasar candi, titik awal perjalanan naik menuju Rupadhatu.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Halaman 1/Halaman -118.jpg",
+      "image": "/assets/panorama/halaman-1-03.jpg",
+      "lat": -7.607678333333333,
+      "lon": 110.204475,
+      "alt": 302.51,
+      "direction": 109.44,
+      "connections": [
+        {
+          "to": "halaman-1-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "halaman-1-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Limas Segiempat",
+        "geo_en": "Square Pyramid",
+        "sisi": 5,
+        "rusuk": 8,
+        "titik": 5,
+        "volume": "⅓ × Luas alas × t",
+        "luas": "Luas alas + Σ luas sisi tegak",
+        "element": "Dasar Kamadhatu",
+        "context": "Fondasi candi merepresentasikan Kamadhatu (alam keinginan). Terdapat 160 panel relief tersembunyi yang menggambarkan hukum karma.",
+        "conf": 88,
+        "local_angle": 40,
+        "class_id": "limas-segiempat"
+      }
+    },
+    {
+      "id": "halaman-1-04",
+      "index": 9,
+      "folder": "Halaman 1",
+      "area_label": "Halaman Candi",
+      "area_desc": "Halaman dasar candi, titik awal perjalanan naik menuju Rupadhatu.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Halaman 1/Halaman -123.jpg",
+      "image": "/assets/panorama/halaman-1-04.jpg",
+      "lat": -7.607895,
+      "lon": 110.204405,
+      "alt": 292.44,
+      "direction": 94.41,
+      "connections": [
+        {
+          "to": "undag-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "halaman-1-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Limas Segiempat",
+        "geo_en": "Square Pyramid",
+        "sisi": 5,
+        "rusuk": 8,
+        "titik": 5,
+        "volume": "⅓ × Luas alas × t",
+        "luas": "Luas alas + Σ luas sisi tegak",
+        "element": "Dasar Kamadhatu",
+        "context": "Fondasi candi merepresentasikan Kamadhatu (alam keinginan). Terdapat 160 panel relief tersembunyi yang menggambarkan hukum karma.",
+        "conf": 88,
+        "local_angle": 40,
+        "class_id": "limas-segiempat"
+      }
+    },
+    {
+      "id": "undag-00",
+      "index": 10,
+      "folder": "Undag",
+      "area_label": "Tangga (Undag)",
+      "area_desc": "Tangga curam menghubungkan setiap tingkat candi, melambangkan perjalanan spiritual menanjak.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Undag/Undag -001.jpg",
+      "image": "/assets/panorama/undag-00.jpg",
+      "lat": -7.6078866666666665,
+      "lon": 110.20434166666666,
+      "alt": 281.61,
+      "direction": 99.55,
+      "connections": [
+        {
+          "to": "undag-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "halaman-1-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Prisma Segitiga",
+        "geo_en": "Triangular Prism",
+        "sisi": 5,
+        "rusuk": 9,
+        "titik": 6,
+        "volume": "Luas alas × t",
+        "luas": "2 × Luas alas + Keliling alas × t",
+        "element": "Tangga Masuk Candi",
+        "context": "Tangga menuju tingkat atas candi melambangkan perjalanan spiritual dari dunia fana (Kamadhatu) menuju pencerahan (Arupadhatu).",
+        "conf": 87,
+        "local_angle": 40,
+        "class_id": "prisma-segitiga"
+      }
+    },
+    {
+      "id": "undag-01",
+      "index": 11,
+      "folder": "Undag",
+      "area_label": "Tangga (Undag)",
+      "area_desc": "Tangga curam menghubungkan setiap tingkat candi, melambangkan perjalanan spiritual menanjak.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Undag/Undag -031.jpg",
+      "image": "/assets/panorama/undag-01.jpg",
+      "lat": -7.60848,
+      "lon": 110.20381333333333,
+      "alt": 291.1,
+      "direction": 192.64,
+      "connections": [
+        {
+          "to": "undag-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "undag-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Prisma Segitiga",
+        "geo_en": "Triangular Prism",
+        "sisi": 5,
+        "rusuk": 9,
+        "titik": 6,
+        "volume": "Luas alas × t",
+        "luas": "2 × Luas alas + Keliling alas × t",
+        "element": "Tangga Masuk Candi",
+        "context": "Tangga menuju tingkat atas candi melambangkan perjalanan spiritual dari dunia fana (Kamadhatu) menuju pencerahan (Arupadhatu).",
+        "conf": 87,
+        "local_angle": 40,
+        "class_id": "prisma-segitiga"
+      }
+    },
+    {
+      "id": "undag-02",
+      "index": 12,
+      "folder": "Undag",
+      "area_label": "Tangga (Undag)",
+      "area_desc": "Tangga curam menghubungkan setiap tingkat candi, melambangkan perjalanan spiritual menanjak.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Undag/Undag -061.jpg",
+      "image": "/assets/panorama/undag-02.jpg",
+      "lat": -7.607913333333333,
+      "lon": 110.20336666666667,
+      "alt": 284.46,
+      "direction": 288.74,
+      "connections": [
+        {
+          "to": "undag-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "undag-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Prisma Segitiga",
+        "geo_en": "Triangular Prism",
+        "sisi": 5,
+        "rusuk": 9,
+        "titik": 6,
+        "volume": "Luas alas × t",
+        "luas": "2 × Luas alas + Keliling alas × t",
+        "element": "Tangga Masuk Candi",
+        "context": "Tangga menuju tingkat atas candi melambangkan perjalanan spiritual dari dunia fana (Kamadhatu) menuju pencerahan (Arupadhatu).",
+        "conf": 87,
+        "local_angle": 40,
+        "class_id": "prisma-segitiga"
+      }
+    },
+    {
+      "id": "undag-03",
+      "index": 13,
+      "folder": "Undag",
+      "area_label": "Tangga (Undag)",
+      "area_desc": "Tangga curam menghubungkan setiap tingkat candi, melambangkan perjalanan spiritual menanjak.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Undag/Undag -092.jpg",
+      "image": "/assets/panorama/undag-03.jpg",
+      "lat": -7.607366666666667,
+      "lon": 110.2038,
+      "alt": 293.47,
+      "direction": 349.44,
+      "connections": [
+        {
+          "to": "undag-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "undag-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Prisma Segitiga",
+        "geo_en": "Triangular Prism",
+        "sisi": 5,
+        "rusuk": 9,
+        "titik": 6,
+        "volume": "Luas alas × t",
+        "luas": "2 × Luas alas + Keliling alas × t",
+        "element": "Tangga Masuk Candi",
+        "context": "Tangga menuju tingkat atas candi melambangkan perjalanan spiritual dari dunia fana (Kamadhatu) menuju pencerahan (Arupadhatu).",
+        "conf": 87,
+        "local_angle": 40,
+        "class_id": "prisma-segitiga"
+      }
+    },
+    {
+      "id": "undag-04",
+      "index": 14,
+      "folder": "Undag",
+      "area_label": "Tangga (Undag)",
+      "area_desc": "Tangga curam menghubungkan setiap tingkat candi, melambangkan perjalanan spiritual menanjak.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Undag/Undag -122.jpg",
+      "image": "/assets/panorama/undag-04.jpg",
+      "lat": -7.6078833333333336,
+      "lon": 110.20432166666667,
+      "alt": 297.71,
+      "direction": 77.09,
+      "connections": [
+        {
+          "to": "lorong-1-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "undag-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Prisma Segitiga",
+        "geo_en": "Triangular Prism",
+        "sisi": 5,
+        "rusuk": 9,
+        "titik": 6,
+        "volume": "Luas alas × t",
+        "luas": "2 × Luas alas + Keliling alas × t",
+        "element": "Tangga Masuk Candi",
+        "context": "Tangga menuju tingkat atas candi melambangkan perjalanan spiritual dari dunia fana (Kamadhatu) menuju pencerahan (Arupadhatu).",
+        "conf": 87,
+        "local_angle": 40,
+        "class_id": "prisma-segitiga"
+      }
+    },
+    {
+      "id": "lorong-1-00",
+      "index": 15,
+      "folder": "Lorong 1",
+      "area_label": "Lorong Tingkat 1",
+      "area_desc": "Galeri relief tingkat pertama Rupadhatu, memuat kisah Karmawibhangga dan Lalitavistara.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 1/Lorong 1_114.jpg",
+      "image": "/assets/panorama/lorong-1-00.jpg",
+      "lat": -7.60795,
+      "lon": 110.204275,
+      "alt": 297.58,
+      "direction": 86.9,
+      "connections": [
+        {
+          "to": "lorong-1-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "undag-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-1-01",
+      "index": 16,
+      "folder": "Lorong 1",
+      "area_label": "Lorong Tingkat 1",
+      "area_desc": "Galeri relief tingkat pertama Rupadhatu, memuat kisah Karmawibhangga dan Lalitavistara.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 1/Lorong 1_069.jpg",
+      "image": "/assets/panorama/lorong-1-01.jpg",
+      "lat": -7.607675,
+      "lon": 110.20353833333333,
+      "alt": 307.31,
+      "direction": 274.37,
+      "connections": [
+        {
+          "to": "lorong-1-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-1-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-1-02",
+      "index": 17,
+      "folder": "Lorong 1",
+      "area_label": "Lorong Tingkat 1",
+      "area_desc": "Galeri relief tingkat pertama Rupadhatu, memuat kisah Karmawibhangga dan Lalitavistara.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 1/Lorong 1_046.jpg",
+      "image": "/assets/panorama/lorong-1-02.jpg",
+      "lat": -7.604491666666667,
+      "lon": 110.19368,
+      "alt": 0,
+      "direction": 269.6,
+      "connections": [
+        {
+          "to": "lorong-1-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-1-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-1-03",
+      "index": 18,
+      "folder": "Lorong 1",
+      "area_label": "Lorong Tingkat 1",
+      "area_desc": "Galeri relief tingkat pertama Rupadhatu, memuat kisah Karmawibhangga dan Lalitavistara.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 1/Lorong 1_005.jpg",
+      "image": "/assets/panorama/lorong-1-03.jpg",
+      "lat": -7.607913333333333,
+      "lon": 110.204225,
+      "alt": 290.04,
+      "direction": 122.4,
+      "connections": [
+        {
+          "to": "lorong-1-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-1-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-1-04",
+      "index": 19,
+      "folder": "Lorong 1",
+      "area_label": "Lorong Tingkat 1",
+      "area_desc": "Galeri relief tingkat pertama Rupadhatu, memuat kisah Karmawibhangga dan Lalitavistara.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 1/Lorong 1_023.jpg",
+      "image": "/assets/panorama/lorong-1-04.jpg",
+      "lat": -7.608358333333333,
+      "lon": 110.20405833333334,
+      "alt": 295.67,
+      "direction": 183.96,
+      "connections": [
+        {
+          "to": "selasar-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-1-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "selasar-00",
+      "index": 20,
+      "folder": "Selasar",
+      "area_label": "Selasar",
+      "area_desc": "Jalur berjalan mengelilingi candi (pradaksina) di tepi luar galeri relief.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Selasar/Selasar -001.jpg",
+      "image": "/assets/panorama/selasar-00.jpg",
+      "lat": -7.607946666666667,
+      "lon": 110.20432,
+      "alt": 292.89,
+      "direction": 122.33,
+      "connections": [
+        {
+          "to": "selasar-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-1-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ]
+    },
+    {
+      "id": "selasar-01",
+      "index": 21,
+      "folder": "Selasar",
+      "area_label": "Selasar",
+      "area_desc": "Jalur berjalan mengelilingi candi (pradaksina) di tepi luar galeri relief.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Selasar/Selasar -026.jpg",
+      "image": "/assets/panorama/selasar-01.jpg",
+      "lat": -7.6084,
+      "lon": 110.20408833333333,
+      "alt": 305.14,
+      "direction": 195.54,
+      "connections": [
+        {
+          "to": "selasar-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "selasar-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ]
+    },
+    {
+      "id": "selasar-02",
+      "index": 22,
+      "folder": "Selasar",
+      "area_label": "Selasar",
+      "area_desc": "Jalur berjalan mengelilingi candi (pradaksina) di tepi luar galeri relief.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Selasar/Selasar -049.jpg",
+      "image": "/assets/panorama/selasar-02.jpg",
+      "lat": -7.608113333333334,
+      "lon": 110.20341666666667,
+      "alt": 286.86,
+      "direction": 275.44,
+      "connections": [
+        {
+          "to": "selasar-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "selasar-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ]
+    },
+    {
+      "id": "selasar-03",
+      "index": 23,
+      "folder": "Selasar",
+      "area_label": "Selasar",
+      "area_desc": "Jalur berjalan mengelilingi candi (pradaksina) di tepi luar galeri relief.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Selasar/Selasar -073.jpg",
+      "image": "/assets/panorama/selasar-03.jpg",
+      "lat": -7.60752,
+      "lon": 110.20359666666667,
+      "alt": 288.2,
+      "direction": 12.33,
+      "connections": [
+        {
+          "to": "selasar-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "selasar-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ]
+    },
+    {
+      "id": "selasar-04",
+      "index": 24,
+      "folder": "Selasar",
+      "area_label": "Selasar",
+      "area_desc": "Jalur berjalan mengelilingi candi (pradaksina) di tepi luar galeri relief.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Selasar/Selasar -101.jpg",
+      "image": "/assets/panorama/selasar-04.jpg",
+      "lat": -7.607863333333333,
+      "lon": 110.20423833333334,
+      "alt": 285.26,
+      "direction": 115.84,
+      "connections": [
+        {
+          "to": "lorong-2-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "selasar-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ]
+    },
+    {
+      "id": "lorong-2-00",
+      "index": 25,
+      "folder": "Lorong 2",
+      "area_label": "Lorong Tingkat 2",
+      "area_desc": "Galeri relief tingkat kedua, menampilkan kisah Jataka dan Awadana.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 2/Lorong 2-115.jpg",
+      "image": "/assets/panorama/lorong-2-00.jpg",
+      "lat": -7.607958333333333,
+      "lon": 110.20419166666667,
+      "alt": 280,
+      "direction": 76.52,
+      "connections": [
+        {
+          "to": "lorong-2-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "selasar-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-2-01",
+      "index": 26,
+      "folder": "Lorong 2",
+      "area_label": "Lorong Tingkat 2",
+      "area_desc": "Galeri relief tingkat kedua, menampilkan kisah Jataka dan Awadana.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 2/Lorong 2-061.jpg",
+      "image": "/assets/panorama/lorong-2-01.jpg",
+      "lat": -7.607913333333333,
+      "lon": 110.20353,
+      "alt": 284.36,
+      "direction": 248.85,
+      "connections": [
+        {
+          "to": "lorong-2-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-2-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-2-02",
+      "index": 27,
+      "folder": "Lorong 2",
+      "area_label": "Lorong Tingkat 2",
+      "area_desc": "Galeri relief tingkat kedua, menampilkan kisah Jataka dan Awadana.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 2/Lorong 2-028.jpg",
+      "image": "/assets/panorama/lorong-2-02.jpg",
+      "lat": -7.608425,
+      "lon": 110.203925,
+      "alt": 301.36,
+      "direction": 171.44,
+      "connections": [
+        {
+          "to": "lorong-2-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-2-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-2-03",
+      "index": 28,
+      "folder": "Lorong 2",
+      "area_label": "Lorong Tingkat 2",
+      "area_desc": "Galeri relief tingkat kedua, menampilkan kisah Jataka dan Awadana.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 2/Lorong 2-016.jpg",
+      "image": "/assets/panorama/lorong-2-03.jpg",
+      "lat": -7.60822,
+      "lon": 110.20406333333334,
+      "alt": 296.02,
+      "direction": 180.34,
+      "connections": [
+        {
+          "to": "lorong-2-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-2-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-2-04",
+      "index": 29,
+      "folder": "Lorong 2",
+      "area_label": "Lorong Tingkat 2",
+      "area_desc": "Galeri relief tingkat kedua, menampilkan kisah Jataka dan Awadana.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 2/Lorong 2-045.jpg",
+      "image": "/assets/panorama/lorong-2-04.jpg",
+      "lat": -7.608171666666666,
+      "lon": 110.20348666666666,
+      "alt": 274.94,
+      "direction": 279.84,
+      "connections": [
+        {
+          "to": "lorong-3-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-2-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-3-00",
+      "index": 30,
+      "folder": "Lorong 3",
+      "area_label": "Lorong Tingkat 3",
+      "area_desc": "Galeri relief tingkat ketiga, kelanjutan narasi kehidupan Buddha.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 3/Lorong 3-096.jpg",
+      "image": "/assets/panorama/lorong-3-00.jpg",
+      "lat": -7.607658333333333,
+      "lon": 110.20412166666667,
+      "alt": 314.6,
+      "direction": 120.93,
+      "connections": [
+        {
+          "to": "lorong-3-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-2-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-3-01",
+      "index": 31,
+      "folder": "Lorong 3",
+      "area_label": "Lorong Tingkat 3",
+      "area_desc": "Galeri relief tingkat ketiga, kelanjutan narasi kehidupan Buddha.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 3/Lorong 3-075.jpg",
+      "image": "/assets/panorama/lorong-3-01.jpg",
+      "lat": -7.607613333333333,
+      "lon": 110.20363666666667,
+      "alt": 323.24,
+      "direction": 352.45,
+      "connections": [
+        {
+          "to": "lorong-3-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-3-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-3-02",
+      "index": 32,
+      "folder": "Lorong 3",
+      "area_label": "Lorong Tingkat 3",
+      "area_desc": "Galeri relief tingkat ketiga, kelanjutan narasi kehidupan Buddha.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 3/Lorong 3-045.jpg",
+      "image": "/assets/panorama/lorong-3-02.jpg",
+      "lat": -7.608103333333333,
+      "lon": 110.20348833333334,
+      "alt": 302.96,
+      "direction": 277.21,
+      "connections": [
+        {
+          "to": "lorong-3-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-3-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-3-03",
+      "index": 33,
+      "folder": "Lorong 3",
+      "area_label": "Lorong Tingkat 3",
+      "area_desc": "Galeri relief tingkat ketiga, kelanjutan narasi kehidupan Buddha.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 3/Lorong 3-011.jpg",
+      "image": "/assets/panorama/lorong-3-03.jpg",
+      "lat": -7.608113333333334,
+      "lon": 110.20415333333334,
+      "alt": 286.73,
+      "direction": 99.34,
+      "connections": [
+        {
+          "to": "lorong-3-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-3-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-3-04",
+      "index": 34,
+      "folder": "Lorong 3",
+      "area_label": "Lorong Tingkat 3",
+      "area_desc": "Galeri relief tingkat ketiga, kelanjutan narasi kehidupan Buddha.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 3/Lorong 3-004.jpg",
+      "image": "/assets/panorama/lorong-3-04.jpg",
+      "lat": -7.60593,
+      "lon": 110.21043333333333,
+      "alt": 0,
+      "direction": 106.02,
+      "connections": [
+        {
+          "to": "lorong-4-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-3-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-4-00",
+      "index": 35,
+      "folder": "Lorong 4",
+      "area_label": "Lorong Tingkat 4",
+      "area_desc": "Galeri relief tingkat keempat, menampilkan kisah Gandavyuha.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 4/Lorong 4-075.jpg",
+      "image": "/assets/panorama/lorong-4-00.jpg",
+      "lat": -7.607713333333334,
+      "lon": 110.20398,
+      "alt": 304,
+      "direction": 79.24,
+      "connections": [
+        {
+          "to": "lorong-4-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-3-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-4-01",
+      "index": 36,
+      "folder": "Lorong 4",
+      "area_label": "Lorong Tingkat 4",
+      "area_desc": "Galeri relief tingkat keempat, menampilkan kisah Gandavyuha.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 4/Lorong 4-053.jpg",
+      "image": "/assets/panorama/lorong-4-01.jpg",
+      "lat": -7.607638333333333,
+      "lon": 110.20356333333334,
+      "alt": 312.76,
+      "direction": 354.21,
+      "connections": [
+        {
+          "to": "lorong-4-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-4-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-4-02",
+      "index": 37,
+      "folder": "Lorong 4",
+      "area_label": "Lorong Tingkat 4",
+      "area_desc": "Galeri relief tingkat keempat, menampilkan kisah Gandavyuha.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 4/Lorong 4-062.jpg",
+      "image": "/assets/panorama/lorong-4-02.jpg",
+      "lat": -7.607738333333334,
+      "lon": 110.20386333333333,
+      "alt": 315.09,
+      "direction": 348.48,
+      "connections": [
+        {
+          "to": "lorong-4-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-4-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-4-03",
+      "index": 38,
+      "folder": "Lorong 4",
+      "area_label": "Lorong Tingkat 4",
+      "area_desc": "Galeri relief tingkat keempat, menampilkan kisah Gandavyuha.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 4/Lorong 4-006.jpg",
+      "image": "/assets/panorama/lorong-4-03.jpg",
+      "lat": -7.608021666666667,
+      "lon": 110.20408666666667,
+      "alt": 296.49,
+      "direction": 69.7,
+      "connections": [
+        {
+          "to": "lorong-4-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-4-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "lorong-4-04",
+      "index": 39,
+      "folder": "Lorong 4",
+      "area_label": "Lorong Tingkat 4",
+      "area_desc": "Galeri relief tingkat keempat, menampilkan kisah Gandavyuha.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Lorong 4/Lorong 4-003.jpg",
+      "image": "/assets/panorama/lorong-4-04.jpg",
+      "lat": -7.607966666666667,
+      "lon": 110.20410333333334,
+      "alt": 294,
+      "direction": 100.46,
+      "connections": [
+        {
+          "to": "teras-1-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-4-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Balok",
+        "geo_en": "Rectangular Prism",
+        "sisi": 6,
+        "rusuk": 12,
+        "titik": 8,
+        "volume": "p × l × t",
+        "luas": "2(pl + pt + lt)",
+        "element": "Teras Rupadhatu I",
+        "context": "Lima teras persegi (Rupadhatu) dihiasi 1.460 panel relief naratif yang menceritakan kehidupan Buddha dan ajaran Dharma.",
+        "conf": 94,
+        "local_angle": 40,
+        "class_id": "balok"
+      }
+    },
+    {
+      "id": "teras-1-00",
+      "index": 40,
+      "folder": "Teras 1",
+      "area_label": "Teras Arupadhatu 1",
+      "area_desc": "Teras melingkar pertama, memasuki Arupadhatu — alam tanpa wujud.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 1/Teras 1-037.jpg",
+      "image": "/assets/panorama/teras-1-00.jpg",
+      "lat": -7.607775,
+      "lon": 110.203995,
+      "alt": 307.51,
+      "direction": 70.61,
+      "connections": [
+        {
+          "to": "teras-1-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "lorong-4-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-1-01",
+      "index": 41,
+      "folder": "Teras 1",
+      "area_label": "Teras Arupadhatu 1",
+      "area_desc": "Teras melingkar pertama, memasuki Arupadhatu — alam tanpa wujud.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 1/Teras 1-036.jpg",
+      "image": "/assets/panorama/teras-1-01.jpg",
+      "lat": -7.607825,
+      "lon": 110.20393833333334,
+      "alt": 309.47,
+      "direction": 17.68,
+      "connections": [
+        {
+          "to": "teras-1-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-1-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-1-02",
+      "index": 42,
+      "folder": "Teras 1",
+      "area_label": "Teras Arupadhatu 1",
+      "area_desc": "Teras melingkar pertama, memasuki Arupadhatu — alam tanpa wujud.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 1/Teras 1-038.jpg",
+      "image": "/assets/panorama/teras-1-02.jpg",
+      "lat": -7.607821666666666,
+      "lon": 110.20411333333334,
+      "alt": 306.86,
+      "direction": 40.66,
+      "connections": [
+        {
+          "to": "teras-1-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-1-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-1-03",
+      "index": 43,
+      "folder": "Teras 1",
+      "area_label": "Teras Arupadhatu 1",
+      "area_desc": "Teras melingkar pertama, memasuki Arupadhatu — alam tanpa wujud.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 1/Teras 1-020.jpg",
+      "image": "/assets/panorama/teras-1-03.jpg",
+      "lat": -7.608025,
+      "lon": 110.20368666666667,
+      "alt": 295.01,
+      "direction": 265.45,
+      "connections": [
+        {
+          "to": "teras-1-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-1-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-1-04",
+      "index": 44,
+      "folder": "Teras 1",
+      "area_label": "Teras Arupadhatu 1",
+      "area_desc": "Teras melingkar pertama, memasuki Arupadhatu — alam tanpa wujud.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 1/Teras 1-018.jpg",
+      "image": "/assets/panorama/teras-1-04.jpg",
+      "lat": -7.608021666666667,
+      "lon": 110.20369666666667,
+      "alt": 294.33,
+      "direction": 46.24,
+      "connections": [
+        {
+          "to": "teras-2-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-1-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-2-00",
+      "index": 45,
+      "folder": "Teras 2",
+      "area_label": "Teras Arupadhatu 2",
+      "area_desc": "Teras melingkar kedua, dipenuhi stupa berlubang berisi arca Buddha.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 2/Teras 2-003.jpg",
+      "image": "/assets/panorama/teras-2-00.jpg",
+      "lat": -7.607966666666667,
+      "lon": 110.20398,
+      "alt": 298.86,
+      "direction": 128.96,
+      "connections": [
+        {
+          "to": "teras-2-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-1-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-2-01",
+      "index": 46,
+      "folder": "Teras 2",
+      "area_label": "Teras Arupadhatu 2",
+      "area_desc": "Teras melingkar kedua, dipenuhi stupa berlubang berisi arca Buddha.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 2/Teras 2-012.jpg",
+      "image": "/assets/panorama/teras-2-01.jpg",
+      "lat": -7.60803,
+      "lon": 110.20369666666667,
+      "alt": 314.8,
+      "direction": 224.57,
+      "connections": [
+        {
+          "to": "teras-2-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-2-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-2-02",
+      "index": 47,
+      "folder": "Teras 2",
+      "area_label": "Teras Arupadhatu 2",
+      "area_desc": "Teras melingkar kedua, dipenuhi stupa berlubang berisi arca Buddha.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 2/Teras 2-002.jpg",
+      "image": "/assets/panorama/teras-2-02.jpg",
+      "lat": -7.607955,
+      "lon": 110.20398,
+      "alt": 298.19,
+      "direction": 87.37,
+      "connections": [
+        {
+          "to": "teras-2-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-2-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-2-03",
+      "index": 48,
+      "folder": "Teras 2",
+      "area_label": "Teras Arupadhatu 2",
+      "area_desc": "Teras melingkar kedua, dipenuhi stupa berlubang berisi arca Buddha.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 2/Teras 2-023.jpg",
+      "image": "/assets/panorama/teras-2-03.jpg",
+      "lat": -7.607763333333334,
+      "lon": 110.20387,
+      "alt": 307.11,
+      "direction": 4.12,
+      "connections": [
+        {
+          "to": "teras-2-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-2-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-2-04",
+      "index": 49,
+      "folder": "Teras 2",
+      "area_label": "Teras Arupadhatu 2",
+      "area_desc": "Teras melingkar kedua, dipenuhi stupa berlubang berisi arca Buddha.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 2/Teras 2-005.jpg",
+      "image": "/assets/panorama/teras-2-04.jpg",
+      "lat": -7.60805,
+      "lon": 110.20398833333333,
+      "alt": 295.21,
+      "direction": 139.33,
+      "connections": [
+        {
+          "to": "teras-3-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-2-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-3-00",
+      "index": 50,
+      "folder": "Teras 3",
+      "area_label": "Teras Arupadhatu 3",
+      "area_desc": "Teras melingkar ketiga, tingkat tertinggi sebelum stupa induk.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 3/Teras 3-011.jpg",
+      "image": "/assets/panorama/teras-3-00.jpg",
+      "lat": -7.607888333333333,
+      "lon": 110.20373666666667,
+      "alt": 313.94,
+      "direction": 262.69,
+      "connections": [
+        {
+          "to": "teras-3-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-2-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-3-01",
+      "index": 51,
+      "folder": "Teras 3",
+      "area_label": "Teras Arupadhatu 3",
+      "area_desc": "Teras melingkar ketiga, tingkat tertinggi sebelum stupa induk.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 3/Teras 3-002.jpg",
+      "image": "/assets/panorama/teras-3-01.jpg",
+      "lat": -7.60795,
+      "lon": 110.20388333333334,
+      "alt": 303.89,
+      "direction": 129.02,
+      "connections": [
+        {
+          "to": "teras-3-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-3-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-3-02",
+      "index": 52,
+      "folder": "Teras 3",
+      "area_label": "Teras Arupadhatu 3",
+      "area_desc": "Teras melingkar ketiga, tingkat tertinggi sebelum stupa induk.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 3/Teras 3-003.jpg",
+      "image": "/assets/panorama/teras-3-02.jpg",
+      "lat": -7.607983333333333,
+      "lon": 110.20390833333333,
+      "alt": 312.96,
+      "direction": 117.8,
+      "connections": [
+        {
+          "to": "teras-3-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-3-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-3-03",
+      "index": 53,
+      "folder": "Teras 3",
+      "area_label": "Teras Arupadhatu 3",
+      "area_desc": "Teras melingkar ketiga, tingkat tertinggi sebelum stupa induk.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 3/Teras 3-004.jpg",
+      "image": "/assets/panorama/teras-3-03.jpg",
+      "lat": -7.608016666666667,
+      "lon": 110.20388333333334,
+      "alt": 311.71,
+      "direction": 166.64,
+      "connections": [
+        {
+          "to": "teras-3-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-3-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "teras-3-04",
+      "index": 54,
+      "folder": "Teras 3",
+      "area_label": "Teras Arupadhatu 3",
+      "area_desc": "Teras melingkar ketiga, tingkat tertinggi sebelum stupa induk.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Teras 3/Teras 3-012.jpg",
+      "image": "/assets/panorama/teras-3-04.jpg",
+      "lat": -7.607888333333333,
+      "lon": 110.20373666666667,
+      "alt": 313.94,
+      "direction": 318.65,
+      "connections": [
+        {
+          "to": "plateu-00",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-3-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Tabung",
+        "geo_en": "Cylinder",
+        "sisi": 3,
+        "rusuk": 2,
+        "titik": 0,
+        "volume": "π × r² × t",
+        "luas": "2πr² + 2πrt",
+        "element": "Stupa Berlubang",
+        "context": "72 stupa berlubang berbentuk silinder tersebar di tiga teras bundar. Setiap stupa berisi patung Buddha dalam posisi meditasi (mudra dhyana).",
+        "conf": 91,
+        "local_angle": 40,
+        "class_id": "tabung"
+      }
+    },
+    {
+      "id": "plateu-00",
+      "index": 55,
+      "folder": "Plateu",
+      "area_label": "Plateu Stupa Induk",
+      "area_desc": "Plaza puncak dengan stupa induk — puncak pencapaian spiritual Arupadhatu.",
+      "folder_pos": 0,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Plateu/Plateu-001.jpg",
+      "image": "/assets/panorama/plateu-00.jpg",
+      "lat": -7.607958333333333,
+      "lon": 110.20404666666667,
+      "alt": 302,
+      "direction": 72.26,
+      "connections": [
+        {
+          "to": "plateu-01",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "teras-3-04",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Setengah Bola",
+        "geo_en": "Hemisphere",
+        "sisi": 1,
+        "rusuk": 0,
+        "titik": 0,
+        "volume": "⅔ × π × r³",
+        "luas": "3πr²",
+        "element": "Stupa Utama Arupadhatu",
+        "context": "Stupa utama melambangkan Arupadhatu — pencapaian spiritual tertinggi dalam kosmologi Buddha. Berdiameter sekitar 11 meter dengan puncak menjulang setinggi 35 meter.",
+        "conf": 97,
+        "local_angle": 40,
+        "class_id": "setengah-bola"
+      }
+    },
+    {
+      "id": "plateu-01",
+      "index": 56,
+      "folder": "Plateu",
+      "area_label": "Plateu Stupa Induk",
+      "area_desc": "Plaza puncak dengan stupa induk — puncak pencapaian spiritual Arupadhatu.",
+      "folder_pos": 1,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Plateu/Plateu-015.jpg",
+      "image": "/assets/panorama/plateu-01.jpg",
+      "lat": -7.608158333333333,
+      "lon": 110.20387166666667,
+      "alt": 318,
+      "direction": 156.34,
+      "connections": [
+        {
+          "to": "plateu-02",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "plateu-00",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Setengah Bola",
+        "geo_en": "Hemisphere",
+        "sisi": 1,
+        "rusuk": 0,
+        "titik": 0,
+        "volume": "⅔ × π × r³",
+        "luas": "3πr²",
+        "element": "Stupa Utama Arupadhatu",
+        "context": "Stupa utama melambangkan Arupadhatu — pencapaian spiritual tertinggi dalam kosmologi Buddha. Berdiameter sekitar 11 meter dengan puncak menjulang setinggi 35 meter.",
+        "conf": 97,
+        "local_angle": 40,
+        "class_id": "setengah-bola"
+      }
+    },
+    {
+      "id": "plateu-02",
+      "index": 57,
+      "folder": "Plateu",
+      "area_label": "Plateu Stupa Induk",
+      "area_desc": "Plaza puncak dengan stupa induk — puncak pencapaian spiritual Arupadhatu.",
+      "folder_pos": 2,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Plateu/Plateu-029.jpg",
+      "image": "/assets/panorama/plateu-02.jpg",
+      "lat": -7.603455,
+      "lon": 110.20011166666667,
+      "alt": 0,
+      "direction": 266.67,
+      "connections": [
+        {
+          "to": "plateu-03",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "plateu-01",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Setengah Bola",
+        "geo_en": "Hemisphere",
+        "sisi": 1,
+        "rusuk": 0,
+        "titik": 0,
+        "volume": "⅔ × π × r³",
+        "luas": "3πr²",
+        "element": "Stupa Utama Arupadhatu",
+        "context": "Stupa utama melambangkan Arupadhatu — pencapaian spiritual tertinggi dalam kosmologi Buddha. Berdiameter sekitar 11 meter dengan puncak menjulang setinggi 35 meter.",
+        "conf": 97,
+        "local_angle": 40,
+        "class_id": "setengah-bola"
+      }
+    },
+    {
+      "id": "plateu-03",
+      "index": 58,
+      "folder": "Plateu",
+      "area_label": "Plateu Stupa Induk",
+      "area_desc": "Plaza puncak dengan stupa induk — puncak pencapaian spiritual Arupadhatu.",
+      "folder_pos": 3,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Plateu/Plateu-042.jpg",
+      "image": "/assets/panorama/plateu-03.jpg",
+      "lat": -7.607736666666667,
+      "lon": 110.20381166666667,
+      "alt": 316,
+      "direction": 348.21,
+      "connections": [
+        {
+          "to": "plateu-04",
+          "label": "Maju",
+          "local_angle": 0
+        },
+        {
+          "to": "plateu-02",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Setengah Bola",
+        "geo_en": "Hemisphere",
+        "sisi": 1,
+        "rusuk": 0,
+        "titik": 0,
+        "volume": "⅔ × π × r³",
+        "luas": "3πr²",
+        "element": "Stupa Utama Arupadhatu",
+        "context": "Stupa utama melambangkan Arupadhatu — pencapaian spiritual tertinggi dalam kosmologi Buddha. Berdiameter sekitar 11 meter dengan puncak menjulang setinggi 35 meter.",
+        "conf": 97,
+        "local_angle": 40,
+        "class_id": "setengah-bola"
+      }
+    },
+    {
+      "id": "plateu-04",
+      "index": 59,
+      "folder": "Plateu",
+      "area_label": "Plateu Stupa Induk",
+      "area_desc": "Plaza puncak dengan stupa induk — puncak pencapaian spiritual Arupadhatu.",
+      "folder_pos": 4,
+      "folder_total": 5,
+      "source_zip_path": "Borobudur Virtual/Plateu/Plateu-056.jpg",
+      "image": "/assets/panorama/plateu-04.jpg",
+      "lat": -7.60137,
+      "lon": 110.20522,
+      "alt": 0,
+      "direction": 105.61,
+      "connections": [
+        {
+          "to": "plateu-03",
+          "label": "Mundur",
+          "local_angle": 180
+        }
+      ],
+      "identify": {
+        "object_id": null,
+        "geo": "Setengah Bola",
+        "geo_en": "Hemisphere",
+        "sisi": 1,
+        "rusuk": 0,
+        "titik": 0,
+        "volume": "⅔ × π × r³",
+        "luas": "3πr²",
+        "element": "Stupa Utama Arupadhatu",
+        "context": "Stupa utama melambangkan Arupadhatu — pencapaian spiritual tertinggi dalam kosmologi Buddha. Berdiameter sekitar 11 meter dengan puncak menjulang setinggi 35 meter.",
+        "conf": 97,
+        "local_angle": 40,
+        "class_id": "setengah-bola"
+      }
+    }
+  ]
+}

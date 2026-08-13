@@ -48,6 +48,27 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-ser
 
 #splash .meta { color: #475569; font-size: 0.72em; margin-top: 18px; text-align: center; line-height: 1.8; }
 
+#splash .splash-input {
+  width: 260px; padding: 11px 16px; margin-bottom: 14px; border-radius: 12px;
+  border: 1px solid rgba(129,140,248,0.25); background: rgba(255,255,255,0.05);
+  color: #E2E8F0; font-size: 0.95em; text-align: center; outline: none;
+  transition: border-color 0.2s;
+}
+#splash .splash-input:focus { border-color: #818CF8; }
+#splash .splash-input::placeholder { color: #64748B; }
+
+#splash .login-mode-tabs {
+  display: flex; gap: 6px; margin-bottom: 12px;
+  background: rgba(255,255,255,0.04); border-radius: 12px; padding: 4px;
+}
+#splash .mode-tab {
+  flex: 1; padding: 8px 0; border: none; border-radius: 9px; cursor: pointer;
+  background: transparent; color: #64748B; font-size: 0.85em; font-weight: 700;
+  transition: background 0.15s, color 0.15s;
+}
+#splash .mode-tab.active { background: rgba(129,140,248,0.18); color: #C7D2FE; }
+#splash .splash-error { color: #ff7043; font-size: 0.75em; margin: -6px 0 10px; min-height: 1em; }
+
 /* ── HUD (top-left) ────────────────────────────────── */
 #hud {
   position: fixed; top: 16px; left: 16px; z-index: 100;
@@ -155,3 +176,156 @@ body { margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-ser
   display: none;
 }
 #scene-btn:hover { background: rgba(129,140,248,0.15); }
+
+/* ── 360° Tour — area panel + jump menu ───────────── */
+#tour-panel {
+  position: fixed; left: 16px; bottom: 16px; z-index: 100;
+  max-width: 280px;
+  background: rgba(0, 8, 20, 0.85); border-radius: 14px;
+  padding: 14px 18px; border: 1px solid rgba(0,229,255,0.18);
+  backdrop-filter: blur(12px); pointer-events: none;
+}
+#tour-panel .tour-area-label {
+  color: #00e5ff; font-size: 9px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase;
+}
+#tour-panel .tour-area-name { color: #fff; font-size: 17px; font-weight: 800; margin: 3px 0 2px; }
+#tour-panel .tour-area-pos  { color: rgba(255,255,255,0.35); font-size: 11px; margin-bottom: 6px; }
+#tour-panel .tour-area-desc { color: rgba(255,255,255,0.55); font-size: 11.5px; line-height: 1.6; }
+
+#tour-jump {
+  position: fixed; top: 16px; right: 16px; z-index: 100;
+  background: rgba(0,0,0,0.55); border: 1px solid rgba(129,140,248,0.25);
+  color: #C7D2FE; border-radius: 10px; padding: 8px 12px;
+  font-size: 12px; font-weight: 600; backdrop-filter: blur(8px);
+  pointer-events: auto; cursor: pointer;
+}
+
+.tour-hotspot-ring {
+  animation: tourPulse 1.6s ease-in-out infinite;
+}
+@keyframes tourPulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+/* ── Dataset capture mode (tur 360°) ──────────────── */
+#dataset-toggle {
+  position: fixed; top: 82px; left: 16px; z-index: 100;
+  background: rgba(0,0,0,0.55); border: 1px solid rgba(255,183,77,0.3);
+  color: #FFB74D; border-radius: 10px; padding: 8px 14px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  backdrop-filter: blur(8px); transition: background 0.2s;
+}
+#dataset-toggle:hover { background: rgba(255,183,77,0.15); }
+#dataset-toggle.active { background: rgba(255,183,77,0.2); border-color: #FFB74D; }
+
+#dataset-panel {
+  position: fixed; top: 128px; left: 16px; z-index: 100;
+  width: 240px;
+  max-height: min(420px, 60vh); overflow-y: auto;
+  background: rgba(0, 8, 20, 0.92); border-radius: 14px;
+  padding: 16px; border: 1px solid rgba(255,183,77,0.25);
+  backdrop-filter: blur(12px);
+}
+#dataset-panel label {
+  display: block; color: rgba(255,255,255,0.4); font-size: 9px;
+  font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px;
+}
+#dataset-panel input, #dataset-panel select {
+  width: 100%; box-sizing: border-box; margin-bottom: 10px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  color: #fff; border-radius: 8px; padding: 8px 10px; font-size: 13px;
+}
+#dataset-panel button {
+  width: 100%; padding: 9px; border-radius: 8px; border: none;
+  background: linear-gradient(135deg, #FFB74D, #FF9800);
+  color: #1a1000; font-weight: 800; font-size: 13px; cursor: pointer;
+}
+#dataset-panel button:hover { filter: brightness(1.08); }
+#dataset-status, #dataset-login-msg {
+  margin-top: 8px; font-size: 11.5px; color: rgba(255,255,255,0.6); line-height: 1.5;
+}
+#dataset-panel .dataset-desc {
+  font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.6; margin-bottom: 12px;
+  padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+#dataset-panel .dataset-desc b { color: #FFB74D; }
+
+/* ── Hasil Belajar Saya (siswa login sungguhan) ────── */
+#student-results-toggle {
+  position: fixed; top: 60px; right: 16px; z-index: 100;
+  background: rgba(0,0,0,0.55); border: 1px solid rgba(0,229,255,0.3);
+  color: #00e5ff; border-radius: 10px; padding: 8px 14px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  backdrop-filter: blur(8px); transition: background 0.2s;
+  display: none;
+}
+#student-results-toggle:hover { background: rgba(0,229,255,0.15); }
+
+#student-results-panel {
+  position: fixed; top: 106px; right: 16px; z-index: 100;
+  width: 260px;
+  max-height: min(420px, 60vh); overflow-y: auto;
+  background: rgba(0, 8, 20, 0.92); border-radius: 14px;
+  padding: 16px; border: 1px solid rgba(0,229,255,0.25);
+  backdrop-filter: blur(12px);
+  display: none;
+}
+#student-results-panel .sr-name { color: #fff; font-weight: 800; font-size: 14px; margin-bottom: 10px; }
+#student-results-panel .sr-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+#student-results-panel .sr-stat { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 8px; text-align: center; }
+#student-results-panel .sr-stat .val { color: #00e5ff; font-size: 16px; font-weight: 800; }
+#student-results-panel .sr-stat .lbl { color: rgba(255,255,255,0.4); font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+#student-results-panel .sr-section-label { color: rgba(255,255,255,0.4); font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin: 10px 0 6px; }
+#student-results-panel .sr-row { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255,255,255,0.7); padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+#student-results-panel .sr-row.correct .sr-badge { color: #00e676; }
+#student-results-panel .sr-row.wrong .sr-badge { color: #ff5252; }
+#student-results-panel .sr-empty { color: rgba(255,255,255,0.35); font-size: 11.5px; text-align: center; padding: 16px 0; }
+
+/* ── Kuis (uji pemahaman) ──────────────────────────── */
+#quiz-trigger-btn {
+  width: 100%; margin-top: 14px; padding: 11px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #38BDF8, #818CF8);
+  color: #05131f; font-weight: 800; font-size: 13px; cursor: pointer;
+  pointer-events: auto;
+}
+#quiz-trigger-btn:hover { filter: brightness(1.08); }
+
+#quiz-overlay {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 300; width: 320px;
+  background: rgba(0, 8, 20, 0.97); border-radius: 18px;
+  padding: 24px; border: 1px solid rgba(129,140,248,0.25);
+  backdrop-filter: blur(16px); display: none;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.7);
+}
+#quiz-overlay .close {
+  position: absolute; top: 10px; right: 14px;
+  background: rgba(255,255,255,0.06); border: none;
+  color: rgba(255,255,255,0.4); font-size: 18px; cursor: pointer;
+  border-radius: 6px; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+}
+#quiz-overlay .close:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+.quiz-question { color: #fff; font-size: 15px; font-weight: 600; margin: 10px 0 16px; line-height: 1.5; }
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-option {
+  padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04); color: #E2E8F0; font-size: 13px; text-align: left;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.quiz-option:hover { background: rgba(129,140,248,0.1); border-color: #818CF8; }
+.quiz-option.correct { background: rgba(0,230,118,0.15); border-color: #00e676; color: #00e676; }
+.quiz-option.wrong   { background: rgba(255,82,82,0.15); border-color: #ff5252; color: #ff8a80; }
+.quiz-option:disabled { cursor: default; }
+
+.quiz-feedback { margin-top: 14px; font-size: 12.5px; color: rgba(255,255,255,0.6); line-height: 1.6; }
+
+/* ── Fade transition antar titik tur 360° ─────────────── */
+#tour-fade {
+  position: fixed; inset: 0; z-index: 60;
+  background: #000; opacity: 0; pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+#tour-fade.active { opacity: 1; }

@@ -40,6 +40,23 @@
     </div>
   </div>
 
+  <div class="login-mode-tabs">
+    <button type="button" class="mode-tab active" data-mode="guest" onclick="setLoginMode('guest')">Tamu</button>
+    <button type="button" class="mode-tab" data-mode="student" onclick="setLoginMode('student')">Login Siswa</button>
+  </div>
+
+  <div id="guest-fields">
+    <input id="student-name" class="splash-input" type="text" placeholder="Nama kamu (opsional)" maxlength="100">
+    <select id="student-school" class="splash-input school-select"><option value="">Pilih sekolah (opsional)</option></select>
+  </div>
+
+  <div id="student-login-fields" style="display:none">
+    <select id="login-school" class="splash-input school-select"><option value="">Pilih sekolah</option></select>
+    <input id="login-student-number" class="splash-input" type="text" placeholder="Nomor Induk">
+    <input id="login-student-password" class="splash-input" type="password" placeholder="Password">
+    <div id="student-login-error" class="splash-error"></div>
+  </div>
+
   <button onclick="startApp()">Masuk Eksplorasi</button>
 
   <div class="meta">
@@ -87,9 +104,24 @@
     <div class="ctx-label">Konteks Budaya</div>
     <div id="info-context">—</div>
   </div>
+
+  <button id="quiz-trigger-btn" onclick="openQuiz()">📝 Uji Pemahaman</button>
+</div>
+
+<!-- ── Kuis Panel ────────────────────────────────────── -->
+<div id="quiz-overlay">
+  <button class="close" onclick="closeQuiz()" aria-label="Tutup">×</button>
+  <div class="panel-label">Uji Pemahaman</div>
+  <div id="quiz-question" class="quiz-question">—</div>
+  <div id="quiz-options" class="quiz-options"></div>
+  <div id="quiz-feedback" class="quiz-feedback"></div>
 </div>
 
 <button id="scene-btn" onclick="window.location.href='/'">← Borobudur</button>
+
+<!-- ── Hasil Belajar Saya (muncul kalau login sebagai siswa) ── -->
+<button id="student-results-toggle" onclick="toggleStudentResults()">📊 Hasil Saya</button>
+<div id="student-results-panel"></div>
 
 <!-- ── A-FRAME SCENE — CANDI PRAMBANAN ──────────── -->
 <a-scene
@@ -112,7 +144,8 @@
   <a-entity light="type:directional;  color:#6655aa; intensity:0.3" position="-4 2 -3"></a-entity>
 
   <!-- Ground (tanah kering Prambanan) -->
-  <a-plane position="0 0 0" rotation="-90 0 0" width="100" height="100" color="#6a5a3a" roughness="1"></a-plane>
+  <a-plane position="0 0 0" rotation="-90 0 0" width="100" height="100" color="#6a5a3a" roughness="1"
+    material="src:#ground-tex; repeat:20 20" ></a-plane>
   <a-plane position=" 4 0.01  -5" rotation="-90 0 0" width="6" height="8" color="#5a4a2a" roughness="1"></a-plane>
   <a-plane position="-5 0.01  -9" rotation="-90 0 0" width="5" height="5" color="#5a4a2a" roughness="1"></a-plane>
 

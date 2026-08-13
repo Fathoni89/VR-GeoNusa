@@ -72,6 +72,11 @@
       background: var(--surface); border-right: 1px solid var(--border);
       padding: 16px 10px; display: flex; flex-direction: column; gap: 3px;
     }
+    .sidebar-toggle {
+      display: none; background: none; border: 1px solid var(--border); color: var(--text);
+      border-radius: 7px; padding: 6px 11px; font-size: 15px; cursor: pointer; line-height: 1;
+    }
+    .sidebar-backdrop { display: none; }
     .sidebar .section-label { color: var(--muted); font-size: 10px; font-weight: 700;
       letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 12px 4px; }
     .nav-item {
@@ -208,7 +213,16 @@
 
     @media (max-width: 768px) {
       .app { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
+      .sidebar-toggle { display: inline-flex; align-items: center; justify-content: center; }
+      .sidebar {
+        display: none; position: fixed; top: 56px; left: 0; bottom: 0; width: 240px;
+        z-index: 50; overflow-y: auto; box-shadow: 4px 0 24px rgba(0,0,0,.4);
+      }
+      .sidebar.open { display: flex; }
+      .sidebar-backdrop.open {
+        display: block; position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,.5); z-index: 40;
+      }
       .stats { grid-template-columns: 1fr 1fr; }
       .form-grid { grid-template-columns: 1fr; }
     }
@@ -235,7 +249,6 @@
       <button type="submit" class="login-btn">Masuk →</button>
     </form>
     <div class="login-err" id="login-err"></div>
-    <div class="login-hint">Default: admin / geonusa2026</div>
   </div>
 </div>
 
@@ -247,6 +260,7 @@
 
   <!-- Topbar -->
   <header class="topbar">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Buka menu">☰</button>
     <span class="logo">VR-GeoNusa</span>
     <span class="badge">Admin</span>
     <div class="spacer"></div>
@@ -255,24 +269,39 @@
     <button class="logout-btn" onclick="doLogout()">Keluar</button>
   </header>
 
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
   <!-- Sidebar -->
-  <nav class="sidebar">
+  <nav class="sidebar" id="sidebar">
     <div class="section-label">Konten</div>
-    <div class="nav-item active" onclick="showPage('objects')">
+    <div class="nav-item active" data-super-admin-only onclick="showPage('objects')">
       <span class="icon">🏛️</span> Objek Scene
     </div>
-    <div class="nav-item" onclick="showPage('scenes')">
+    <div class="nav-item" data-super-admin-only onclick="showPage('scenes')">
       <span class="icon">🗺️</span> Kelola Scene
     </div>
-    <div class="section-label" style="margin-top:8px">Referensi</div>
-    <div class="nav-item" onclick="showPage('geometri')">
+    <div class="nav-item" data-super-admin-only onclick="state.currentTourId=null; showPage('tour')">
+      <span class="icon">🧭</span> Tur 360°
+    </div>
+    <div class="nav-item" onclick="state.currentClassId=null; showPage('classes')">
+      <span class="icon">🎓</span> Kelas & Siswa
+    </div>
+    <div class="nav-item" onclick="showPage('report')">
+      <span class="icon">📊</span> Laporan Guru
+    </div>
+    <div class="section-label" style="margin-top:8px" data-admin-only>Multi-Sekolah</div>
+    <div class="nav-item" data-admin-only onclick="showPage('schools')">
+      <span class="icon">🏫</span> Sekolah & Akun Guru
+    </div>
+    <div class="section-label" style="margin-top:8px" data-super-admin-only>Referensi</div>
+    <div class="nav-item" data-super-admin-only onclick="showPage('geometri')">
       <span class="icon">📐</span> Katalog Geometri
     </div>
-    <div class="nav-item" onclick="showPage('export')">
+    <div class="nav-item" data-super-admin-only onclick="showPage('export')">
       <span class="icon">📤</span> Export / Backup
     </div>
-    <div class="section-label" style="margin-top:8px">Konten Lain</div>
-    <div class="nav-item" onclick="showPage('team')">
+    <div class="section-label" style="margin-top:8px" data-super-admin-only>Konten Lain</div>
+    <div class="nav-item" data-super-admin-only onclick="showPage('team')">
       <span class="icon">👥</span> Tim Peneliti
     </div>
     <div class="section-label" style="margin-top:8px">Akun</div>
@@ -501,7 +530,9 @@ const API = '';  // same origin
 let state = {
   token: localStorage.getItem('vgn_token') || '',
   username: localStorage.getItem('vgn_user') || '',
-  currentScene: localStorage.getItem('vgn_scene') || 'borobudur',
+  role: localStorage.getItem('vgn_role') || '',
+  schoolId: localStorage.getItem('vgn_school_id') || '',
+  currentScene: localStorage.getItem('vgn_scene') || 'prambanan',
   scenes: {},
   sceneList: [],
   team: [],
@@ -509,6 +540,9 @@ let state = {
   editingMemberId: null,
   currentPage: 'objects',
 };
+function isSuperAdmin() { return state.role === 'super_admin'; }
+function isSchoolAdmin() { return state.role === 'school_admin'; }
+function isStaffAdmin() { return state.role === 'super_admin' || state.role === 'school_admin'; }
 
 // ══════════════════════════════════════════════════════
 // AUTH
@@ -524,8 +558,13 @@ async function doLogin(e) {
     if (!json.success) { document.getElementById('login-err').textContent = json.message; return; }
     state.token    = json.token;
     state.username = json.username;
+    state.role     = json.role;
+    state.schoolId = json.school_id || '';
     localStorage.setItem('vgn_token', json.token);
     localStorage.setItem('vgn_user', json.username);
+    localStorage.setItem('vgn_role', json.role);
+    localStorage.setItem('vgn_school_id', json.school_id || '');
+    if (!isSuperAdmin()) state.currentPage = 'report';
     showApp();
   } catch (err) {
     document.getElementById('login-err').textContent = 'Gagal terhubung ke server';
@@ -539,6 +578,9 @@ async function checkAuth() {
     const json = await res.json();
     if (!json.success) { showLogin(); return; }
     state.username = json.username;
+    state.role     = json.role;
+    state.schoolId = json.school_id || '';
+    if (!isSuperAdmin() && state.currentPage !== 'report' && state.currentPage !== 'settings') state.currentPage = 'report';
     showApp();
   } catch { showLogin(); }
 }
@@ -546,7 +588,9 @@ async function checkAuth() {
 function doLogout() {
   localStorage.removeItem('vgn_token');
   localStorage.removeItem('vgn_user');
-  state.token = ''; state.username = '';
+  localStorage.removeItem('vgn_role');
+  localStorage.removeItem('vgn_school_id');
+  state.token = ''; state.username = ''; state.role = ''; state.schoolId = '';
   showLogin();
 }
 
@@ -558,9 +602,22 @@ function showLogin() {
 async function showApp() {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app-page').style.display   = 'block';
-  document.getElementById('topbar-user').textContent  = '👤 ' + state.username;
-  await loadAllScenes();
+  const roleLabel = isSuperAdmin() ? '' : isSchoolAdmin() ? ' (Admin Sekolah)' : ' (Guru)';
+  document.getElementById('topbar-user').textContent  = '👤 ' + state.username + roleLabel;
+  applyRoleVisibility();
+  if (isSuperAdmin()) await loadAllScenes();
   showPage(state.currentPage);
+}
+
+// Guru hanya melihat Laporan Guru — menu pengelolaan konten/sekolah
+// disembunyikan (server juga menolaknya lewat requireRole, ini cuma UI).
+function applyRoleVisibility() {
+  document.querySelectorAll('[data-super-admin-only]').forEach(el => {
+    el.style.display = isSuperAdmin() ? '' : 'none';
+  });
+  document.querySelectorAll('[data-admin-only]').forEach(el => {
+    el.style.display = isStaffAdmin() ? '' : 'none';
+  });
 }
 
 // ══════════════════════════════════════════════════════
@@ -577,6 +634,14 @@ async function loadAllScenes() {
     state.sceneList = scenesJson.data || [];
     state.team      = (teamJson.data || []).sort((a,b) => (a.order||99)-(b.order||99));
     await Promise.all(state.sceneList.map(s => loadSceneDetail(s.scene_id)));
+
+    // Sembuhkan sendiri kalau currentScene tersimpan di localStorage sudah
+    // tidak valid lagi (mis. scene lama yang sudah dihapus/dipindah, atau
+    // sisa nilai "undefined" dari bug lama) — daripada nampilin "undefined".
+    if (!state.sceneList.find(s => s.scene_id === state.currentScene)) {
+      state.currentScene = state.sceneList[0]?.scene_id || '';
+      localStorage.setItem('vgn_scene', state.currentScene);
+    }
   } catch(e) { toast('Gagal load data: '+e.message, 'error'); }
 }
 
@@ -595,15 +660,25 @@ function apiFetch(url, options={}) {
 // ══════════════════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════════════════
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-backdrop').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+
 function showPage(page) {
+  closeSidebar();
   state.currentPage = page;
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(el => {
-    const map = { objects:'Objek', scenes:'Kelola', geometri:'Katalog', export:'Export', settings:'Pengaturan' };
+    const map = { objects:'Objek Scene', scenes:'Kelola Scene', tour:'Tur 360°', classes:'Kelas & Siswa', report:'Laporan Guru', schools:'Sekolah & Akun Guru', geometri:'Katalog', export:'Export', settings:'Pengaturan', team:'Tim Peneliti' };
     if (el.textContent.trim().includes(map[page])) el.classList.add('active');
   });
   const main = document.getElementById('main-content');
-  const pages = { objects: renderObjectsPage, scenes: renderScenesPage, geometri: renderGeometriPage, export: renderExportPage, settings: renderSettingsPage, team: renderTeamPage };
+  const pages = { objects: renderObjectsPage, scenes: renderScenesPage, tour: renderTourPage, classes: renderClassesPage, report: renderReportPage, schools: renderSchoolsPage, geometri: renderGeometriPage, export: renderExportPage, settings: renderSettingsPage, team: renderTeamPage };
   if (pages[page]) pages[page](main);
 }
 
@@ -668,10 +743,13 @@ function confPill(conf) {
 // ══════════════════════════════════════════════════════
 // PAGE: SCENES
 // ══════════════════════════════════════════════════════
-function renderScenesPage(main) {
+async function renderScenesPage(main) {
+  // Tur 360° (foto asli, seperti Borobudur) sekarang punya menu sendiri
+  // ("Tur 360°" di sidebar) — halaman ini murni untuk scene objek primitif
+  // (mis. Prambanan), supaya tidak dobel dengan daftar di sana.
   const cards = state.sceneList.map(s => {
     const sc = state.scenes[s.scene_id] || {};
-    const isDefault = ['borobudur','prambanan'].includes(s.scene_id);
+    const isDefault = ['prambanan'].includes(s.scene_id);
     const thumbPath = `/assets/images/${s.scene_id}.jpg`;
     return `
       <div class="scene-info-card">
@@ -706,6 +784,584 @@ function renderScenesPage(main) {
       Klik "+ Tambah Scene" → isi form → scene VR otomatis dibuat → tambahkan objek via tab "Objek Scene".
       Upload foto ke <code>public/assets/images/[scene_id].jpg</code> agar thumbnail muncul.
     </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: TUR 360° (daftar semua tur foto — Borobudur, dan situs
+// lain begitu foto 360°-nya ada — lalu detail identifikasi per tur)
+// ══════════════════════════════════════════════════════
+async function renderTourPage(main) {
+  main.innerHTML = `<div class="page-header"><div><h1>Tur 360°</h1><div class="sub">Memuat daftar tur…</div></div></div>`;
+
+  const res = await apiFetch('/api/tours');
+  const json = await res.json();
+  const tours = json.data || [];
+
+  if (state.currentTourId && tours.find(t => t.tour_id === state.currentTourId)) {
+    return renderTourDetailPage(main, state.currentTourId);
+  }
+
+  const cards = tours.map(t => `
+    <div class="scene-info-card">
+      <div class="sc-thumb">
+        <img src="/assets/panorama/plateu-01.jpg" alt="${t.name}" onerror="this.style.display='none'">
+        <span class="sc-default-badge" style="background:rgba(255,183,77,.15);color:#FFB74D;border-color:rgba(255,183,77,.3)">TUR 360°</span>
+      </div>
+      <div class="sc-body">
+        <div class="sc-name">${t.name}</div>
+        <div class="sc-loc">📍 ${t.source || 'Foto 360° asli'}</div>
+        <div class="sc-stats">
+          <div class="sc-stat"><div class="sc-stat-val">${t.node_count}</div><div class="sc-stat-lbl">Titik</div></div>
+          <div class="sc-stat"><div class="sc-stat-val">${t.identified_count}</div><div class="sc-stat-lbl">Teridentifikasi</div></div>
+        </div>
+        <div class="sc-actions">
+          <button class="btn btn-ghost btn-sm" onclick="state.currentTourId='${t.tour_id}'; renderTourPage(document.getElementById('main-content'))">🧭 Kelola Identifikasi</button>
+          <a href="/vr/tour-${t.tour_id}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Tur</a>
+        </div>
+      </div>
+    </div>`).join('');
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Tur 360°</h1><div class="sub">Semua destinasi dengan tur foto 360° — situs baru muncul otomatis begitu fotonya diproses</div></div>
+    </div>
+    <div class="scene-cards">${cards || `<div style="color:var(--muted);padding:24px">Belum ada tur 360° yang diproses.</div>`}</div>`;
+}
+
+async function renderTourDetailPage(main, tourId) {
+  main.innerHTML = `<div class="page-header"><div><h1>Tur 360°</h1><div class="sub">Memuat data tur…</div></div></div>`;
+
+  const [tourRes, labelsRes] = await Promise.all([
+    fetch(`/data/tour-${tourId}.json`),
+    fetch('/data/geometry-labels.json'),
+  ]);
+  const tour = await tourRes.json();
+  const labels = await labelsRes.json();
+  state.tourData = tour;
+  state.geometryClasses = labels.classes;
+
+  const classOptions = (selected) => [
+    `<option value="" ${!selected?'selected':''}>— Tidak ada —</option>`,
+    ...labels.classes.map(c => `<option value="${c.class_id}" ${c.class_id===selected?'selected':''}>${c.label_id} (${c.label_en})</option>`),
+  ].join('');
+
+  const rows = tour.folder_order.map(folder => {
+    const nodesInFolder = tour.nodes.filter(n => n.folder === folder);
+    const sample = nodesInFolder[0];
+    const identify = sample.identify;
+    const rowId = folder.replace(/\s+/g, '-').toLowerCase();
+    return `
+      <tr>
+        <td style="font-weight:600">${sample.area_label}</td>
+        <td style="font-family:monospace;font-size:11px;color:var(--muted)">${nodesInFolder.length} titik</td>
+        <td>
+          <div class="form-group" style="margin:0">
+            <select id="tour-class-${rowId}">${classOptions(identify?.class_id || '')}</select>
+          </div>
+        </td>
+        <td style="width:90px">
+          <div class="form-group" style="margin:0">
+            <input id="tour-conf-${rowId}" type="number" min="0" max="100" value="${identify?.conf ?? 85}" style="width:70px">
+          </div>
+        </td>
+        <td>${identify?`<span class="badge-interactive">Teridentifikasi</span>`:'<span class="badge-static">Belum</span>'}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="saveTourFolder('${folder.replace(/'/g,"\\'")}','${rowId}')">💾 Simpan</button></td>
+      </tr>`;
+  }).join('');
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="nav-item" style="display:inline-flex;padding:0;margin-bottom:6px;color:var(--accent);cursor:pointer" onclick="state.currentTourId=null; renderTourPage(document.getElementById('main-content'))">← Semua Tur</div>
+        <h1>${tour.name || tourId}</h1>
+        <div class="sub">Atur geometri apa yang teridentifikasi di tiap area — dipakai oleh marker "Identifikasi" di dalam tur</div>
+      </div>
+      <a href="/vr/tour-${tourId}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Tur</a>
+    </div>
+    <div class="stats">
+      <div class="stat-card"><div class="val">${tour.nodes.length}</div><div class="lbl">Total Titik</div></div>
+      <div class="stat-card"><div class="val">${tour.folder_order.length}</div><div class="lbl">Area</div></div>
+      <div class="stat-card"><div class="val">${tour.nodes.filter(n=>n.identify).length}</div><div class="lbl">Titik Teridentifikasi</div></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar"><h2>Identifikasi per Area</h2></div>
+      <table>
+        <thead><tr><th>Area</th><th>Titik</th><th>Kelas Geometri</th><th>Conf. %</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:14px;font-size:12px;color:var(--muted);margin-top:16px">
+      💡 Satu area (mis. "Teras 1") bisa berisi banyak titik pandang — mengatur kelas geometri di sini menerapkannya ke <strong style="color:var(--accent)">semua titik dalam area itu sekaligus</strong>. Pilih "— Tidak ada —" untuk area yang memang tidak punya elemen geometri jelas (mis. halaman/selasar).
+    </div>`;
+}
+
+async function saveTourFolder(folder, rowId) {
+  const classId = document.getElementById(`tour-class-${rowId}`).value;
+  const conf = parseInt(document.getElementById(`tour-conf-${rowId}`).value, 10);
+  const res = await apiFetch(`/api/tour/${state.currentTourId}/folder/${encodeURIComponent(folder)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ class_id: classId || null, conf }),
+  });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  toast(`Area "${folder}" diperbarui (${json.applied_to} titik) ✓`, 'success');
+  renderTourDetailPage(document.getElementById('main-content'), state.currentTourId);
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: LAPORAN GURU (rekap sesi, kuis, interaksi siswa)
+// ══════════════════════════════════════════════════════
+async function renderReportPage(main, page) {
+  main.innerHTML = `<div class="page-header"><div><h1>Laporan Guru</h1><div class="sub">Memuat rekap aktivitas…</div></div></div>`;
+
+  page = page || 1;
+  const schoolParam = isSuperAdmin() && state.reportSchoolFilter ? `&school_id=${state.reportSchoolFilter}` : '';
+  const res = await apiFetch(`/api/reports/summary?page=${page}${schoolParam}`);
+  const json = await res.json();
+  if (!json.success) { main.innerHTML = `<div class="page-header"><div><h1>Laporan Guru</h1><div class="sub" style="color:var(--red)">${json.message}</div></div></div>`; return; }
+  const { totals, perQuestion, perObject, perSchool, recentSessions, pagination, conceptRecommendations } = json.data;
+
+  let schoolFilterHtml = '';
+  if (isSuperAdmin()) {
+    if (!state.schoolsCache) {
+      const sRes = await apiFetch('/api/schools');
+      const sJson = await sRes.json();
+      state.schoolsCache = sJson.data || [];
+    }
+    const opts = state.schoolsCache.map(s => `<option value="${s.id}" ${String(s.id)===String(state.reportSchoolFilter)?'selected':''}>${s.name}</option>`).join('');
+    schoolFilterHtml = `<select onchange="state.reportSchoolFilter=this.value; renderReportPage(document.getElementById('main-content'))" style="margin-right:8px">
+      <option value="">Semua Sekolah</option>${opts}
+    </select>`;
+  }
+
+  const perSchoolRows = (perSchool || []).length ? perSchool.map(s => `
+    <tr><td style="font-weight:600">${s.school_name || '— (tanpa sekolah)'}</td><td>${s.session_count}</td></tr>
+  `).join('') : '';
+
+  const questionRows = perQuestion.length ? perQuestion.map(q => `
+    <tr>
+      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${q.question_id}</td>
+      <td>${q.attempts}</td>
+      <td>${confPill(q.accuracy_pct)}</td>
+      <td>${q.avg_response_time ?? '—'} dtk</td>
+    </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Belum ada data kuis</td></tr>`;
+
+  const objectRows = perObject.length ? perObject.map(o => `
+    <tr>
+      <td style="font-weight:600">${o.geometry_label || o.object_code}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${o.object_code}</td>
+      <td>${o.interaction_count}</td>
+    </tr>`).join('') : `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--muted)">Belum ada interaksi</td></tr>`;
+
+  const sessionRows = recentSessions.length ? recentSessions.map(s => `
+    <tr>
+      <td style="font-weight:600">${s.student_name}</td>
+      ${isSuperAdmin() ? `<td>${s.school_name || '—'}</td>` : ''}
+      <td>${s.scene_name}</td>
+      <td style="font-size:11px;color:var(--muted)">${s.started_at}</td>
+      <td>${s.duration_seconds != null ? s.duration_seconds + ' dtk' : '— (belum selesai)'}</td>
+    </tr>`).join('') : `<tr><td colspan="${isSuperAdmin()?5:4}" style="text-align:center;padding:24px;color:var(--muted)">Belum ada sesi</td></tr>`;
+
+  const conceptCards = (conceptRecommendations || []).length ? conceptRecommendations.map(c => {
+    const tone = c.attempts < 3 ? 'muted' : c.accuracy_pct < 60 ? 'red' : c.accuracy_pct < 85 ? 'yellow' : 'green';
+    const toneColor = { muted: 'var(--muted)', red: 'var(--red)', yellow: 'var(--yellow)', green: 'var(--green)' }[tone];
+    return `
+    <div style="background:var(--surface2);border-radius:10px;padding:14px;border-left:3px solid ${toneColor}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span class="badge-geo">${c.geometry_name}</span>
+        <span style="color:${toneColor};font-weight:700;font-size:13px">${c.attempts >= 3 ? c.accuracy_pct + '%' : '—'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text);line-height:1.5">${c.recommendation}</div>
+    </div>`;
+  }).join('') : `<div style="color:var(--muted);text-align:center;padding:24px">Belum ada data kuis untuk direkap per konsep</div>`;
+
+  const csvUrl = `/api/reports/export.csv${schoolParam ? '?' + schoolParam.slice(1) : ''}`;
+  const pageBtn = (p, label) => `<button class="btn btn-ghost btn-sm" ${p<1||p>pagination.totalPages?'disabled':''} onclick="renderReportPage(document.getElementById('main-content'), ${p})">${label}</button>`;
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Laporan Guru</h1><div class="sub">Rekap sesi eksplorasi, kuis, dan interaksi siswa${isSuperAdmin()?' (semua sekolah, bisa difilter)':''}</div></div>
+      <div>
+        ${schoolFilterHtml}
+        <a href="${csvUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-right:8px">⬇️ Export CSV</a>
+        <button class="btn btn-ghost btn-sm" onclick="renderReportPage(document.getElementById('main-content'))">🔄 Refresh</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat-card"><div class="val">${totals.total_sessions}</div><div class="lbl">Total Sesi</div></div>
+      <div class="stat-card"><div class="val">${totals.total_students}</div><div class="lbl">Siswa Unik</div></div>
+      <div class="stat-card"><div class="val">${totals.avg_duration_seconds ?? '—'}</div><div class="lbl">Rata² Durasi (dtk)</div></div>
+      <div class="stat-card"><div class="val">${totals.total_quiz_attempts}</div><div class="lbl">Percobaan Kuis</div></div>
+      <div class="stat-card"><div class="val">${totals.quiz_accuracy_pct ?? '—'}%</div><div class="lbl">Akurasi Kuis</div></div>
+      <div class="stat-card"><div class="val">${totals.total_interactions}</div><div class="lbl">Total Interaksi</div></div>
+    </div>
+
+    ${isSuperAdmin() && perSchoolRows ? `
+    <div class="table-wrap" style="margin-bottom:20px">
+      <div class="table-toolbar"><h2>Sesi per Sekolah</h2></div>
+      <table><thead><tr><th>Sekolah</th><th>Jumlah Sesi</th></tr></thead><tbody>${perSchoolRows}</tbody></table>
+    </div>` : ''}
+
+    <div class="table-wrap" style="margin-bottom:20px">
+      <div class="table-toolbar"><h2>Rekomendasi per Konsep Geometri</h2></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:16px">${conceptCards}</div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-toolbar"><h2>Akurasi per Soal Kuis</h2></div>
+      <table>
+        <thead><tr><th>Soal</th><th>Percobaan</th><th>Akurasi</th><th>Rata² Waktu Jawab</th></tr></thead>
+        <tbody>${questionRows}</tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap" style="margin-top:20px">
+      <div class="table-toolbar"><h2>Interaksi per Elemen Geometri</h2></div>
+      <table>
+        <thead><tr><th>Geometri</th><th>Kode</th><th>Jumlah Interaksi</th></tr></thead>
+        <tbody>${objectRows}</tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap" style="margin-top:20px">
+      <div class="table-toolbar">
+        <h2>Sesi Terbaru</h2>
+        <div style="font-size:11px;color:var(--muted)">Halaman ${pagination.page} / ${pagination.totalPages || 1} · ${pagination.total} sesi total</div>
+      </div>
+      <table>
+        <thead><tr><th>Nama Siswa</th>${isSuperAdmin()?'<th>Sekolah</th>':''}<th>Scene</th><th>Mulai</th><th>Durasi</th></tr></thead>
+        <tbody>${sessionRows}</tbody>
+      </table>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px">
+        ${pageBtn(pagination.page - 1, '← Sebelumnya')}
+        ${pageBtn(pagination.page + 1, 'Berikutnya →')}
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: KELAS & SISWA (guru: kelasnya sendiri; super_admin: semua)
+// Ini yang bikin siswa punya LOGIN SUNGGUHAN (nomor induk + password),
+// bukan cuma isi nama bebas — password dibuat sistem & guru yang membagikan.
+// ══════════════════════════════════════════════════════
+async function renderClassesPage(main) {
+  main.innerHTML = `<div class="page-header"><div><h1>Kelas & Siswa</h1><div class="sub">Memuat…</div></div></div>`;
+
+  if (state.currentClassId) return renderClassDetailPage(main, state.currentClassId);
+
+  const res = await apiFetch('/api/classes');
+  const classes = (await res.json()).data || [];
+
+  // school_admin butuh daftar guru di sekolahnya sendiri untuk form
+  // "+ Tambah Kelas" (mereka tidak mengajar, jadi wajib pilih guru pengampu).
+  let schoolTeachers = [];
+  if (isSchoolAdmin()) {
+    const accRes = await apiFetch('/api/accounts');
+    schoolTeachers = ((await accRes.json()).data || []).filter(a => a.role === 'teacher');
+  }
+
+  const showOwnerCol = isSuperAdmin() || isSchoolAdmin();
+  const ownerLabel = (c) => isSuperAdmin() ? `${c.school_name} <span style="color:var(--muted);font-size:11px">(${c.teacher_username})</span>` : c.teacher_username;
+
+  const rows = classes.length ? classes.map(c => `
+    <tr>
+      <td style="font-weight:600">${c.class_name}</td>
+      <td>${c.grade_level || '—'}</td>
+      <td>${c.academic_year || '—'}</td>
+      ${showOwnerCol ? `<td>${ownerLabel(c)}</td>` : ''}
+      <td>${c.student_count}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="state.currentClassId=${c.id}; renderClassesPage(document.getElementById('main-content'))">👥 Kelola Siswa</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteClass(${c.id},'${c.class_name.replace(/'/g,"\\'")}')" style="margin-left:4px">🗑</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="${showOwnerCol?6:5}" style="text-align:center;padding:24px;color:var(--muted)">Belum ada kelas</td></tr>`;
+
+  const subLabel = isSuperAdmin() ? 'Semua kelas di semua sekolah' : isSchoolAdmin() ? 'Semua kelas di sekolah Anda' : 'Kelas yang Anda ajar';
+  const teacherPicker = isSchoolAdmin() ? `
+        <select name="teacher_account_id" required style="flex:1">
+          <option value="">— Pilih guru pengampu —</option>
+          ${schoolTeachers.map(t => `<option value="${t.id}">${t.username}</option>`).join('')}
+        </select>` : '';
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Kelas & Siswa</h1><div class="sub">${subLabel}</div></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar"><h2>Daftar Kelas</h2></div>
+      <table>
+        <thead><tr><th>Nama Kelas</th><th>Tingkat</th><th>Tahun Ajaran</th>${showOwnerCol?`<th>${isSuperAdmin()?'Sekolah / Guru':'Guru'}</th>`:''}<th>Jml Siswa</th><th>Aksi</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${!isSuperAdmin() ? `
+      <form onsubmit="addClass(event)" style="display:flex;gap:8px;padding:14px;flex-wrap:wrap">
+        <input name="class_name" placeholder="Nama kelas (mis. Kelas 8A)" required style="flex:2">
+        <input name="grade_level" placeholder="Tingkat (mis. 8)" style="flex:1">
+        <input name="academic_year" placeholder="Tahun ajaran (mis. 2026/2027)" style="flex:1">
+        ${teacherPicker}
+        <button type="submit" class="btn btn-primary btn-sm">+ Tambah Kelas</button>
+      </form>` : ''}
+    </div>`;
+}
+
+async function addClass(e) {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const teacherAccountId = form.get('teacher_account_id');
+  const res = await apiFetch('/api/classes', {
+    method: 'POST',
+    body: JSON.stringify({
+      class_name: form.get('class_name'), grade_level: form.get('grade_level') || null,
+      academic_year: form.get('academic_year') || null,
+      teacher_account_id: teacherAccountId ? Number(teacherAccountId) : undefined,
+    }),
+  });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  toast(`Kelas "${form.get('class_name')}" dibuat ✓`, 'success');
+  renderClassesPage(document.getElementById('main-content'));
+}
+
+async function deleteClass(id, name) {
+  if (!confirm(`Hapus kelas "${name}"? Siswa di kelas ini tidak ikut terhapus.`)) return;
+  const res = await apiFetch(`/api/classes/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  toast('Kelas dihapus ✓', 'success');
+  renderClassesPage(document.getElementById('main-content'));
+}
+
+async function renderClassDetailPage(main, classId) {
+  main.innerHTML = `<div class="page-header"><div><h1>Kelas & Siswa</h1><div class="sub">Memuat roster…</div></div></div>`;
+
+  const res = await apiFetch(`/api/classes/${classId}/students`);
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); state.currentClassId = null; return renderClassesPage(main); }
+  const students = json.data || [];
+
+  const rows = students.length ? students.map(s => `
+    <tr>
+      <td style="font-weight:600">${s.name}</td>
+      <td style="font-family:monospace;font-size:12px">${s.student_number}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword(${s.id},'${s.name.replace(/'/g,"\\'")}')">🔑 Reset Password</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.name.replace(/'/g,"\\'")}')" style="margin-left:4px">🗑</button>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--muted)">Belum ada siswa — tambahkan lewat form di bawah</td></tr>`;
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="nav-item" style="display:inline-flex;padding:0;margin-bottom:6px;color:var(--accent);cursor:pointer" onclick="state.currentClassId=null; renderClassesPage(document.getElementById('main-content'))">← Semua Kelas</div>
+        <h1>Roster Siswa</h1>
+        <div class="sub">${students.length} siswa terdaftar</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nama</th><th>Nomor Induk</th><th>Aksi</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap" style="margin-top:20px">
+      <div class="table-toolbar"><h2>Tambah Siswa (Impor Massal)</h2></div>
+      <div style="padding:14px">
+        <label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Satu siswa per baris: Nama, Nomor Induk</label>
+        <textarea id="bulk-student-input" rows="6" placeholder="Dewi Lestari, 2026001&#10;Rian Saputra, 2026002" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;padding:10px;font-family:monospace;font-size:12px"></textarea>
+        <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="bulkAddStudents(${classId})">+ Tambahkan Semua</button>
+        <div id="bulk-student-result" style="margin-top:14px"></div>
+      </div>
+    </div>`;
+}
+
+async function bulkAddStudents(classId) {
+  const raw = document.getElementById('bulk-student-input').value;
+  const students = raw.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+    const [name, student_number] = line.split(',').map(s => s.trim());
+    return { name, student_number };
+  }).filter(s => s.name && s.student_number);
+
+  if (students.length === 0) { toast('Tidak ada baris valid — format: Nama, Nomor Induk', 'error'); return; }
+
+  const res = await apiFetch(`/api/classes/${classId}/students/bulk`, { method: 'POST', body: JSON.stringify({ students }) });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+
+  const resultEl = document.getElementById('bulk-student-result');
+  const createdRows = json.created.map(s => `
+    <tr><td>${s.name}</td><td style="font-family:monospace">${s.student_number}</td><td style="font-family:monospace;color:#00e676">${s.password}</td></tr>`).join('');
+  const skippedList = json.skipped.length
+    ? `<div style="color:var(--red);font-size:12px;margin-top:10px">Dilewati: ${json.skipped.map(s => `${s.name||'?'} (${s.reason})`).join(', ')}</div>` : '';
+
+  resultEl.innerHTML = `
+    <div style="background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:10px;padding:12px">
+      <div style="color:#00e676;font-weight:700;font-size:12px;margin-bottom:8px">✓ ${json.created.length} siswa ditambahkan — <b>salin password ini sekarang</b>, tidak ditampilkan lagi setelah halaman di-refresh:</div>
+      <table style="width:100%"><thead><tr><th style="text-align:left">Nama</th><th style="text-align:left">No. Induk</th><th style="text-align:left">Password</th></tr></thead><tbody>${createdRows}</tbody></table>
+      ${skippedList}
+    </div>`;
+  document.getElementById('bulk-student-input').value = '';
+  toast(`${json.created.length} siswa ditambahkan ✓`, 'success');
+}
+
+async function resetStudentPassword(id, name) {
+  if (!confirm(`Reset password "${name}"? Password lama tidak akan berlaku lagi.`)) return;
+  const res = await apiFetch(`/api/students/${id}/reset-password`, { method: 'PUT', body: JSON.stringify({}) });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  alert(`Password baru untuk "${name}": ${json.password}\n\nCatat sekarang — tidak ditampilkan lagi.`);
+}
+
+async function deleteStudent(id, name) {
+  if (!confirm(`Hapus siswa "${name}" dari kelas ini?`)) return;
+  const res = await apiFetch(`/api/students/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  toast(`"${name}" dihapus ✓`, 'success');
+  renderClassDetailPage(document.getElementById('main-content'), state.currentClassId);
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE: SEKOLAH & AKUN GURU (super_admin only)
+// ══════════════════════════════════════════════════════
+const ROLE_BADGES = {
+  super_admin: '<span class="badge-interactive">Super Admin</span>',
+  school_admin: '<span class="badge-geo">Admin Sekolah</span>',
+  teacher: '<span class="badge-static">Guru</span>',
+};
+
+async function renderSchoolsPage(main) {
+  main.innerHTML = `<div class="page-header"><div><h1>Sekolah & Akun Guru</h1><div class="sub">Memuat…</div></div></div>`;
+
+  const [schoolsRes, accountsRes] = await Promise.all([apiFetch('/api/schools'), apiFetch('/api/accounts')]);
+  const schools  = (await schoolsRes.json()).data || [];
+  const accounts = (await accountsRes.json()).data || [];
+  state.schoolsCache = schools; // dipakai ulang oleh filter di Laporan Guru
+
+  const schoolRows = schools.length ? schools.map(s => `
+    <tr>
+      <td style="font-weight:600">${s.name}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${s.code || '—'}</td>
+      <td>${accounts.filter(a => a.school_id === s.id).length}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteSchool(${s.id},'${s.name.replace(/'/g,"\\'")}')">🗑 Hapus</button></td>
+    </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Belum ada sekolah</td></tr>`;
+
+  const schoolOptions = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+  const accountRows = accounts.length ? accounts.map(a => `
+    <tr>
+      <td style="font-weight:600">${a.username}</td>
+      <td>${ROLE_BADGES[a.role] || a.role}</td>
+      ${isSuperAdmin() ? `<td>${a.school_name || '—'}</td>` : ''}
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="resetAccountPassword(${a.id},'${a.username}')">🔑 Reset Password</button>
+        ${a.role !== 'super_admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id},'${a.username}')" style="margin-left:4px">🗑</button>` : ''}
+      </td>
+    </tr>`).join('') : '';
+
+  const schoolsSection = isSuperAdmin() ? `
+    <div class="table-wrap">
+      <div class="table-toolbar"><h2>Sekolah</h2></div>
+      <table>
+        <thead><tr><th>Nama</th><th>Kode</th><th>Jml Akun</th><th>Aksi</th></tr></thead>
+        <tbody>${schoolRows}</tbody>
+      </table>
+      <form onsubmit="addSchool(event)" style="display:flex;gap:8px;padding:14px">
+        <input name="name" placeholder="Nama sekolah" required style="flex:2">
+        <input name="code" placeholder="Kode (opsional)" style="flex:1">
+        <button type="submit" class="btn btn-primary btn-sm">+ Tambah Sekolah</button>
+      </form>
+    </div>` : '';
+
+  // super_admin bikin akun peran apa saja + pilih sekolah; school_admin cuma
+  // bikin akun guru, otomatis di sekolahnya sendiri (tanpa perlu form field).
+  const accountFormFields = isSuperAdmin() ? `
+        <select name="role" style="flex:1">
+          <option value="teacher">Guru</option>
+          <option value="school_admin">Admin Sekolah</option>
+        </select>
+        <select name="school_id" required style="flex:1">
+          <option value="">— Pilih sekolah —</option>${schoolOptions}
+        </select>` : '';
+
+  main.innerHTML = `
+    <div class="page-header">
+      <div><h1>Sekolah & Akun Guru</h1><div class="sub">${isSuperAdmin() ? 'Kelola sekolah peserta pilot dan akun login per sekolah' : 'Kelola akun guru di sekolah Anda'}</div></div>
+    </div>
+
+    ${schoolsSection}
+
+    <div class="table-wrap" style="margin-top:${isSuperAdmin() ? '20px' : '0'}">
+      <div class="table-toolbar"><h2>${isSuperAdmin() ? 'Akun' : 'Akun Guru'}</h2></div>
+      <table>
+        <thead><tr><th>Username</th><th>Peran</th>${isSuperAdmin() ? '<th>Sekolah</th>' : ''}<th>Aksi</th></tr></thead>
+        <tbody>${accountRows || `<tr><td colspan="${isSuperAdmin()?4:3}" style="text-align:center;padding:24px;color:var(--muted)">Belum ada akun</td></tr>`}</tbody>
+      </table>
+      <form onsubmit="addAccount(event)" style="display:flex;gap:8px;padding:14px;flex-wrap:wrap">
+        <input name="username" placeholder="Username" required style="flex:1">
+        <input name="password" type="password" placeholder="Password (min. 6 karakter)" required style="flex:1">
+        ${accountFormFields}
+        <button type="submit" class="btn btn-primary btn-sm">+ Tambah Akun${isSuperAdmin() ? '' : ' Guru'}</button>
+      </form>
+    </div>`;
+}
+
+async function addSchool(e) {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const res = await apiFetch('/api/schools', { method: 'POST', body: JSON.stringify({ name: form.get('name'), code: form.get('code') || null }) });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  toast(`Sekolah "${form.get('name')}" ditambahkan ✓`, 'success');
+  state.schoolsCache = null;
+  renderSchoolsPage(document.getElementById('main-content'));
+}
+
+async function deleteSchool(id, name) {
+  if (!confirm(`Hapus sekolah "${name}"? Akun guru di sekolah ini TIDAK ikut terhapus tapi akan kehilangan sekolahnya.`)) return;
+  const res = await apiFetch(`/api/schools/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  toast('Sekolah dihapus ✓', 'success');
+  state.schoolsCache = null;
+  renderSchoolsPage(document.getElementById('main-content'));
+}
+
+async function addAccount(e) {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const schoolId = form.get('school_id');
+  const res = await apiFetch('/api/accounts', {
+    method: 'POST',
+    body: JSON.stringify({
+      username: form.get('username'), password: form.get('password'),
+      role: form.get('role') || 'teacher',
+      school_id: schoolId ? Number(schoolId) : undefined,
+    }),
+  });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  toast(`Akun "${form.get('username')}" dibuat ✓`, 'success');
+  renderSchoolsPage(document.getElementById('main-content'));
+}
+
+async function resetAccountPassword(id, username) {
+  const newPassword = prompt(`Password baru untuk "${username}" (min. 6 karakter):`);
+  if (!newPassword) return;
+  const res = await apiFetch(`/api/accounts/${id}/reset-password`, { method: 'PUT', body: JSON.stringify({ new_password: newPassword }) });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  toast(`Password "${username}" berhasil direset ✓`, 'success');
+}
+
+async function deleteAccount(id, username) {
+  if (!confirm(`Hapus akun "${username}"?`)) return;
+  const res = await apiFetch(`/api/accounts/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!json.success) { toast(json.message, 'error'); return; }
+  toast(`Akun "${username}" dihapus ✓`, 'success');
+  renderSchoolsPage(document.getElementById('main-content'));
 }
 
 // ══════════════════════════════════════════════════════
@@ -890,7 +1546,7 @@ async function deleteScene(id) {
   const json=await res.json();
   if(!json.success){ toast(json.message,'error'); return; }
   await loadAllScenes();
-  if(state.currentScene===id) state.currentScene='borobudur';
+  if(state.currentScene===id) state.currentScene='prambanan';
   toast(`Scene "${id}" dihapus ✓`,'success');
   renderScenesPage(document.getElementById('main-content'));
 }
