@@ -66,7 +66,7 @@ node server.js
 |---|---|
 | Portal utama | http://localhost:4000 |
 | Tur 360° Borobudur | http://localhost:4000/vr/tour-borobudur.html |
-| Admin Panel | http://localhost:4000/admin (`admin` / `geonusa2026` — ganti setelah login pertama) |
+| Admin Panel | http://localhost:4000/admin |
 
 Untuk langkah lebih detail (troubleshooting, dan panduan deploy ke hosting produksi) lihat [`CARA-MENJALANKAN.md`](CARA-MENJALANKAN.md).
 
