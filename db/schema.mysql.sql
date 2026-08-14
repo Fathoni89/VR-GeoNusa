@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS accounts (
   role          ENUM('super_admin','school_admin','teacher') NOT NULL DEFAULT 'teacher',
   school_id     INT NULL REFERENCES schools(id),  -- NULL untuk super_admin
   must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
+  auth_version  INT UNSIGNED NOT NULL DEFAULT 0,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -53,6 +54,7 @@ CREATE TABLE IF NOT EXISTS students (
   name           VARCHAR(100) NOT NULL,
   student_number VARCHAR(50) NOT NULL,
   password_hash  VARCHAR(255) NOT NULL,
+  auth_version   INT UNSIGNED NOT NULL DEFAULT 0,
   created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uniq_student_number_per_school (school_id, student_number),
   INDEX idx_students_class (class_id)

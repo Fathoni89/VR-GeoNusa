@@ -8,6 +8,12 @@ class FakeDb {
   constructor({ accounts = [], students = [], classes = [], roster = [], sessions = [] } = {}) {
     this.accounts = accounts;
     this.students = students;
+    this.accounts.forEach(account => {
+      if (account.auth_version === undefined) account.auth_version = 0;
+    });
+    this.students.forEach(student => {
+      if (student.auth_version === undefined) student.auth_version = 0;
+    });
     this.classes = classes;
     this.roster = roster;
     this.sessions = sessions;
@@ -19,21 +25,50 @@ class FakeDb {
     const normalized = normalizeSql(sql);
     this.calls.push({ sql: normalized, params });
 
-    if (normalized.includes('select * from accounts where username = ?')) {
+    if (normalized.includes('from accounts where username = ?')) {
       const account = this.accounts.find(item => item.username === params[0]);
       return [[account].filter(Boolean), []];
     }
 
-    if (normalized.includes('select * from accounts where id = ?')) {
+    if (normalized.includes('from accounts where id = ?')) {
       const account = this.accounts.find(item => String(item.id) === String(params[0]));
       return [[account].filter(Boolean), []];
     }
 
-    if (normalized.startsWith('update accounts set password_hash = ?, must_change_password = 0 where id = ?')) {
-      const account = this.accounts.find(item => String(item.id) === String(params[1]));
+    if (
+      normalized.startsWith('update accounts set')
+      && normalized.includes('password_hash = ?')
+      && normalized.includes('must_change_password = 0')
+      && normalized.includes('where id = ?')
+    ) {
+      const accountId = params[1];
+      const expectedAuthVersion = params[2];
+      const account = this.accounts.find(item =>
+        String(item.id) === String(accountId)
+        && (expectedAuthVersion === undefined || item.auth_version === expectedAuthVersion)
+      );
       if (account) {
         account.password_hash = params[0];
         account.must_change_password = 0;
+        if (normalized.includes('auth_version = auth_version + 1')) {
+          account.auth_version += 1;
+        }
+      }
+      return [{ affectedRows: account ? 1 : 0 }, []];
+    }
+
+    if (
+      normalized.startsWith('update accounts set')
+      && normalized.includes('password_hash = ?')
+      && !normalized.includes('must_change_password = 0')
+      && normalized.includes('where id = ?')
+    ) {
+      const account = this.accounts.find(item => String(item.id) === String(params[1]));
+      if (account) {
+        account.password_hash = params[0];
+        if (normalized.includes('auth_version = auth_version + 1')) {
+          account.auth_version += 1;
+        }
       }
       return [{ affectedRows: account ? 1 : 0 }, []];
     }
@@ -43,6 +78,26 @@ class FakeDb {
         String(item.school_id) === String(params[0]) && item.student_number === params[1]
       );
       return [[student].filter(Boolean), []];
+    }
+
+    if (normalized.includes('from students where id = ?')) {
+      const student = this.students.find(item => String(item.id) === String(params[0]));
+      return [[student].filter(Boolean), []];
+    }
+
+    if (
+      normalized.startsWith('update students set')
+      && normalized.includes('password_hash = ?')
+      && normalized.includes('where id = ?')
+    ) {
+      const student = this.students.find(item => String(item.id) === String(params[1]));
+      if (student) {
+        student.password_hash = params[0];
+        if (normalized.includes('auth_version = auth_version + 1')) {
+          student.auth_version += 1;
+        }
+      }
+      return [{ affectedRows: student ? 1 : 0 }, []];
     }
 
     if (normalized.includes('select * from classes where id = ?')) {

@@ -19,6 +19,9 @@ const { createDatabasePool } = require('./src/db/client');
 const { createAuthentication } = require('./src/middleware/authenticate');
 const { requireAnyRole, requireRole } = require('./src/middleware/authorize');
 const { errorHandler } = require('./src/middleware/error-handler');
+const { createAuthRepository } = require('./src/modules/auth/auth.repository');
+const { createAuthService } = require('./src/modules/auth/auth.service');
+const { createAuthRouter } = require('./src/modules/auth/auth.router');
 const {
   createPublicWriteLimiter,
   createStaffLoginLimiter,
@@ -219,6 +222,8 @@ async function initDb({
   await ensureColumn('sessions', 'student_id', 'student_id INT NULL REFERENCES students(id)', migrationContext);
   await ensureColumn('sessions', 'class_id', 'class_id INT NULL REFERENCES classes(id)', migrationContext);
   await ensureColumn('sessions', 'write_token_hash', 'write_token_hash VARCHAR(64) NULL', migrationContext);
+  await ensureColumn('accounts', 'auth_version', 'auth_version INT UNSIGNED NOT NULL DEFAULT 0', migrationContext);
+  await ensureColumn('students', 'auth_version', 'auth_version INT UNSIGNED NOT NULL DEFAULT 0', migrationContext);
   await ensureAccountsRoleEnum(migrationContext);
   await ensureMustChangePasswordMigration(migrationContext);
 
@@ -287,25 +292,6 @@ app.use(cors());
 app.use(express.json());
 
 // ── Auth helpers ─────────────────────────────────────
-function generateToken(account) {
-  return jwt.sign(
-    {
-      account_id: account.id,
-      username: account.username,
-      role: account.role,
-      school_id: account.school_id,
-      must_change_password: Number(account.must_change_password) === 1,
-    },
-    JWT_SECRET,
-    { expiresIn: '24h' }
-  );
-}
-
-function verifyToken(token) {
-  try { return jwt.verify(token, JWT_SECRET); }
-  catch { return null; }
-}
-
 const AUTH_COOKIE_NAME = 'vgn_auth';
 const AUTH_COOKIE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
@@ -319,9 +305,22 @@ function authCookieOptions({ includeMaxAge = true } = {}) {
   };
 }
 
+const authRepository = createAuthRepository(pool);
+const authService = createAuthService({
+  repository: authRepository,
+  passwords: {
+    compare: bcrypt.compare,
+    hash: bcrypt.hash,
+  },
+  tokens: {
+    sign: (claims, expiresIn) => jwt.sign(claims, JWT_SECRET, { expiresIn }),
+    verify: token => jwt.verify(token, JWT_SECRET),
+  },
+});
+
 const { readAuthToken, requireAuth } = createAuthentication({
   cookieName: AUTH_COOKIE_NAME,
-  verifyToken,
+  verifyToken: token => authService.verifyToken(token),
 });
 
 // ── Auth middleware (lindungi endpoint write) ─────────
@@ -685,71 +684,20 @@ async function loadObjects() {
 // REST API — AUTH
 // ══════════════════════════════════════════════════════
 
-// POST /api/auth/login
-app.post('/api/auth/login', staffLoginLimiter, async (req, res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password)
-    return res.status(400).json({ success: false, message: 'Username dan password wajib diisi' });
-
-  const [[account]] = await pool.query('SELECT * FROM accounts WHERE username = ?', [username]);
-  if (!account) return res.status(401).json({ success: false, message: 'Username atau password salah' });
-
-  const ok = await bcrypt.compare(password, account.password_hash);
-  if (!ok) return res.status(401).json({ success: false, message: 'Username atau password salah' });
-
-  const token = generateToken(account);
-  const cookieMode = String(req.get('X-Auth-Mode') || '').toLowerCase() === 'cookie';
-  if (cookieMode) {
-    res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions());
-  }
-  res.json({
-    success: true,
-    ...(!cookieMode ? { token } : {}),
-    username: account.username,
-    role: account.role,
-    school_id: account.school_id,
-    must_change_password: Number(account.must_change_password) === 1,
-  });
+const authRouter = createAuthRouter({
+  service: authService,
+  readAuthToken,
+  staffLoginLimiter,
+  publicWriteLimiter,
+  cookieName: AUTH_COOKIE_NAME,
+  cookieOptions: authCookieOptions,
 });
-
-// GET /api/auth/verify
-app.get('/api/auth/verify', (req, res) => {
-  const token = readAuthToken(req);
-  const data = token ? verifyToken(token) : null;
-  if (!data) return res.status(401).json({ success: false, message: 'Token tidak valid atau expired' });
-  res.json({
-    success: true,
-    username: data.username,
-    role: data.role,
-    school_id: data.school_id,
-    must_change_password: data.must_change_password === true,
-  });
-});
+app.use('/api/auth', authRouter);
 
 // POST /api/auth/logout
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie(AUTH_COOKIE_NAME, authCookieOptions({ includeMaxAge: false }));
   res.json({ success: true, message: 'Logout berhasil' });
-});
-
-// POST /api/auth/change-password
-app.post('/api/auth/change-password', requireAuth, async (req, res) => {
-  const { old_password, new_password } = req.body || {};
-  if (!old_password || !new_password)
-    return res.status(400).json({ success: false, message: 'old_password dan new_password wajib' });
-  if (new_password.length < 6)
-    return res.status(400).json({ success: false, message: 'Password minimal 6 karakter' });
-
-  const [[account]] = await pool.query('SELECT * FROM accounts WHERE id = ?', [req.account.account_id]);
-  const ok = await bcrypt.compare(old_password, account.password_hash);
-  if (!ok) return res.status(401).json({ success: false, message: 'Password lama salah' });
-
-  const newHash = await bcrypt.hash(new_password, 10);
-  await pool.query(
-    'UPDATE accounts SET password_hash = ?, must_change_password = 0 WHERE id = ?',
-    [newHash, account.id]
-  );
-  res.json({ success: true, message: 'Password berhasil diubah' });
 });
 
 // ══════════════════════════════════════════════════════
@@ -839,7 +787,10 @@ app.put('/api/accounts/:id/reset-password', requireAuth, requireAnyRole('super_a
   if (!new_password || new_password.length < 6)
     return res.status(400).json({ success: false, message: 'Password minimal 6 karakter' });
   const hash = await bcrypt.hash(new_password, 10);
-  await pool.query('UPDATE accounts SET password_hash = ? WHERE id = ?', [hash, req.params.id]);
+  await pool.query(
+    'UPDATE accounts SET password_hash = ?, auth_version = auth_version + 1 WHERE id = ?',
+    [hash, req.params.id]
+  );
   res.json({ success: true, message: 'Password akun berhasil direset' });
 });
 
@@ -984,7 +935,10 @@ app.put('/api/students/:id/reset-password', requireAuth, async (req, res) => {
   if (check.error) return res.status(check.error).json({ success: false, message: check.message });
   const plainPassword = generateStudentPassword();
   const hash = await bcrypt.hash(plainPassword, 10);
-  await pool.query('UPDATE students SET password_hash = ? WHERE id = ?', [hash, student.id]);
+  await pool.query(
+    'UPDATE students SET password_hash = ?, auth_version = auth_version + 1 WHERE id = ?',
+    [hash, student.id]
+  );
   res.json({ success: true, password: plainPassword });
 });
 
@@ -998,36 +952,19 @@ app.delete('/api/students/:id', requireAuth, async (req, res) => {
   res.json({ success: true, message: 'Siswa dihapus' });
 });
 
-// POST /api/auth/student-login — login siswa sungguhan (nomor induk + password
-// per sekolah). Terpisah dari /api/auth/login (staf) karena bentuk
-// kredensialnya beda dan tidak perlu bcrypt-cost tinggi/JWT admin-level.
-app.post('/api/auth/student-login', publicWriteLimiter, async (req, res) => {
-  const { school_id, student_number, password } = req.body || {};
-  if (!school_id || !student_number || !password)
-    return res.status(400).json({ success: false, message: 'school_id, student_number, dan password wajib diisi' });
-
-  const [[student]] = await pool.query(
-    'SELECT * FROM students WHERE school_id = ? AND student_number = ?', [school_id, student_number]
-  );
-  if (!student) return res.status(401).json({ success: false, message: 'Nomor induk atau password salah' });
-  const ok = await bcrypt.compare(password, student.password_hash);
-  if (!ok) return res.status(401).json({ success: false, message: 'Nomor induk atau password salah' });
-
-  const token = jwt.sign(
-    { student_id: student.id, name: student.name, role: 'student', school_id: student.school_id, class_id: student.class_id },
-    JWT_SECRET, { expiresIn: '12h' }
-  );
-  res.json({ success: true, token, name: student.name, class_id: student.class_id, school_id: student.school_id });
-});
-
-function requireStudent(req, res, next) {
+async function requireStudent(req, res, next) {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-  const data = token ? verifyToken(token) : null;
-  if (!data || data.role !== 'student')
-    return res.status(401).json({ success: false, message: 'Unauthorized — login siswa terlebih dahulu' });
-  req.student = data;
-  next();
+  try {
+    const data = token ? await authService.verifyToken(token) : null;
+    if (!data || data.kind !== 'student') {
+      return res.status(401).json({ success: false, message: 'Unauthorized — login siswa terlebih dahulu' });
+    }
+    req.student = data;
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 // GET /api/students/me/results — siswa melihat hasil belajarnya sendiri
@@ -1370,12 +1307,12 @@ app.post('/api/ml/predict/:tourId/:nodeId', publicWriteLimiter, async (req, res)
 // sungguhan (student_id + class_id terisi) — kalau tidak ada/tidak valid,
 // tetap jalan mode anonim seperti sebelumnya (nama bebas, tanpa akun) supaya
 // demo publik/GitHub Pages tidak mendadak butuh akun.
-function getOptionalStudent(req) {
+async function getOptionalStudent(req) {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!token) return null;
-  const data = verifyToken(token);
-  return data && data.role === 'student' ? data : null;
+  const data = await authService.verifyToken(token);
+  return data && data.kind === 'student' ? data : null;
 }
 
 function hashSessionToken(token) {
@@ -1389,7 +1326,7 @@ async function hasSessionOwnership(req, sessionId) {
   );
   if (!session) return false;
 
-  const student = getOptionalStudent(req);
+  const student = await getOptionalStudent(req);
   if (
     student
     && session.student_id !== null
@@ -1415,7 +1352,7 @@ async function requireSessionOwnership(req, res, sessionId) {
 
 // POST /api/sessions — mulai sesi eksplorasi
 app.post('/api/sessions', publicWriteLimiter, async (req, res) => {
-  const student = getOptionalStudent(req);
+  const student = await getOptionalStudent(req);
   const { student_name, role, school_id, scene_name, device_type } = req.body || {};
 
   const name = student ? student.name : (student_name || 'Anonim').trim().slice(0, 100);

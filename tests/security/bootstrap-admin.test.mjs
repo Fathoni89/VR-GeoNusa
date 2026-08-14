@@ -264,7 +264,11 @@ describe('kebijakan wajib ganti password', () => {
       .post('/api/schools')
       .set('Authorization', `Bearer ${login.body.token}`)
       .send({ name: 'Masih ditolak' });
-    expect(staleToken.status).toBe(403);
+    expect(staleToken.status).toBe(401);
+    expect(staleToken.body).toEqual({
+      success: false,
+      message: 'Unauthorized — login terlebih dahulu',
+    });
 
     const relogin = await request(app).post('/api/auth/login').send({
       username: 'admin',

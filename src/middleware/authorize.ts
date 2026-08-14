@@ -19,7 +19,8 @@ export function requireRole(role: StaffRole): RequestHandler {
 
 export function requireAnyRole(...roles: StaffRole[]): RequestHandler {
   return (request, response, next) => {
-    if (!roles.includes((request as AuthenticatedRequest).account.role)) {
+    const accountRole = (request as AuthenticatedRequest).account.role;
+    if (!roles.includes(accountRole)) {
       response.status(403).json(FORBIDDEN_RESPONSE);
       return;
     }
