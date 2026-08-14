@@ -2,13 +2,13 @@
 
 ## Prasyarat
 
-Pastikan **Node.js** dan **MySQL/MariaDB** sudah terinstal. Cek Node.js dengan membuka Terminal dan ketik:
+Pastikan **Node.js 22 LTS** dan **MySQL/MariaDB** sudah terinstal. Cek Node.js dengan membuka Terminal dan ketik:
 
 ```
 node --version
 ```
 
-Jika muncul angka versi (misal `v20.x.x`), berarti sudah siap. Jika belum, unduh di https://nodejs.org.
+Jika muncul angka versi `v22.x.x`, berarti sudah siap. Jika belum, unduh di https://nodejs.org.
 
 ---
 
@@ -25,22 +25,73 @@ cd ~/VR-GeoNusa
 npm install
 ```
 
-### 3. Siapkan Database
+### 3. Jalankan Aplikasi dan Database dengan Docker (direkomendasikan untuk lokal)
+
+Pastikan Docker Desktop sudah berjalan. Siapkan konfigurasi terlebih dahulu:
+
+```bash
+cp .env.example .env
+# isi DB_USER, DB_PASSWORD, DB_NAME, dan BOOTSTRAP_ADMIN_PASSWORD
+```
+
+Kemudian jalankan:
+
+```bash
+docker compose up -d --build
+```
+
+Compose akan menjalankan aplikasi Node.js di `http://localhost:4000`, membuat
+database MySQL, dan menyimpan data database di volume persisten
+`vr-geonusa-mysql-data`. Konfigurasi koneksi dibaca dari file `.env`.
+
+Untuk menghentikan aplikasi dan database tanpa menghapus data:
+
+```bash
+docker compose stop
+```
+
+Jika ingin menjalankan aplikasi dengan Node.js di Windows dan hanya database
+yang memakai Docker, jalankan `docker compose up -d database`, lalu lanjutkan
+ke langkah 4. Catatan: modul native TensorFlow.js mungkin memerlukan toolchain
+C++ tambahan pada versi Node.js tertentu di Windows.
+
+### 3b. Siapkan Database tanpa Docker
 
 Buat database MySQL/MariaDB kosong beserta user-nya, lalu salin `.env.example` menjadi `.env` dan isi kredensialnya:
 
 ```bash
 cp .env.example .env
-# edit .env — isi DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+# edit .env — isi DB_HOST, DB_USER, DB_PASSWORD, DB_NAME,
+# dan BOOTSTRAP_ADMIN_PASSWORD untuk database kosong atau upgrade admin legacy
 ```
 
-Tabel dan akun `admin` default dibuat **otomatis** saat server pertama kali jalan — tidak perlu import file `.sql` manual (kecuali untuk deploy produksi, lihat bagian bawah).
+Tabel dan akun `admin` bootstrap dibuat **otomatis** saat server pertama kali
+jalan. Password awal dibaca dari `BOOTSTRAP_ADMIN_PASSWORD` dan wajib diganti
+setelah login pertama. Tidak perlu import file `.sql` manual (kecuali untuk
+deploy produksi, lihat bagian bawah).
+
+Pada upgrade dari versi yang masih memakai password admin tetap, startup
+pertama juga merotasi akun `admin` ke `BOOTSTRAP_ADMIN_PASSWORD` dan mewajibkan
+penggantian password. Setelah migrasi atau bootstrap berhasil, nilai environment
+tersebut boleh dihapus dari konfigurasi runtime.
 
 ### 4. Jalankan Server
 
 ```bash
 node server.js
 ```
+
+Untuk memverifikasi dan membuat build campuran JavaScript/TypeScript:
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
+
+Build tersimpan di `dist/` dan dapat dijalankan dengan `npm run start:build`.
+Perintah `node server.js` tetap menjadi entry point legacy untuk rollback.
 
 Jika berhasil, akan muncul pesan seperti ini:
 
@@ -59,7 +110,8 @@ Jika berhasil, akan muncul pesan seperti ini:
 | Portal Utama  | http://localhost:4000           |
 | Admin Panel   | http://localhost:4000/admin     |
 
-**Login admin:** username `admin`, password `geonusa2026`
+**Login admin pertama:** username `admin`, dengan password yang Anda isi pada
+`BOOTSTRAP_ADMIN_PASSWORD`.
 
 ---
 
@@ -122,10 +174,15 @@ npm install --omit=dev
 
 ```bash
 cp .env.example .env
-# edit .env — isi DB_HOST, DB_USER, DB_PASSWORD, DB_NAME sesuai database yang dibuat di langkah 1
+# edit .env — isi DB_HOST, DB_USER, DB_PASSWORD, DB_NAME sesuai database,
+# serta BOOTSTRAP_ADMIN_PASSWORD untuk database kosong atau upgrade admin legacy
 ```
 
-Tabel dibuat otomatis saat server pertama kali jalan (termasuk akun `super_admin` default `admin` / `geonusa2026` — **wajib ganti password-nya setelah login pertama**).
+Tabel dibuat otomatis saat server pertama kali jalan. Pada database kosong,
+akun `super_admin` bernama `admin` memakai password awal dari
+`BOOTSTRAP_ADMIN_PASSWORD` dan **wajib menggantinya setelah login pertama**.
+Upgrade dari versi lama akan merotasi akun `admin` dengan nilai environment yang
+sama tepat satu kali.
 
 ### 5. Jalankan sebagai proses yang tidak mati
 

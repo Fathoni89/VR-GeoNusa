@@ -105,7 +105,7 @@
     <div id="info-context">—</div>
   </div>
 
-  <button id="quiz-trigger-btn" onclick="openQuiz()">📝 Uji Pemahaman</button>
+  <button id="quiz-trigger-btn" onclick="openQuiz()">Uji Pemahaman</button>
 </div>
 
 <!-- ── Kuis Panel ────────────────────────────────────── -->
@@ -120,7 +120,7 @@
 <button id="scene-btn" onclick="window.location.href='/'">← Borobudur</button>
 
 <!-- ── Hasil Belajar Saya (muncul kalau login sebagai siswa) ── -->
-<button id="student-results-toggle" onclick="toggleStudentResults()">📊 Hasil Saya</button>
+<button id="student-results-toggle" onclick="toggleStudentResults()">Hasil Saya</button>
 <div id="student-results-panel"></div>
 
 <!-- ── A-FRAME SCENE — CANDI PRAMBANAN ──────────── -->
@@ -362,6 +362,7 @@
 
 </a-scene>
 
+<script src="../js/html-sanitize.js"></script>
 <script src="../js/app.js"></script>
 <script>
 // Set scene context untuk Prambanan sebelum startApp() dipanggil

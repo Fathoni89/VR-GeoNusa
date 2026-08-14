@@ -195,25 +195,25 @@
     <span class="logo">VR-GeoNusa</span>
     <span class="badge">Admin Panel</span>
     <div class="spacer"></div>
-    <a href="../index.html" target="_blank">↗ Buka Scene Borobudur</a>
-    <a href="../scenes/prambanan.html" target="_blank" style="margin-left:12px">↗ Buka Scene Prambanan</a>
+    <a href="../index.html" target="_blank"> Buka Scene Borobudur</a>
+    <a href="../scenes/prambanan.html" target="_blank" style="margin-left:12px"> Buka Scene Prambanan</a>
   </header>
 
   <!-- Sidebar -->
   <nav class="sidebar">
     <div class="section-label">Manajemen</div>
     <div class="nav-item active" onclick="showPage('objects')">
-      <span class="icon">🏛️</span> Objek Scene
+      Objek Scene
     </div>
     <div class="nav-item" onclick="showPage('scenes')">
-      <span class="icon">🗺️</span> Info Scene
+      Info Scene
     </div>
     <div class="nav-item" onclick="showPage('export')">
-      <span class="icon">📤</span> Export Data
+      Export Data
     </div>
     <div class="section-label" style="margin-top:12px">Referensi</div>
     <div class="nav-item" onclick="showPage('geometri')">
-      <span class="icon">📐</span> Katalog Geometri
+      Katalog Geometri
     </div>
   </nav>
 
@@ -389,7 +389,7 @@
 
       <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal()">Batal</button>
-        <button type="submit" class="btn btn-primary">💾 Simpan Objek</button>
+        <button type="submit" class="btn btn-primary"> Simpan Objek</button>
       </div>
     </form>
   </div>
@@ -467,8 +467,8 @@ function renderObjectsPage(main) {
     </div>
 
     <div class="scene-tabs">
-      <div class="scene-tab ${state.currentScene==='borobudur'?'active':''}" onclick="switchScene('borobudur')">🛕 Borobudur</div>
-      <div class="scene-tab ${state.currentScene==='prambanan'?'active':''}" onclick="switchScene('prambanan')">🏛️ Prambanan</div>
+      <div class="scene-tab ${state.currentScene==='borobudur'?'active':''}" onclick="switchScene('borobudur')"> Borobudur</div>
+      <div class="scene-tab ${state.currentScene==='prambanan'?'active':''}" onclick="switchScene('prambanan')"> Prambanan</div>
     </div>
 
     <div class="stats">
@@ -481,7 +481,7 @@ function renderObjectsPage(main) {
     <div class="table-wrap">
       <div class="table-toolbar">
         <h2>Daftar Objek — ${meta.label}</h2>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('export')">📤 Export JSON</button>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('export')"> Export JSON</button>
       </div>
       <table>
         <thead>
@@ -508,8 +508,8 @@ function renderObjectsPage(main) {
                 ${obj.model_src   ? '<span class="badge-model" style="margin-left:4px">GLTF</span>' : ''}
               </td>
               <td>
-                <button class="btn btn-ghost btn-sm" onclick="openEditModal('${obj.id}')">✏️ Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteObject('${obj.id}')" style="margin-left:4px">🗑</button>
+                <button class="btn btn-ghost btn-sm" onclick="openEditModal('${obj.id}')"> Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteObject('${obj.id}')" style="margin-left:4px"></button>
               </td>
             </tr>
           `).join('')}
@@ -546,7 +546,7 @@ function renderScenesPage(main) {
               <div style="font-weight:800;font-size:1.1em">${sc?.name || meta.label}</div>
               <div style="color:var(--muted);font-size:12px">${sc?.location || ''} · ${sc?.era || ''}</div>
             </div>
-            <a href="../${meta.sceneFile}" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Scene</a>
+            <a href="../${meta.sceneFile}" target="_blank" class="btn btn-ghost btn-sm"> Buka Scene</a>
           </div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
             <div style="background:var(--surface2);border-radius:8px;padding:12px">
@@ -581,11 +581,11 @@ function renderExportPage(main) {
           <pre id="preview-${id}">${JSON.stringify(state.scenes[id], null, 2).slice(0, 400)}...</pre>
         </div>
         <div class="export-actions">
-          <button class="btn btn-success" onclick="downloadJSON('${id}')">⬇️ Download ${meta.file}</button>
-          <button class="btn btn-ghost" onclick="copyJSON('${id}')">📋 Copy ke Clipboard</button>
+          <button class="btn btn-success" onclick="downloadJSON('${id}')"> Download ${meta.file}</button>
+          <button class="btn btn-ghost" onclick="copyJSON('${id}')"> Copy ke Clipboard</button>
         </div>
         <div style="margin-top:12px;background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.12);border-radius:8px;padding:12px;font-size:12px;color:var(--muted)">
-          💡 <strong style="color:var(--accent)">Cara update scene:</strong>
+           <strong style="color:var(--accent)">Cara update scene:</strong>
           Download file → simpan ke <code>VR-GeoNusa/${meta.file}</code> → commit & push ke GitHub
         </div>
       </div>
@@ -734,13 +734,13 @@ function saveObject(e) {
   if (state.editingId) {
     const idx = scene.objects.findIndex(o => o.id === state.editingId);
     if (idx >= 0) scene.objects[idx] = obj;
-    toast('Objek berhasil diupdate ✓', 'success');
+    toast('Objek berhasil diupdate', 'success');
   } else {
     if (scene.objects.find(o => o.id === obj.id)) {
       toast('ID sudah ada, gunakan ID yang berbeda', 'error'); return;
     }
     scene.objects.push(obj);
-    toast('Objek berhasil ditambahkan ✓', 'success');
+    toast('Objek berhasil ditambahkan', 'success');
   }
 
   closeModal();

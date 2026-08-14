@@ -690,7 +690,7 @@
     <a href="#tim">Tim</a>
   </div>
   <div class="nav-spacer"></div>
-  <a href="admin/" class="nav-admin">⚙ Admin Panel</a>
+  <a href="admin/" class="nav-admin"> Admin Panel</a>
 </nav>
 
 <!-- ── HERO ─────────────────────────────────── -->
@@ -769,7 +769,7 @@
       <div class="scene-card-body">
         <span class="scene-card-badge badge-available">Foto 360° + ML</span>
         <div class="scene-card-name">Candi Borobudur</div>
-        <div class="scene-card-loc">📍 Magelang, Jawa Tengah · Abad ke-8 M</div>
+        <div class="scene-card-loc"> Magelang, Jawa Tengah · Abad ke-8 M</div>
         <div class="scene-card-tags">
           <span class="scene-geo-tag">Setengah Bola</span>
           <span class="scene-geo-tag">Balok</span>
@@ -788,7 +788,7 @@
       <div class="scene-card-body">
         <span class="scene-card-badge badge-available">Tersedia</span>
         <div class="scene-card-name">Candi Prambanan</div>
-        <div class="scene-card-loc">📍 Sleman, DI Yogyakarta · Abad ke-9 M</div>
+        <div class="scene-card-loc"> Sleman, DI Yogyakarta · Abad ke-9 M</div>
         <div class="scene-card-tags">
           <span class="scene-geo-tag">Limas Segiempat</span>
           <span class="scene-geo-tag">Balok</span>
@@ -803,11 +803,11 @@
       <img class="scene-card-img"
         src="assets/images/keratonyogya.jpg" alt="Keraton Yogyakarta"
         onerror="this.style.display='none'; document.querySelector('.scene-thumb-placeholder').style.display='flex'">
-      <div class="scene-thumb-placeholder" style="display:none">🕌</div>
+      <div class="scene-thumb-placeholder" style="display:none"></div>
       <div class="scene-card-body">
         <span class="scene-card-badge badge-soon">Segera</span>
         <div class="scene-card-name">Keraton Yogyakarta</div>
-        <div class="scene-card-loc">📍 Yogyakarta · Abad ke-18 M</div>
+        <div class="scene-card-loc"> Yogyakarta · Abad ke-18 M</div>
         <div class="scene-card-tags">
           <span class="scene-geo-tag">Prisma</span>
           <span class="scene-geo-tag">Limas</span>
@@ -865,28 +865,28 @@
       <div class="section-eyebrow" style="margin-bottom:20px">Kompatibilitas</div>
       <div class="devices-grid">
         <div class="device-card">
-          <div class="device-icon">🥽</div>
+          <div class="device-icon"></div>
           <div class="device-name">Meta Quest 3</div>
           <div class="device-note">Mode VR imersif penuh via Meta Quest Browser.</div>
-          <div class="device-status status-full">✓ VR Penuh</div>
+              <div class="device-status status-full">VR Penuh</div>
         </div>
         <div class="device-card">
-          <div class="device-icon">💻</div>
+          <div class="device-icon"></div>
           <div class="device-name">Desktop</div>
           <div class="device-note">Mode 3D interaktif. Berjalan di spesifikasi rendah sekalipun.</div>
-          <div class="device-status status-full">✓ Mode 3D</div>
+              <div class="device-status status-full">Mode 3D</div>
         </div>
         <div class="device-card">
-          <div class="device-icon">📱</div>
+          <div class="device-icon"></div>
           <div class="device-name">Smartphone</div>
           <div class="device-note">Mode 3D dengan sensor gyroscope untuk melihat sekeliling.</div>
-          <div class="device-status status-partial">✓ Mode 3D</div>
+              <div class="device-status status-partial">Mode 3D</div>
         </div>
         <div class="device-card">
-          <div class="device-icon">🎮</div>
+          <div class="device-icon"></div>
           <div class="device-name">Pico 4</div>
           <div class="device-note">Akses via Pico Browser, WebXR aktif otomatis.</div>
-          <div class="device-status status-full">✓ VR Penuh</div>
+              <div class="device-status status-full">VR Penuh</div>
         </div>
       </div>
     </div>
@@ -903,7 +903,7 @@
     </p>
   </div>
   <div class="geo-grid">
-    <div class="geo-card"><div class="geo-icon">◼</div><div class="geo-name">Balok</div><div class="geo-en">Rectangular Prism</div></div>
+    <div class="geo-card"><div class="geo-icon"></div><div class="geo-name">Balok</div><div class="geo-en">Rectangular Prism</div></div>
     <div class="geo-card"><div class="geo-icon">▲</div><div class="geo-name">Limas Segiempat</div><div class="geo-en">Square Pyramid</div></div>
     <div class="geo-card"><div class="geo-icon">◑</div><div class="geo-name">Setengah Bola</div><div class="geo-en">Hemisphere</div></div>
     <div class="geo-card"><div class="geo-icon">⬤</div><div class="geo-name">Tabung</div><div class="geo-en">Cylinder</div></div>
@@ -965,10 +965,11 @@
   </div>
 </footer>
 <div class="footer-bottom">
-  <p>© 2026 Tim VR-GeoNusa · Hibah Fundamental BIMA Kemenristekdikti</p>
+  <p> 2026 Tim VR-GeoNusa · Hibah Fundamental BIMA Kemenristekdikti</p>
   <p style="color:var(--stone-700)">Prototype Tahun 1 · WebXR · A-Frame 1.5</p>
 </div>
 
+<script src="js/html-sanitize.js"></script>
 <script>
 // Smooth scroll
 document.querySelectorAll('a[href^="#"]').forEach(a =>
@@ -998,7 +999,7 @@ async function loadStats() {
 
 // Ambil inisial dari nama
 function initials(name) {
-  return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+  return String(name ?? '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 }
 
 // Load tim peneliti dari API/JSON
@@ -1026,15 +1027,16 @@ async function loadTeam() {
     const makeResCard = m => {
       const exp   = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(s=>s.trim()).filter(Boolean)).slice(0, 3);
       const links = [
-        m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${m.sinta_id}" target="_blank" title="SINTA">SINTA ↗</a>` : '',
-        m.orcid    ? `<a href="https://orcid.org/${m.orcid}" target="_blank" title="ORCID">ORCID ↗</a>` : '',
-        m.email    ? `<a href="mailto:${m.email}" title="Email">✉ Email</a>` : '',
+        m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${encodeURIComponent(m.sinta_id)}" target="_blank" rel="noopener noreferrer" title="SINTA">SINTA </a>` : '',
+        m.orcid    ? `<a href="https://orcid.org/${encodeURIComponent(m.orcid)}" target="_blank" rel="noopener noreferrer" title="ORCID">ORCID </a>` : '',
+        m.email    ? `<a href="mailto:${encodeURIComponent(m.email)}" title="Email"> Email</a>` : '',
       ].filter(Boolean).join('');
-      const photoHtml = m.photo
-        ? `<img src="${m.photo}" alt="${m.name}" loading="lazy"
+      const photoUrl = safeTeamPhotoUrl(m.photo);
+      const photoHtml = photoUrl
+        ? `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(m.name)}" loading="lazy"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-           <div class="tc-initials" style="display:none">${initials(m.name)}</div>`
-        : `<div class="tc-initials">${initials(m.name)}</div>`;
+           <div class="tc-initials" style="display:none">${escapeHtml(initials(m.name))}</div>`
+        : `<div class="tc-initials">${escapeHtml(initials(m.name))}</div>`;
       return `
         <div class="team-card-h">
           <div class="tc-photo">
@@ -1042,11 +1044,11 @@ async function loadTeam() {
             <span class="tc-badge">${m.role_type === 'peneliti' ? 'Peneliti' : 'Dosen'}</span>
           </div>
           <div class="tc-body">
-            <div class="tc-name">${m.name}</div>
-            <div class="tc-role">${m.role}</div>
-            <div class="tc-inst">${m.institution}</div>
-            ${m.bio ? `<div class="tc-bio">${m.bio}</div>` : ''}
-            ${exp.length ? `<div class="tc-tags">${exp.map(e=>`<span class="tc-tag">${e}</span>`).join('')}</div>` : ''}
+            <div class="tc-name">${escapeHtml(m.name)}</div>
+            <div class="tc-role">${escapeHtml(m.role)}</div>
+            <div class="tc-inst">${escapeHtml(m.institution)}</div>
+            ${m.bio ? `<div class="tc-bio">${escapeHtml(m.bio)}</div>` : ''}
+            ${exp.length ? `<div class="tc-tags">${exp.map(e=>`<span class="tc-tag">${escapeHtml(e)}</span>`).join('')}</div>` : ''}
             ${links ? `<div class="tc-links">${links}</div>` : ''}
           </div>
         </div>`;
@@ -1055,19 +1057,20 @@ async function loadTeam() {
     // ── Kartu Mahasiswa (horizontal compact) ──
     const makeStuCard = m => {
       const exp = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(s=>s.trim()).filter(Boolean)).slice(0, 2);
-      const photoHtml = m.photo
-        ? `<img src="${m.photo}" alt="${m.name}" loading="lazy"
+      const photoUrl = safeTeamPhotoUrl(m.photo);
+      const photoHtml = photoUrl
+        ? `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(m.name)}" loading="lazy"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-           <div class="ts-initials" style="display:none">${initials(m.name)}</div>`
-        : `<div class="ts-initials">${initials(m.name)}</div>`;
+           <div class="ts-initials" style="display:none">${escapeHtml(initials(m.name))}</div>`
+        : `<div class="ts-initials">${escapeHtml(initials(m.name))}</div>`;
       return `
         <div class="team-card-s">
           <div class="ts-photo">${photoHtml}</div>
           <div class="ts-body">
-            <div class="ts-name">${m.name}</div>
-            <div class="ts-role">${m.role}</div>
-            <div class="ts-inst">${m.institution}</div>
-            ${exp.length ? `<div class="ts-tags">${exp.map(e=>`<span class="ts-tag">${e}</span>`).join('')}</div>` : ''}
+            <div class="ts-name">${escapeHtml(m.name)}</div>
+            <div class="ts-role">${escapeHtml(m.role)}</div>
+            <div class="ts-inst">${escapeHtml(m.institution)}</div>
+            ${exp.length ? `<div class="ts-tags">${exp.map(e=>`<span class="ts-tag">${escapeHtml(e)}</span>`).join('')}</div>` : ''}
           </div>
         </div>`;
     };

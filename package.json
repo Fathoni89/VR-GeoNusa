@@ -5,20 +5,46 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start:build": "node dist/server.js",
+    "dev": "node --watch server.js",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint eslint.config.js \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "test": "vitest run && node --test tests/integration/server-startup.test.js",
+    "build": "npm run clean && tsc -p tsconfig.json && node dist/src/build/copy-runtime-assets.js && node dist/src/build/smoke-health.js"
+  },
+  "engines": {
+    "node": ">=22 <23"
   },
   "dependencies": {
     "@tensorflow/tfjs-node": "^4.22.0",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
+    "esbuild": "^0.28.2",
+    "esbuild-register": "^3.6.0",
     "express": "^4.19.2",
     "express-rate-limit": "^8.6.2",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.23.3",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "zod": "^4.4.3"
   },
   "author": "Tim VR-GeoNusa — Universitas Sebelas April & UST",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^8.0.1",
+    "@babel/eslint-parser": "^8.0.1",
+    "@babel/preset-typescript": "^8.0.1",
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^4.17.0",
+    "@types/node": "^22.20.1",
+    "@types/supertest": "^7.2.1",
+    "eslint": "^10.8.1",
+    "supertest": "^7.2.2",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
 }

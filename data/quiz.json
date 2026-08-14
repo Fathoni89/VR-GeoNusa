@@ -1,5 +1,5 @@
 {
-  "_comment": "VR-GeoNusa — bank soal kuis geometri, ditampilkan setelah siswa mengidentifikasi objek di scene VR. is_correct dihitung di frontend lalu dikirim ke POST /api/quiz-results.",
+  "_comment": "VR-GeoNusa — bank soal kuis geometri. Client mengirim question_id dan answer; server menghitung is_correct sebelum menyimpan hasil.",
   "_version": "0.1.0",
   "questions": [
     {

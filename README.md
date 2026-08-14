@@ -41,7 +41,7 @@ Di setiap titik, siswa bisa mengidentifikasi bentuk geometri elemen candi (stupa
 
 ## Cara Menjalankan Lokal
 
-**Prasyarat:** Node.js 18+ dan MySQL/MariaDB.
+**Prasyarat:** Node.js 22 LTS dan MySQL/MariaDB.
 
 ```bash
 git clone https://github.com/Fathoni89/VR-GeoNusa.git
@@ -53,7 +53,8 @@ Buat database + user MySQL, lalu salin `.env.example` menjadi `.env` dan isi kre
 
 ```bash
 cp .env.example .env
-# edit .env — isi DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+# edit .env — isi DB_HOST, DB_USER, DB_PASSWORD, DB_NAME,
+# serta BOOTSTRAP_ADMIN_PASSWORD untuk database kosong atau upgrade admin legacy
 ```
 
 Jalankan server (skema tabel dan akun `super_admin` default dibuat otomatis saat pertama kali jalan):
@@ -62,11 +63,26 @@ Jalankan server (skema tabel dan akun `super_admin` default dibuat otomatis saat
 node server.js
 ```
 
+Perintah verifikasi dan build campuran JavaScript/TypeScript:
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
+
+Hasil build berada di `dist/` dan dapat dijalankan dengan `npm run start:build`.
+Entry point lama `node server.js` tetap tersedia sebagai rollback.
+
+Pada database kosong atau saat migrasi akun `admin` versi lama, password awal
+berasal dari `BOOTSTRAP_ADMIN_PASSWORD` dan wajib diganti setelah login pertama.
+
 | Halaman | Alamat |
 |---|---|
 | Portal utama | http://localhost:4000 |
 | Tur 360° Borobudur | http://localhost:4000/vr/tour-borobudur.html |
-| Admin Panel | http://localhost:4000/admin (`admin` / `geonusa2026` — ganti setelah login pertama) |
+| Admin Panel | http://localhost:4000/admin (username awal `admin`; password dari `BOOTSTRAP_ADMIN_PASSWORD`) |
 
 Untuk langkah lebih detail (troubleshooting, dan panduan deploy ke hosting produksi) lihat [`CARA-MENJALANKAN.md`](CARA-MENJALANKAN.md).
 

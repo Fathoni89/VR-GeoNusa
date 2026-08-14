@@ -14,6 +14,11 @@
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
+const {
+  assertFileIdentifier,
+  resolveIdentifierPath,
+  resolveWithin,
+} = require('../lib/file-paths');
 
 // Kompatibilitas: util.isNullOrUndefined() sudah dihapus dari Node.js core
 // (deprecated sejak lama, dibuang di versi Node terbaru), tapi binding
@@ -39,7 +44,7 @@ let classNames = [];
 async function loadModel() {
   model = await tf.loadLayersModel(`file://${path.join(MODEL_DIR, 'model.json')}`);
   classNames = JSON.parse(fs.readFileSync(path.join(MODEL_DIR, 'class_indices.json'), 'utf8'));
-  console.log('🧠 Model ML server-side dimuat:', classNames.join(', '));
+  console.log('Model ML server-side dimuat:', classNames.join(', '));
 }
 
 function equirectToPerspective(srcBuffer, srcWidth, srcHeight, yawDeg, pitchDeg, fovDeg, outSize) {
@@ -81,9 +86,16 @@ function equirectToPerspective(srcBuffer, srcWidth, srcHeight, yawDeg, pitchDeg,
 }
 
 async function predictNode(tourId, nodeId) {
+  assertFileIdentifier(tourId, 'tour_id');
+  assertFileIdentifier(nodeId, 'node_id');
   if (!model) throw new Error('Model ML belum siap — coba lagi sesaat lagi');
 
-  const tourFile = path.join(DATA_DIR, `tour-${tourId}.json`);
+  const tourFile = resolveIdentifierPath(DATA_DIR, {
+    id: tourId,
+    prefix: 'tour-',
+    suffix: '.json',
+    label: 'tour_id',
+  });
   if (!fs.existsSync(tourFile)) throw new Error(`Tur "${tourId}" tidak ditemukan`);
   const tour = JSON.parse(fs.readFileSync(tourFile, 'utf8'));
 
@@ -91,7 +103,8 @@ async function predictNode(tourId, nodeId) {
   if (!node) throw new Error(`Titik "${nodeId}" tidak ditemukan`);
   if (!node.identify) throw new Error('Titik ini belum diberi identifikasi geometri oleh admin');
 
-  const imgPath = path.join(PUBLIC_DIR, node.image);
+  const relativeImage = String(node.image || '').replace(/^[/\\]+/, '');
+  const imgPath = resolveWithin(PUBLIC_DIR, relativeImage);
   const { data, info } = await sharp(imgPath).removeAlpha().raw().toBuffer({ resolveWithObject: true });
 
   const cropBuf = equirectToPerspective(data, info.width, info.height, node.identify.local_angle, 1.5, 65, 224);

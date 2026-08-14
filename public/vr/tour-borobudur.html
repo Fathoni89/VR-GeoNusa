@@ -71,11 +71,11 @@
 <select id="tour-jump"></select>
 
 <!-- ── Hasil Belajar Saya (muncul kalau login sebagai siswa) ── -->
-<button id="student-results-toggle" onclick="toggleStudentResults()">📊 Hasil Saya</button>
+<button id="student-results-toggle" onclick="toggleStudentResults()">Hasil Saya</button>
 <div id="student-results-panel"></div>
 
 <!-- ── Dataset Capture Mode (untuk tim peneliti — buat dataset ML) ── -->
-<button id="dataset-toggle" onclick="toggleDatasetPanel()" style="display:none">📸 Mode Dataset</button>
+<button id="dataset-toggle" onclick="toggleDatasetPanel()" style="display:none"> Mode Dataset</button>
 <div id="dataset-panel" style="display:none">
 
   <div class="dataset-desc">
@@ -157,7 +157,7 @@
     <div id="info-context">—</div>
   </div>
 
-  <button id="quiz-trigger-btn" onclick="openQuiz()">📝 Uji Pemahaman</button>
+  <button id="quiz-trigger-btn" onclick="openQuiz()">Uji Pemahaman</button>
 </div>
 
 <!-- ── Kuis Panel ────────────────────────────────────── -->
@@ -206,6 +206,7 @@
 
 </a-scene>
 
+<script src="../js/html-sanitize.js"></script>
 <script src="../js/tour.js"></script>
 </body>
 </html>

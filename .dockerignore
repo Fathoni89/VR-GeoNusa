@@ -1,0 +1,15 @@
+.git
+.github
+.agents
+.codex
+.env
+node_modules
+npm-debug.log*
+*.log
+MLTraining/venv
+MLTraining/output
+MLTraining/wandb
+MLTraining/__pycache__
+Dataset/geometry_wbn/train
+Dataset/geometry_wbn/val
+Dataset/geometry_wbn/test

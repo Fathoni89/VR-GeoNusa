@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS accounts (
   password_hash VARCHAR(255) NOT NULL,  -- bcrypt hash (sudah termasuk salt)
   role          ENUM('super_admin','school_admin','teacher') NOT NULL DEFAULT 'teacher',
   school_id     INT NULL REFERENCES schools(id),  -- NULL untuk super_admin
+  must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   student_id       INT NULL REFERENCES students(id), -- diisi kalau siswa login sungguhan (bukan mode anonim/demo)
   school_id        INT NULL REFERENCES schools(id),
   class_id         INT NULL REFERENCES classes(id),
+  write_token_hash VARCHAR(64) NULL,
   scene_name       VARCHAR(100) NOT NULL,
   started_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   ended_at         DATETIME NULL,

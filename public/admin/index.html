@@ -260,12 +260,12 @@
 
   <!-- Topbar -->
   <header class="topbar">
-    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Buka menu">☰</button>
+    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Buka menu">Menu</button>
     <span class="logo">VR-GeoNusa</span>
     <span class="badge">Admin</span>
     <div class="spacer"></div>
     <span class="user-info" id="topbar-user"></span>
-    <a href="/" target="_blank" style="margin:0 12px">↗ Portal</a>
+    <a href="/" target="_blank" style="margin:0 12px"> Portal</a>
     <button class="logout-btn" onclick="doLogout()">Keluar</button>
   </header>
 
@@ -275,38 +275,38 @@
   <nav class="sidebar" id="sidebar">
     <div class="section-label">Konten</div>
     <div class="nav-item active" data-super-admin-only onclick="showPage('objects')">
-      <span class="icon">🏛️</span> Objek Scene
+      Objek Scene
     </div>
     <div class="nav-item" data-super-admin-only onclick="showPage('scenes')">
-      <span class="icon">🗺️</span> Kelola Scene
+      Kelola Scene
     </div>
     <div class="nav-item" data-super-admin-only onclick="state.currentTourId=null; showPage('tour')">
-      <span class="icon">🧭</span> Tur 360°
+      Tur 360°
     </div>
     <div class="nav-item" onclick="state.currentClassId=null; showPage('classes')">
-      <span class="icon">🎓</span> Kelas & Siswa
+      Kelas & Siswa
     </div>
     <div class="nav-item" onclick="showPage('report')">
-      <span class="icon">📊</span> Laporan Guru
+      Laporan Guru
     </div>
     <div class="section-label" style="margin-top:8px" data-admin-only>Multi-Sekolah</div>
     <div class="nav-item" data-admin-only onclick="showPage('schools')">
-      <span class="icon">🏫</span> Sekolah & Akun Guru
+      Sekolah & Akun Guru
     </div>
     <div class="section-label" style="margin-top:8px" data-super-admin-only>Referensi</div>
     <div class="nav-item" data-super-admin-only onclick="showPage('geometri')">
-      <span class="icon">📐</span> Katalog Geometri
+      Katalog Geometri
     </div>
     <div class="nav-item" data-super-admin-only onclick="showPage('export')">
-      <span class="icon">📤</span> Export / Backup
+      Export / Backup
     </div>
     <div class="section-label" style="margin-top:8px" data-super-admin-only>Konten Lain</div>
     <div class="nav-item" data-super-admin-only onclick="showPage('team')">
-      <span class="icon">👥</span> Tim Peneliti
+      Tim Peneliti
     </div>
     <div class="section-label" style="margin-top:8px">Akun</div>
     <div class="nav-item" onclick="showPage('settings')">
-      <span class="icon">⚙️</span> Pengaturan
+      Pengaturan
     </div>
   </nav>
 
@@ -386,7 +386,7 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal('obj-modal')">Batal</button>
-        <button type="submit" class="btn btn-primary">💾 Simpan Objek</button>
+        <button type="submit" class="btn btn-primary"> Simpan Objek</button>
       </div>
     </form>
   </div>
@@ -439,7 +439,7 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal('scene-modal')">Batal</button>
-        <button type="submit" class="btn btn-primary">🗺️ Buat Scene</button>
+        <button type="submit" class="btn btn-primary"> Buat Scene</button>
       </div>
     </form>
   </div>
@@ -513,7 +513,7 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal('team-modal')">Batal</button>
-        <button type="submit" class="btn btn-primary">💾 Simpan Anggota</button>
+        <button type="submit" class="btn btn-primary"> Simpan Anggota</button>
       </div>
     </form>
   </div>
@@ -522,6 +522,7 @@
 <!-- Toast -->
 <div id="toast"></div>
 
+<script src="/js/html-sanitize.js"></script>
 <script>
 // ══════════════════════════════════════════════════════
 // STATE & CONFIG
@@ -532,6 +533,7 @@ let state = {
   username: localStorage.getItem('vgn_user') || '',
   role: localStorage.getItem('vgn_role') || '',
   schoolId: localStorage.getItem('vgn_school_id') || '',
+  mustChangePassword: false,
   currentScene: localStorage.getItem('vgn_scene') || 'prambanan',
   scenes: {},
   sceneList: [],
@@ -560,11 +562,13 @@ async function doLogin(e) {
     state.username = json.username;
     state.role     = json.role;
     state.schoolId = json.school_id || '';
+    state.mustChangePassword = json.must_change_password === true;
     localStorage.setItem('vgn_token', json.token);
     localStorage.setItem('vgn_user', json.username);
     localStorage.setItem('vgn_role', json.role);
     localStorage.setItem('vgn_school_id', json.school_id || '');
-    if (!isSuperAdmin()) state.currentPage = 'report';
+    if (state.mustChangePassword) state.currentPage = 'settings';
+    else if (!isSuperAdmin()) state.currentPage = 'report';
     showApp();
   } catch (err) {
     document.getElementById('login-err').textContent = 'Gagal terhubung ke server';
@@ -580,6 +584,8 @@ async function checkAuth() {
     state.username = json.username;
     state.role     = json.role;
     state.schoolId = json.school_id || '';
+    state.mustChangePassword = json.must_change_password === true;
+    if (state.mustChangePassword) state.currentPage = 'settings';
     if (!isSuperAdmin() && state.currentPage !== 'report' && state.currentPage !== 'settings') state.currentPage = 'report';
     showApp();
   } catch { showLogin(); }
@@ -591,6 +597,7 @@ function doLogout() {
   localStorage.removeItem('vgn_role');
   localStorage.removeItem('vgn_school_id');
   state.token = ''; state.username = ''; state.role = ''; state.schoolId = '';
+  state.mustChangePassword = false;
   showLogin();
 }
 
@@ -603,8 +610,12 @@ async function showApp() {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app-page').style.display   = 'block';
   const roleLabel = isSuperAdmin() ? '' : isSchoolAdmin() ? ' (Admin Sekolah)' : ' (Guru)';
-  document.getElementById('topbar-user').textContent  = '👤 ' + state.username + roleLabel;
+  document.getElementById('topbar-user').textContent  = state.username + roleLabel;
   applyRoleVisibility();
+  if (state.mustChangePassword) {
+    showPage('settings');
+    return;
+  }
   if (isSuperAdmin()) await loadAllScenes();
   showPage(state.currentPage);
 }
@@ -670,6 +681,7 @@ function closeSidebar() {
 }
 
 function showPage(page) {
+  if (state.mustChangePassword && page !== 'settings') page = 'settings';
   closeSidebar();
   state.currentPage = page;
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -690,7 +702,7 @@ function renderObjectsPage(main) {
   const interactive = scene.objects.filter(o=>o.interactive).length;
   const withModel   = scene.objects.filter(o=>o.model_src).length;
   const tabs = state.sceneList.map(s =>
-    `<div class="scene-tab ${s.scene_id===state.currentScene?'active':''}" onclick="switchScene('${s.scene_id}')">${s.name}</div>`
+    `<div class="scene-tab ${s.scene_id===state.currentScene?'active':''}" onclick="switchScene(${htmlJsString(s.scene_id)})">${escapeHtml(s.name)}</div>`
   ).join('');
   main.innerHTML = `
     <div class="page-header">
@@ -706,8 +718,8 @@ function renderObjectsPage(main) {
     </div>
     <div class="table-wrap">
       <div class="table-toolbar">
-        <h2>Daftar Objek — ${scene.name||state.currentScene}</h2>
-        <a href="/vr/${state.currentScene}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka VR</a>
+        <h2>Daftar Objek — ${escapeHtml(scene.name||state.currentScene)}</h2>
+        <a href="/vr/${encodeURIComponent(state.currentScene)}.html" target="_blank" class="btn btn-ghost btn-sm"> Buka VR</a>
       </div>
       <table>
         <thead><tr><th>ID</th><th>Elemen</th><th>Tipe</th><th>Geometri</th><th>Conf.</th><th>Status</th><th>Aksi</th></tr></thead>
@@ -715,18 +727,18 @@ function renderObjectsPage(main) {
           ${scene.objects.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Belum ada objek — klik "+ Tambah Objek"</td></tr>` : ''}
           ${scene.objects.map(obj => `
             <tr>
-              <td style="font-family:monospace;font-size:11px;color:var(--muted)">${obj.id}</td>
-              <td style="font-weight:600">${obj.element||'—'}</td>
-              <td><code style="font-size:11px;color:var(--accent2)">${obj.type}</code></td>
-              <td>${obj.geo?`<span class="badge-geo">${obj.geo}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+              <td style="font-family:monospace;font-size:11px;color:var(--muted)">${escapeHtml(obj.id)}</td>
+              <td style="font-weight:600">${escapeHtml(obj.element||'—')}</td>
+              <td><code style="font-size:11px;color:var(--accent2)">${escapeHtml(obj.type)}</code></td>
+              <td>${obj.geo?`<span class="badge-geo">${escapeHtml(obj.geo)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
               <td>${obj.conf&&obj.interactive?confPill(obj.conf):'—'}</td>
               <td>
                 ${obj.interactive?'<span class="badge-interactive">Interaktif</span>':'<span class="badge-static">Dekoratif</span>'}
                 ${obj.model_src?'<span class="badge-model" style="margin-left:4px">GLTF</span>':''}
               </td>
               <td>
-                <button class="btn btn-ghost btn-sm" onclick="openEditObjModal('${obj.id}')">✏️ Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteObj('${obj.id}')" style="margin-left:4px">🗑</button>
+                <button class="btn btn-ghost btn-sm" onclick="openEditObjModal(${htmlJsString(obj.id)})"> Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteObj(${htmlJsString(obj.id)})" style="margin-left:4px"></button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -754,21 +766,21 @@ async function renderScenesPage(main) {
     return `
       <div class="scene-info-card">
         <div class="sc-thumb">
-          <img src="${thumbPath}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-          <div class="sc-thumb-fallback" style="display:none;background:linear-gradient(135deg,#1a2744,#2d4a2a)">🏛️</div>
+          <img src="${escapeHtml(thumbPath)}" alt="${escapeHtml(s.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+          <div class="sc-thumb-fallback" style="display:none;background:linear-gradient(135deg,#1a2744,#2d4a2a)"></div>
           ${isDefault?'<span class="sc-default-badge">DEFAULT</span>':''}
         </div>
         <div class="sc-body">
-          <div class="sc-name">${s.name}</div>
-          <div class="sc-loc">📍 ${s.location||'—'} · ${sc.era||'—'}</div>
+          <div class="sc-name">${escapeHtml(s.name)}</div>
+          <div class="sc-loc"> ${escapeHtml(s.location||'—')} · ${escapeHtml(sc.era||'—')}</div>
           <div class="sc-stats">
-            <div class="sc-stat"><div class="sc-stat-val">${s.obj_count}</div><div class="sc-stat-lbl">Objek</div></div>
+            <div class="sc-stat"><div class="sc-stat-val">${escapeHtml(s.obj_count)}</div><div class="sc-stat-lbl">Objek</div></div>
             <div class="sc-stat"><div class="sc-stat-val">${(sc.objects||[]).filter(o=>o.interactive).length}</div><div class="sc-stat-lbl">Interaktif</div></div>
           </div>
           <div class="sc-actions">
-            <button class="btn btn-ghost btn-sm" onclick="switchScene('${s.scene_id}'); showPage('objects')">📋 Kelola Objek</button>
-            <a href="/vr/${s.scene_id}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka VR</a>
-            ${!isDefault?`<button class="btn btn-danger btn-sm" onclick="deleteScene('${s.scene_id}')">🗑 Hapus</button>`:''}
+            <button class="btn btn-ghost btn-sm" onclick="switchScene(${htmlJsString(s.scene_id)}); showPage('objects')"> Kelola Objek</button>
+            <a href="/vr/${encodeURIComponent(s.scene_id)}.html" target="_blank" class="btn btn-ghost btn-sm"> Buka VR</a>
+            ${!isDefault?`<button class="btn btn-danger btn-sm" onclick="deleteScene(${htmlJsString(s.scene_id)})"> Hapus</button>`:''}
           </div>
         </div>
       </div>`;
@@ -780,7 +792,7 @@ async function renderScenesPage(main) {
     </div>
     <div class="scene-cards">${cards}</div>
     <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:14px;font-size:12px;color:var(--muted)">
-      💡 <strong style="color:var(--accent)">Cara menambah scene baru:</strong>
+       <strong style="color:var(--accent)">Cara menambah scene baru:</strong>
       Klik "+ Tambah Scene" → isi form → scene VR otomatis dibuat → tambahkan objek via tab "Objek Scene".
       Upload foto ke <code>public/assets/images/[scene_id].jpg</code> agar thumbnail muncul.
     </div>`;
@@ -804,19 +816,19 @@ async function renderTourPage(main) {
   const cards = tours.map(t => `
     <div class="scene-info-card">
       <div class="sc-thumb">
-        <img src="/assets/panorama/plateu-01.jpg" alt="${t.name}" onerror="this.style.display='none'">
+        <img src="/assets/panorama/plateu-01.jpg" alt="${escapeHtml(t.name)}" onerror="this.style.display='none'">
         <span class="sc-default-badge" style="background:rgba(255,183,77,.15);color:#FFB74D;border-color:rgba(255,183,77,.3)">TUR 360°</span>
       </div>
       <div class="sc-body">
-        <div class="sc-name">${t.name}</div>
-        <div class="sc-loc">📍 ${t.source || 'Foto 360° asli'}</div>
+        <div class="sc-name">${escapeHtml(t.name)}</div>
+        <div class="sc-loc"> ${escapeHtml(t.source || 'Foto 360° asli')}</div>
         <div class="sc-stats">
-          <div class="sc-stat"><div class="sc-stat-val">${t.node_count}</div><div class="sc-stat-lbl">Titik</div></div>
-          <div class="sc-stat"><div class="sc-stat-val">${t.identified_count}</div><div class="sc-stat-lbl">Teridentifikasi</div></div>
+          <div class="sc-stat"><div class="sc-stat-val">${escapeHtml(t.node_count)}</div><div class="sc-stat-lbl">Titik</div></div>
+          <div class="sc-stat"><div class="sc-stat-val">${escapeHtml(t.identified_count)}</div><div class="sc-stat-lbl">Teridentifikasi</div></div>
         </div>
         <div class="sc-actions">
-          <button class="btn btn-ghost btn-sm" onclick="state.currentTourId='${t.tour_id}'; renderTourPage(document.getElementById('main-content'))">🧭 Kelola Identifikasi</button>
-          <a href="/vr/tour-${t.tour_id}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Tur</a>
+          <button class="btn btn-ghost btn-sm" onclick="state.currentTourId=${htmlJsString(t.tour_id)}; renderTourPage(document.getElementById('main-content'))"> Kelola Identifikasi</button>
+          <a href="/vr/tour-${encodeURIComponent(t.tour_id)}.html" target="_blank" class="btn btn-ghost btn-sm"> Buka Tur</a>
         </div>
       </div>
     </div>`).join('');
@@ -832,7 +844,7 @@ async function renderTourDetailPage(main, tourId) {
   main.innerHTML = `<div class="page-header"><div><h1>Tur 360°</h1><div class="sub">Memuat data tur…</div></div></div>`;
 
   const [tourRes, labelsRes] = await Promise.all([
-    fetch(`/data/tour-${tourId}.json`),
+    fetch(`/data/tour-${encodeURIComponent(tourId)}.json`),
     fetch('/data/geometry-labels.json'),
   ]);
   const tour = await tourRes.json();
@@ -842,7 +854,7 @@ async function renderTourDetailPage(main, tourId) {
 
   const classOptions = (selected) => [
     `<option value="" ${!selected?'selected':''}>— Tidak ada —</option>`,
-    ...labels.classes.map(c => `<option value="${c.class_id}" ${c.class_id===selected?'selected':''}>${c.label_id} (${c.label_en})</option>`),
+    ...labels.classes.map(c => `<option value="${escapeHtml(c.class_id)}" ${c.class_id===selected?'selected':''}>${escapeHtml(c.label_id)} (${escapeHtml(c.label_en)})</option>`),
   ].join('');
 
   const rows = tour.folder_order.map(folder => {
@@ -852,20 +864,20 @@ async function renderTourDetailPage(main, tourId) {
     const rowId = folder.replace(/\s+/g, '-').toLowerCase();
     return `
       <tr>
-        <td style="font-weight:600">${sample.area_label}</td>
+        <td style="font-weight:600">${escapeHtml(sample.area_label)}</td>
         <td style="font-family:monospace;font-size:11px;color:var(--muted)">${nodesInFolder.length} titik</td>
         <td>
           <div class="form-group" style="margin:0">
-            <select id="tour-class-${rowId}">${classOptions(identify?.class_id || '')}</select>
+            <select id="tour-class-${escapeHtml(rowId)}">${classOptions(identify?.class_id || '')}</select>
           </div>
         </td>
         <td style="width:90px">
           <div class="form-group" style="margin:0">
-            <input id="tour-conf-${rowId}" type="number" min="0" max="100" value="${identify?.conf ?? 85}" style="width:70px">
+            <input id="tour-conf-${escapeHtml(rowId)}" type="number" min="0" max="100" value="${escapeHtml(identify?.conf ?? 85)}" style="width:70px">
           </div>
         </td>
         <td>${identify?`<span class="badge-interactive">Teridentifikasi</span>`:'<span class="badge-static">Belum</span>'}</td>
-        <td><button class="btn btn-primary btn-sm" onclick="saveTourFolder('${folder.replace(/'/g,"\\'")}','${rowId}')">💾 Simpan</button></td>
+        <td><button class="btn btn-primary btn-sm" onclick="saveTourFolder(${htmlJsString(folder)},${htmlJsString(rowId)})"> Simpan</button></td>
       </tr>`;
   }).join('');
 
@@ -873,10 +885,10 @@ async function renderTourDetailPage(main, tourId) {
     <div class="page-header">
       <div>
         <div class="nav-item" style="display:inline-flex;padding:0;margin-bottom:6px;color:var(--accent);cursor:pointer" onclick="state.currentTourId=null; renderTourPage(document.getElementById('main-content'))">← Semua Tur</div>
-        <h1>${tour.name || tourId}</h1>
+        <h1>${escapeHtml(tour.name || tourId)}</h1>
         <div class="sub">Atur geometri apa yang teridentifikasi di tiap area — dipakai oleh marker "Identifikasi" di dalam tur</div>
       </div>
-      <a href="/vr/tour-${tourId}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Tur</a>
+      <a href="/vr/tour-${encodeURIComponent(tourId)}.html" target="_blank" class="btn btn-ghost btn-sm"> Buka Tur</a>
     </div>
     <div class="stats">
       <div class="stat-card"><div class="val">${tour.nodes.length}</div><div class="lbl">Total Titik</div></div>
@@ -891,7 +903,7 @@ async function renderTourDetailPage(main, tourId) {
       </table>
     </div>
     <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:14px;font-size:12px;color:var(--muted);margin-top:16px">
-      💡 Satu area (mis. "Teras 1") bisa berisi banyak titik pandang — mengatur kelas geometri di sini menerapkannya ke <strong style="color:var(--accent)">semua titik dalam area itu sekaligus</strong>. Pilih "— Tidak ada —" untuk area yang memang tidak punya elemen geometri jelas (mis. halaman/selasar).
+       Satu area (mis. "Teras 1") bisa berisi banyak titik pandang — mengatur kelas geometri di sini menerapkannya ke <strong style="color:var(--accent)">semua titik dalam area itu sekaligus</strong>. Pilih "— Tidak ada —" untuk area yang memang tidak punya elemen geometri jelas (mis. halaman/selasar).
     </div>`;
 }
 
@@ -904,7 +916,7 @@ async function saveTourFolder(folder, rowId) {
   });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Area "${folder}" diperbarui (${json.applied_to} titik) ✓`, 'success');
+  toast(`Area "${folder}" diperbarui (${json.applied_to} titik)`, 'success');
   renderTourDetailPage(document.getElementById('main-content'), state.currentTourId);
 }
 
@@ -914,11 +926,13 @@ async function saveTourFolder(folder, rowId) {
 async function renderReportPage(main, page) {
   main.innerHTML = `<div class="page-header"><div><h1>Laporan Guru</h1><div class="sub">Memuat rekap aktivitas…</div></div></div>`;
 
-  page = page || 1;
-  const schoolParam = isSuperAdmin() && state.reportSchoolFilter ? `&school_id=${state.reportSchoolFilter}` : '';
+  page = Number.isSafeInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+  const schoolParam = isSuperAdmin() && state.reportSchoolFilter
+    ? `&school_id=${encodeURIComponent(state.reportSchoolFilter)}`
+    : '';
   const res = await apiFetch(`/api/reports/summary?page=${page}${schoolParam}`);
   const json = await res.json();
-  if (!json.success) { main.innerHTML = `<div class="page-header"><div><h1>Laporan Guru</h1><div class="sub" style="color:var(--red)">${json.message}</div></div></div>`; return; }
+  if (!json.success) { main.innerHTML = `<div class="page-header"><div><h1>Laporan Guru</h1><div class="sub" style="color:var(--red)">${escapeHtml(json.message)}</div></div></div>`; return; }
   const { totals, perQuestion, perObject, perSchool, recentSessions, pagination, conceptRecommendations } = json.data;
 
   let schoolFilterHtml = '';
@@ -928,38 +942,38 @@ async function renderReportPage(main, page) {
       const sJson = await sRes.json();
       state.schoolsCache = sJson.data || [];
     }
-    const opts = state.schoolsCache.map(s => `<option value="${s.id}" ${String(s.id)===String(state.reportSchoolFilter)?'selected':''}>${s.name}</option>`).join('');
+    const opts = state.schoolsCache.map(s => `<option value="${escapeHtml(s.id)}" ${String(s.id)===String(state.reportSchoolFilter)?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
     schoolFilterHtml = `<select onchange="state.reportSchoolFilter=this.value; renderReportPage(document.getElementById('main-content'))" style="margin-right:8px">
       <option value="">Semua Sekolah</option>${opts}
     </select>`;
   }
 
   const perSchoolRows = (perSchool || []).length ? perSchool.map(s => `
-    <tr><td style="font-weight:600">${s.school_name || '— (tanpa sekolah)'}</td><td>${s.session_count}</td></tr>
+    <tr><td style="font-weight:600">${escapeHtml(s.school_name || '— (tanpa sekolah)')}</td><td>${escapeHtml(s.session_count)}</td></tr>
   `).join('') : '';
 
   const questionRows = perQuestion.length ? perQuestion.map(q => `
     <tr>
-      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${q.question_id}</td>
-      <td>${q.attempts}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${escapeHtml(q.question_id)}</td>
+      <td>${escapeHtml(q.attempts)}</td>
       <td>${confPill(q.accuracy_pct)}</td>
-      <td>${q.avg_response_time ?? '—'} dtk</td>
+      <td>${escapeHtml(q.avg_response_time ?? '—')} dtk</td>
     </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Belum ada data kuis</td></tr>`;
 
   const objectRows = perObject.length ? perObject.map(o => `
     <tr>
-      <td style="font-weight:600">${o.geometry_label || o.object_code}</td>
-      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${o.object_code}</td>
-      <td>${o.interaction_count}</td>
+      <td style="font-weight:600">${escapeHtml(o.geometry_label || o.object_code)}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${escapeHtml(o.object_code)}</td>
+      <td>${escapeHtml(o.interaction_count)}</td>
     </tr>`).join('') : `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--muted)">Belum ada interaksi</td></tr>`;
 
   const sessionRows = recentSessions.length ? recentSessions.map(s => `
     <tr>
-      <td style="font-weight:600">${s.student_name}</td>
-      ${isSuperAdmin() ? `<td>${s.school_name || '—'}</td>` : ''}
-      <td>${s.scene_name}</td>
-      <td style="font-size:11px;color:var(--muted)">${s.started_at}</td>
-      <td>${s.duration_seconds != null ? s.duration_seconds + ' dtk' : '— (belum selesai)'}</td>
+      <td style="font-weight:600">${escapeHtml(s.student_name)}</td>
+      ${isSuperAdmin() ? `<td>${escapeHtml(s.school_name || '—')}</td>` : ''}
+      <td>${escapeHtml(s.scene_name)}</td>
+      <td style="font-size:11px;color:var(--muted)">${escapeHtml(s.started_at)}</td>
+      <td>${escapeHtml(s.duration_seconds != null ? s.duration_seconds + ' dtk' : '— (belum selesai)')}</td>
     </tr>`).join('') : `<tr><td colspan="${isSuperAdmin()?5:4}" style="text-align:center;padding:24px;color:var(--muted)">Belum ada sesi</td></tr>`;
 
   const conceptCards = (conceptRecommendations || []).length ? conceptRecommendations.map(c => {
@@ -968,32 +982,36 @@ async function renderReportPage(main, page) {
     return `
     <div style="background:var(--surface2);border-radius:10px;padding:14px;border-left:3px solid ${toneColor}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span class="badge-geo">${c.geometry_name}</span>
-        <span style="color:${toneColor};font-weight:700;font-size:13px">${c.attempts >= 3 ? c.accuracy_pct + '%' : '—'}</span>
+        <span class="badge-geo">${escapeHtml(c.geometry_name)}</span>
+        <span style="color:${toneColor};font-weight:700;font-size:13px">${escapeHtml(c.attempts >= 3 ? c.accuracy_pct + '%' : '—')}</span>
       </div>
-      <div style="font-size:12px;color:var(--text);line-height:1.5">${c.recommendation}</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.5">${escapeHtml(c.recommendation)}</div>
     </div>`;
   }).join('') : `<div style="color:var(--muted);text-align:center;padding:24px">Belum ada data kuis untuk direkap per konsep</div>`;
 
   const csvUrl = `/api/reports/export.csv${schoolParam ? '?' + schoolParam.slice(1) : ''}`;
-  const pageBtn = (p, label) => `<button class="btn btn-ghost btn-sm" ${p<1||p>pagination.totalPages?'disabled':''} onclick="renderReportPage(document.getElementById('main-content'), ${p})">${label}</button>`;
+  const pageBtn = (p, label) => {
+    const targetPage = Number.isSafeInteger(Number(p)) ? Number(p) : 1;
+    const totalPages = Number.isSafeInteger(Number(pagination.totalPages)) ? Number(pagination.totalPages) : 0;
+    return `<button class="btn btn-ghost btn-sm" ${targetPage<1||targetPage>totalPages?'disabled':''} onclick="renderReportPage(document.getElementById('main-content'), ${targetPage})">${escapeHtml(label)}</button>`;
+  };
 
   main.innerHTML = `
     <div class="page-header">
       <div><h1>Laporan Guru</h1><div class="sub">Rekap sesi eksplorasi, kuis, dan interaksi siswa${isSuperAdmin()?' (semua sekolah, bisa difilter)':''}</div></div>
       <div>
         ${schoolFilterHtml}
-        <a href="${csvUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-right:8px">⬇️ Export CSV</a>
-        <button class="btn btn-ghost btn-sm" onclick="renderReportPage(document.getElementById('main-content'))">🔄 Refresh</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="margin-right:8px" onclick="downloadReportCsv(${htmlJsString(csvUrl)})"> Export CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="renderReportPage(document.getElementById('main-content'))"> Refresh</button>
       </div>
     </div>
     <div class="stats">
-      <div class="stat-card"><div class="val">${totals.total_sessions}</div><div class="lbl">Total Sesi</div></div>
-      <div class="stat-card"><div class="val">${totals.total_students}</div><div class="lbl">Siswa Unik</div></div>
-      <div class="stat-card"><div class="val">${totals.avg_duration_seconds ?? '—'}</div><div class="lbl">Rata² Durasi (dtk)</div></div>
-      <div class="stat-card"><div class="val">${totals.total_quiz_attempts}</div><div class="lbl">Percobaan Kuis</div></div>
-      <div class="stat-card"><div class="val">${totals.quiz_accuracy_pct ?? '—'}%</div><div class="lbl">Akurasi Kuis</div></div>
-      <div class="stat-card"><div class="val">${totals.total_interactions}</div><div class="lbl">Total Interaksi</div></div>
+      <div class="stat-card"><div class="val">${escapeHtml(totals.total_sessions)}</div><div class="lbl">Total Sesi</div></div>
+      <div class="stat-card"><div class="val">${escapeHtml(totals.total_students)}</div><div class="lbl">Siswa Unik</div></div>
+      <div class="stat-card"><div class="val">${escapeHtml(totals.avg_duration_seconds ?? '—')}</div><div class="lbl">Rata² Durasi (dtk)</div></div>
+      <div class="stat-card"><div class="val">${escapeHtml(totals.total_quiz_attempts)}</div><div class="lbl">Percobaan Kuis</div></div>
+      <div class="stat-card"><div class="val">${escapeHtml(totals.quiz_accuracy_pct ?? '—')}%</div><div class="lbl">Akurasi Kuis</div></div>
+      <div class="stat-card"><div class="val">${escapeHtml(totals.total_interactions)}</div><div class="lbl">Total Interaksi</div></div>
     </div>
 
     ${isSuperAdmin() && perSchoolRows ? `
@@ -1026,7 +1044,7 @@ async function renderReportPage(main, page) {
     <div class="table-wrap" style="margin-top:20px">
       <div class="table-toolbar">
         <h2>Sesi Terbaru</h2>
-        <div style="font-size:11px;color:var(--muted)">Halaman ${pagination.page} / ${pagination.totalPages || 1} · ${pagination.total} sesi total</div>
+        <div style="font-size:11px;color:var(--muted)">Halaman ${escapeHtml(pagination.page)} / ${escapeHtml(pagination.totalPages || 1)} · ${escapeHtml(pagination.total)} sesi total</div>
       </div>
       <table>
         <thead><tr><th>Nama Siswa</th>${isSuperAdmin()?'<th>Sekolah</th>':''}<th>Scene</th><th>Mulai</th><th>Durasi</th></tr></thead>
@@ -1037,6 +1055,29 @@ async function renderReportPage(main, page) {
         ${pageBtn(pagination.page + 1, 'Berikutnya →')}
       </div>
     </div>`;
+}
+
+async function downloadReportCsv(csvUrl) {
+  try {
+    const res = await apiFetch(csvUrl, { headers: { Accept: 'text/csv' } });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      toast(json.message || 'Gagal mengunduh CSV', 'error');
+      return;
+    }
+
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = 'vr-geonusa-sessions.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    toast('Gagal mengunduh CSV', 'error');
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1061,18 +1102,20 @@ async function renderClassesPage(main) {
   }
 
   const showOwnerCol = isSuperAdmin() || isSchoolAdmin();
-  const ownerLabel = (c) => isSuperAdmin() ? `${c.school_name} <span style="color:var(--muted);font-size:11px">(${c.teacher_username})</span>` : c.teacher_username;
+  const ownerLabel = (c) => isSuperAdmin()
+    ? `${escapeHtml(c.school_name)} <span style="color:var(--muted);font-size:11px">(${escapeHtml(c.teacher_username)})</span>`
+    : escapeHtml(c.teacher_username);
 
   const rows = classes.length ? classes.map(c => `
     <tr>
-      <td style="font-weight:600">${c.class_name}</td>
-      <td>${c.grade_level || '—'}</td>
-      <td>${c.academic_year || '—'}</td>
+      <td style="font-weight:600">${escapeHtml(c.class_name)}</td>
+      <td>${escapeHtml(c.grade_level || '—')}</td>
+      <td>${escapeHtml(c.academic_year || '—')}</td>
       ${showOwnerCol ? `<td>${ownerLabel(c)}</td>` : ''}
-      <td>${c.student_count}</td>
+      <td>${escapeHtml(c.student_count)}</td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="state.currentClassId=${c.id}; renderClassesPage(document.getElementById('main-content'))">👥 Kelola Siswa</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteClass(${c.id},'${c.class_name.replace(/'/g,"\\'")}')" style="margin-left:4px">🗑</button>
+        <button class="btn btn-ghost btn-sm" onclick="state.currentClassId=${htmlJsString(c.id)}; renderClassesPage(document.getElementById('main-content'))"> Kelola Siswa</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteClass(${htmlJsString(c.id)},${htmlJsString(c.class_name)})" style="margin-left:4px"></button>
       </td>
     </tr>`).join('') : `<tr><td colspan="${showOwnerCol?6:5}" style="text-align:center;padding:24px;color:var(--muted)">Belum ada kelas</td></tr>`;
 
@@ -1080,7 +1123,7 @@ async function renderClassesPage(main) {
   const teacherPicker = isSchoolAdmin() ? `
         <select name="teacher_account_id" required style="flex:1">
           <option value="">— Pilih guru pengampu —</option>
-          ${schoolTeachers.map(t => `<option value="${t.id}">${t.username}</option>`).join('')}
+          ${schoolTeachers.map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.username)}</option>`).join('')}
         </select>` : '';
 
   main.innerHTML = `
@@ -1118,7 +1161,7 @@ async function addClass(e) {
   });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Kelas "${form.get('class_name')}" dibuat ✓`, 'success');
+  toast(`Kelas "${form.get('class_name')}" dibuat`, 'success');
   renderClassesPage(document.getElementById('main-content'));
 }
 
@@ -1127,7 +1170,7 @@ async function deleteClass(id, name) {
   const res = await apiFetch(`/api/classes/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast('Kelas dihapus ✓', 'success');
+  toast('Kelas dihapus', 'success');
   renderClassesPage(document.getElementById('main-content'));
 }
 
@@ -1141,11 +1184,11 @@ async function renderClassDetailPage(main, classId) {
 
   const rows = students.length ? students.map(s => `
     <tr>
-      <td style="font-weight:600">${s.name}</td>
-      <td style="font-family:monospace;font-size:12px">${s.student_number}</td>
+      <td style="font-weight:600">${escapeHtml(s.name)}</td>
+      <td style="font-family:monospace;font-size:12px">${escapeHtml(s.student_number)}</td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword(${s.id},'${s.name.replace(/'/g,"\\'")}')">🔑 Reset Password</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.name.replace(/'/g,"\\'")}')" style="margin-left:4px">🗑</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword(${htmlJsString(s.id)},${htmlJsString(s.name)})"> Reset Password</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${htmlJsString(s.id)},${htmlJsString(s.name)})" style="margin-left:4px"></button>
       </td>
     </tr>`).join('') : `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--muted)">Belum ada siswa — tambahkan lewat form di bawah</td></tr>`;
 
@@ -1170,7 +1213,7 @@ async function renderClassDetailPage(main, classId) {
       <div style="padding:14px">
         <label style="display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Satu siswa per baris: Nama, Nomor Induk</label>
         <textarea id="bulk-student-input" rows="6" placeholder="Dewi Lestari, 2026001&#10;Rian Saputra, 2026002" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;padding:10px;font-family:monospace;font-size:12px"></textarea>
-        <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="bulkAddStudents(${classId})">+ Tambahkan Semua</button>
+        <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="bulkAddStudents(${htmlJsString(classId)})">+ Tambahkan Semua</button>
         <div id="bulk-student-result" style="margin-top:14px"></div>
       </div>
     </div>`;
@@ -1191,18 +1234,18 @@ async function bulkAddStudents(classId) {
 
   const resultEl = document.getElementById('bulk-student-result');
   const createdRows = json.created.map(s => `
-    <tr><td>${s.name}</td><td style="font-family:monospace">${s.student_number}</td><td style="font-family:monospace;color:#00e676">${s.password}</td></tr>`).join('');
+    <tr><td>${escapeHtml(s.name)}</td><td style="font-family:monospace">${escapeHtml(s.student_number)}</td><td style="font-family:monospace;color:#00e676">${escapeHtml(s.password)}</td></tr>`).join('');
   const skippedList = json.skipped.length
-    ? `<div style="color:var(--red);font-size:12px;margin-top:10px">Dilewati: ${json.skipped.map(s => `${s.name||'?'} (${s.reason})`).join(', ')}</div>` : '';
+    ? `<div style="color:var(--red);font-size:12px;margin-top:10px">Dilewati: ${json.skipped.map(s => `${escapeHtml(s.name||'?')} (${escapeHtml(s.reason)})`).join(', ')}</div>` : '';
 
   resultEl.innerHTML = `
     <div style="background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:10px;padding:12px">
-      <div style="color:#00e676;font-weight:700;font-size:12px;margin-bottom:8px">✓ ${json.created.length} siswa ditambahkan — <b>salin password ini sekarang</b>, tidak ditampilkan lagi setelah halaman di-refresh:</div>
+      <div style="color:#00e676;font-weight:700;font-size:12px;margin-bottom:8px">${json.created.length} siswa ditambahkan — <b>salin password ini sekarang</b>, tidak ditampilkan lagi setelah halaman di-refresh:</div>
       <table style="width:100%"><thead><tr><th style="text-align:left">Nama</th><th style="text-align:left">No. Induk</th><th style="text-align:left">Password</th></tr></thead><tbody>${createdRows}</tbody></table>
       ${skippedList}
     </div>`;
   document.getElementById('bulk-student-input').value = '';
-  toast(`${json.created.length} siswa ditambahkan ✓`, 'success');
+  toast(`${json.created.length} siswa ditambahkan`, 'success');
 }
 
 async function resetStudentPassword(id, name) {
@@ -1218,7 +1261,7 @@ async function deleteStudent(id, name) {
   const res = await apiFetch(`/api/students/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`"${name}" dihapus ✓`, 'success');
+  toast(`"${name}" dihapus`, 'success');
   renderClassDetailPage(document.getElementById('main-content'), state.currentClassId);
 }
 
@@ -1241,22 +1284,22 @@ async function renderSchoolsPage(main) {
 
   const schoolRows = schools.length ? schools.map(s => `
     <tr>
-      <td style="font-weight:600">${s.name}</td>
-      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${s.code || '—'}</td>
+      <td style="font-weight:600">${escapeHtml(s.name)}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--muted)">${escapeHtml(s.code || '—')}</td>
       <td>${accounts.filter(a => a.school_id === s.id).length}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteSchool(${s.id},'${s.name.replace(/'/g,"\\'")}')">🗑 Hapus</button></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteSchool(${htmlJsString(s.id)},${htmlJsString(s.name)})"> Hapus</button></td>
     </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Belum ada sekolah</td></tr>`;
 
-  const schoolOptions = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  const schoolOptions = schools.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
 
   const accountRows = accounts.length ? accounts.map(a => `
     <tr>
-      <td style="font-weight:600">${a.username}</td>
-      <td>${ROLE_BADGES[a.role] || a.role}</td>
-      ${isSuperAdmin() ? `<td>${a.school_name || '—'}</td>` : ''}
+      <td style="font-weight:600">${escapeHtml(a.username)}</td>
+      <td>${ROLE_BADGES[a.role] || escapeHtml(a.role)}</td>
+      ${isSuperAdmin() ? `<td>${escapeHtml(a.school_name || '—')}</td>` : ''}
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="resetAccountPassword(${a.id},'${a.username}')">🔑 Reset Password</button>
-        ${a.role !== 'super_admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id},'${a.username}')" style="margin-left:4px">🗑</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="resetAccountPassword(${htmlJsString(a.id)},${htmlJsString(a.username)})"> Reset Password</button>
+        ${a.role !== 'super_admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${htmlJsString(a.id)},${htmlJsString(a.username)})" style="margin-left:4px"></button>` : ''}
       </td>
     </tr>`).join('') : '';
 
@@ -1313,7 +1356,7 @@ async function addSchool(e) {
   const res = await apiFetch('/api/schools', { method: 'POST', body: JSON.stringify({ name: form.get('name'), code: form.get('code') || null }) });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Sekolah "${form.get('name')}" ditambahkan ✓`, 'success');
+  toast(`Sekolah "${form.get('name')}" ditambahkan`, 'success');
   state.schoolsCache = null;
   renderSchoolsPage(document.getElementById('main-content'));
 }
@@ -1323,7 +1366,7 @@ async function deleteSchool(id, name) {
   const res = await apiFetch(`/api/schools/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast('Sekolah dihapus ✓', 'success');
+  toast('Sekolah dihapus', 'success');
   state.schoolsCache = null;
   renderSchoolsPage(document.getElementById('main-content'));
 }
@@ -1342,7 +1385,7 @@ async function addAccount(e) {
   });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Akun "${form.get('username')}" dibuat ✓`, 'success');
+  toast(`Akun "${form.get('username')}" dibuat`, 'success');
   renderSchoolsPage(document.getElementById('main-content'));
 }
 
@@ -1352,7 +1395,7 @@ async function resetAccountPassword(id, username) {
   const res = await apiFetch(`/api/accounts/${id}/reset-password`, { method: 'PUT', body: JSON.stringify({ new_password: newPassword }) });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Password "${username}" berhasil direset ✓`, 'success');
+  toast(`Password "${username}" berhasil direset`, 'success');
 }
 
 async function deleteAccount(id, username) {
@@ -1360,7 +1403,7 @@ async function deleteAccount(id, username) {
   const res = await apiFetch(`/api/accounts/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Akun "${username}" dihapus ✓`, 'success');
+  toast(`Akun "${username}" dihapus`, 'success');
   renderSchoolsPage(document.getElementById('main-content'));
 }
 
@@ -1404,11 +1447,11 @@ function renderExportPage(main) {
     <div class="page-header"><div><h1>Export & Backup</h1><div class="sub">Download JSON untuk backup atau deploy GitHub Pages</div></div></div>
     ${state.sceneList.map(s=>`
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px">
-        <div style="font-weight:700;margin-bottom:10px">${s.name} <code style="font-size:11px;color:var(--muted);margin-left:8px">data/${s.scene_id}.json</code></div>
-        <div class="export-box"><pre>${JSON.stringify(state.scenes[s.scene_id]||{},null,2).slice(0,500)}...</pre></div>
+        <div style="font-weight:700;margin-bottom:10px">${escapeHtml(s.name)} <code style="font-size:11px;color:var(--muted);margin-left:8px">data/${escapeHtml(s.scene_id)}.json</code></div>
+        <div class="export-box"><pre>${escapeHtml(JSON.stringify(state.scenes[s.scene_id]||{},null,2).slice(0,500))}...</pre></div>
         <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-success" onclick="downloadJSON('${s.scene_id}')">⬇️ Download JSON</button>
-          <button class="btn btn-ghost" onclick="copyJSON('${s.scene_id}')">📋 Copy</button>
+          <button class="btn btn-success" onclick="downloadJSON(${htmlJsString(s.scene_id)})"> Download JSON</button>
+          <button class="btn btn-ghost" onclick="copyJSON(${htmlJsString(s.scene_id)})"> Copy</button>
         </div>
       </div>`).join('')}`;
 }
@@ -1427,9 +1470,9 @@ function renderSettingsPage(main) {
     <div class="page-header"><div><h1>Pengaturan</h1><div class="sub">Kelola akun admin</div></div></div>
     <div class="table-wrap" style="padding:20px">
       <div style="font-weight:700;margin-bottom:4px">Akun Admin</div>
-      <div style="color:var(--muted);font-size:12px;margin-bottom:16px">Username: <strong style="color:var(--accent)">${state.username}</strong></div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:16px">Username: <strong style="color:var(--accent)">${escapeHtml(state.username)}</strong></div>
       <div class="pwd-form">
-        <h3>🔑 Ganti Password</h3>
+        <h3> Ganti Password</h3>
         <div class="form-grid">
           <div class="form-group full"><label>Password Lama</label><input id="pwd-old" type="password" placeholder="••••••••"></div>
           <div class="form-group"><label>Password Baru</label><input id="pwd-new" type="password" placeholder="min. 6 karakter"></div>
@@ -1446,7 +1489,10 @@ async function changePassword() {
   if (nw.length<6) { toast('Password minimal 6 karakter','error'); return; }
   const res=await apiFetch('/api/auth/change-password',{method:'POST',body:JSON.stringify({old_password:old,new_password:nw})});
   const json=await res.json();
-  if (json.success) { toast('Password berhasil diubah ✓','success'); renderSettingsPage(document.getElementById('main-content')); }
+  if (json.success) {
+    toast('Password berhasil diubah. Silakan login kembali.','success');
+    doLogout();
+  }
   else toast(json.message,'error');
 }
 
@@ -1504,7 +1550,7 @@ async function saveObject(e) {
   if(!json.success){ toast(json.message,'error'); return; }
   await loadSceneDetail(id);
   closeModal('obj-modal');
-  toast(isEdit?'Objek diupdate ✓':'Objek ditambahkan ✓','success');
+  toast(isEdit?'Objek diupdate':'Objek ditambahkan','success');
   renderObjectsPage(document.getElementById('main-content'));
 }
 async function deleteObj(objId) {
@@ -1513,7 +1559,7 @@ async function deleteObj(objId) {
   const json=await res.json();
   if(!json.success){ toast(json.message,'error'); return; }
   await loadSceneDetail(state.currentScene);
-  toast('Objek dihapus ✓','success');
+  toast('Objek dihapus','success');
   renderObjectsPage(document.getElementById('main-content'));
 }
 
@@ -1535,7 +1581,7 @@ async function saveNewScene(e) {
   if(!json.success){ toast(json.message,'error'); return; }
   await loadAllScenes();
   closeModal('scene-modal');
-  toast(`Scene "${json.data.name}" berhasil dibuat ✓ — VR page: ${json.vr_url}`,'success');
+  toast(`Scene "${json.data.name}" berhasil dibuat — VR page: ${json.vr_url}`,'success');
   // Update landing page scene list juga
   state.currentScene = json.data.scene_id;
   renderScenesPage(document.getElementById('main-content'));
@@ -1547,7 +1593,7 @@ async function deleteScene(id) {
   if(!json.success){ toast(json.message,'error'); return; }
   await loadAllScenes();
   if(state.currentScene===id) state.currentScene='prambanan';
-  toast(`Scene "${id}" dihapus ✓`,'success');
+  toast(`Scene "${id}" dihapus`,'success');
   renderScenesPage(document.getElementById('main-content'));
 }
 
@@ -1581,45 +1627,46 @@ function renderTeamPage(main) {
   const students    = state.team.filter(m => m.role_type === 'mahasiswa');
 
   const memberCard = (m) => {
-    const photoHtml = m.photo
-      ? `<img src="${m.photo}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
+    const photoUrl = safeTeamPhotoUrl(m.photo);
+    const photoHtml = photoUrl
+      ? `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(m.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
       : '';
-    const fallbackEmoji = m.role_type === 'mahasiswa' ? '👨‍🎓' : '👩‍🔬';
+    const fallbackLabel = m.role_type === 'mahasiswa' ? 'Mahasiswa' : 'Peneliti';
     const expertiseTags = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(e=>e.trim()).filter(Boolean))
-      .map(e => `<span style="background:rgba(200,150,62,.1);border:1px solid rgba(200,150,62,.2);color:#C8963E;border-radius:3px;padding:1px 7px;font-size:10px;font-weight:600">${e}</span>`).join('');
+      .map(e => `<span style="background:rgba(200,150,62,.1);border:1px solid rgba(200,150,62,.2);color:#C8963E;border-radius:3px;padding:1px 7px;font-size:10px;font-weight:600">${escapeHtml(e)}</span>`).join('');
     const links = [
-      m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${m.sinta_id}" target="_blank" style="color:var(--accent);font-size:11px">SINTA ↗</a>` : '',
-      m.orcid    ? `<a href="https://orcid.org/${m.orcid}" target="_blank" style="color:var(--accent);font-size:11px">ORCID ↗</a>` : '',
-      m.email    ? `<a href="mailto:${m.email}" style="color:var(--muted);font-size:11px">✉ Email</a>` : '',
+      m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${encodeURIComponent(m.sinta_id)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-size:11px">SINTA </a>` : '',
+      m.orcid    ? `<a href="https://orcid.org/${encodeURIComponent(m.orcid)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-size:11px">ORCID </a>` : '',
+      m.email    ? `<a href="mailto:${encodeURIComponent(m.email)}" style="color:var(--muted);font-size:11px"> Email</a>` : '',
     ].filter(Boolean).join('<span style="color:var(--border);margin:0 4px">|</span>');
 
     return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
         <!-- Foto -->
-        <div style="height:160px;background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center" id="photo-wrap-${m.id}">
+        <div style="height:160px;background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center" id="photo-wrap-${escapeHtml(m.id)}">
           ${photoHtml}
-          <div style="${m.photo?'display:none;':''}width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3em;color:var(--muted)" id="photo-fallback-${m.id}">${fallbackEmoji}</div>
+          <div style="${photoUrl?'display:none;':''}width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1em;font-weight:700;color:var(--muted)" id="photo-fallback-${escapeHtml(m.id)}">${fallbackLabel}</div>
           <!-- Upload button overlay -->
-          <label for="upload-${m.id}" title="Ganti foto"
+          <label for="upload-${escapeHtml(m.id)}" title="Ganti foto"
             style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.15);
                    border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;z-index:2">
-            📷 Ganti Foto
+             Ganti Foto
           </label>
-          <input type="file" id="upload-${m.id}" accept="image/jpeg,image/png,image/webp"
-            style="display:none" onchange="uploadPhoto('${m.id}', this)">
+          <input type="file" id="upload-${escapeHtml(m.id)}" accept="image/jpeg,image/png,image/webp"
+            style="display:none" onchange="uploadPhoto(${htmlJsString(m.id)}, this)">
         </div>
         <!-- Info -->
         <div style="padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:6px">
-          <div style="font-weight:800;font-size:.95rem;color:var(--text)">${m.name}</div>
-          <div style="color:var(--gold);font-size:.75rem;font-weight:700;letter-spacing:.3px">${m.role}</div>
-          <div style="color:var(--muted);font-size:.75rem">${m.institution}</div>
-          ${m.bio ? `<div style="color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:4px;flex:1">${m.bio.slice(0,120)}${m.bio.length>120?'…':''}</div>` : ''}
+          <div style="font-weight:800;font-size:.95rem;color:var(--text)">${escapeHtml(m.name)}</div>
+          <div style="color:var(--gold);font-size:.75rem;font-weight:700;letter-spacing:.3px">${escapeHtml(m.role)}</div>
+          <div style="color:var(--muted);font-size:.75rem">${escapeHtml(m.institution)}</div>
+          ${m.bio ? `<div style="color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:4px;flex:1">${escapeHtml(m.bio.slice(0,120))}${m.bio.length>120?'…':''}</div>` : ''}
           ${expertiseTags ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${expertiseTags}</div>` : ''}
           ${links ? `<div style="display:flex;gap:0;margin-top:6px;align-items:center">${links}</div>` : ''}
           <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openEditMemberModal('${m.id}')">✏️ Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')">🗑</button>
+            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openEditMemberModal(${htmlJsString(m.id)})"> Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMember(${htmlJsString(m.id)})"></button>
           </div>
         </div>
       </div>`;
@@ -1632,8 +1679,8 @@ function renderTeamPage(main) {
     </div>
 
     <div style="background:rgba(200,150,62,.06);border:1px solid rgba(200,150,62,.15);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--muted)">
-      💡 <strong style="color:var(--gold)">Cara upload foto:</strong>
-      Klik tombol <strong>📷 Ganti Foto</strong> di kartu anggota. Format JPG/PNG/WebP, maksimal 3MB.
+       <strong style="color:var(--gold)">Cara upload foto:</strong>
+      Klik tombol <strong> Ganti Foto</strong> di kartu anggota. Format JPG/PNG/WebP, maksimal 3MB.
       Foto langsung tampil di halaman portal.
     </div>
 
@@ -1716,7 +1763,7 @@ async function saveMember(e) {
   const teamJson = await teamRes.json();
   state.team = (teamJson.data||[]).sort((a,b)=>(a.order||99)-(b.order||99));
   closeModal('team-modal');
-  toast(isEdit ? 'Profil diupdate ✓' : 'Anggota ditambahkan ✓', 'success');
+  toast(isEdit ? 'Profil diupdate' : 'Anggota ditambahkan', 'success');
   renderTeamPage(document.getElementById('main-content'));
 }
 
@@ -1727,7 +1774,7 @@ async function deleteMember(id) {
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
   state.team = state.team.filter(t => t.id !== id);
-  toast('Anggota dihapus ✓', 'success');
+  toast('Anggota dihapus', 'success');
   renderTeamPage(document.getElementById('main-content'));
 }
 
@@ -1745,21 +1792,25 @@ async function uploadPhoto(memberId, input) {
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
 
+  const uploadedPhoto = safeTeamPhotoUrl(json.photo);
+  if (!uploadedPhoto) { toast('URL foto dari server tidak valid', 'error'); return; }
+  const displayedPhoto = uploadedPhoto + '?t=' + Date.now();
+
   // Update state dan tampilkan foto baru
   const idx = state.team.findIndex(t => t.id === memberId);
-  if (idx >= 0) state.team[idx].photo = json.photo + '?t=' + Date.now();
+  if (idx >= 0) state.team[idx].photo = displayedPhoto;
 
   // Update gambar di card langsung tanpa reload halaman
   const wrap = document.getElementById(`photo-wrap-${memberId}`);
   if (wrap) {
     let img = wrap.querySelector('img');
     if (!img) { img = document.createElement('img'); img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:10px'; wrap.prepend(img); }
-    img.src = json.photo + '?t=' + Date.now();
+    img.src = displayedPhoto;
     img.style.display = '';
     const fb = document.getElementById(`photo-fallback-${memberId}`);
     if (fb) fb.style.display = 'none';
   }
-  toast('Foto berhasil diupload ✓', 'success');
+  toast('Foto berhasil diupload', 'success');
 }
 
 // ── Boot ─────────────────────────────────────────────

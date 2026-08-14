@@ -66,6 +66,7 @@ desktop.ini
 
 # --- Node (jika ada tooling) ---
 node_modules/
+/dist/
 *.log
 
 # --- Claude Code local config ---
@@ -74,3 +75,8 @@ node_modules/
 # --- Admin credentials (JANGAN commit ke GitHub) ---
 config/admin.json
 config/jwt-secret.txt
+
+.agents
+.codex
+/docs
+bun.lock

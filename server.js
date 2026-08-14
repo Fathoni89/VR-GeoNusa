@@ -1,6 +1,7 @@
 // VR-GeoNusa — Express Backend Server
 // Menjalankan frontend statis + REST API + Auth (multi-sekolah) + MySQL
 
+require('esbuild-register/dist/node').register({ target: 'node22' });
 require('dotenv').config();
 
 const express      = require('express');
@@ -8,37 +9,54 @@ const cors         = require('cors');
 const crypto       = require('crypto');
 const fs           = require('fs');
 const path         = require('path');
-const mysql        = require('mysql2/promise');
 const bcrypt       = require('bcryptjs');
 const jwt          = require('jsonwebtoken');
-const rateLimit    = require('express-rate-limit');
-const mlPredict     = require('./ml/predict');
-const TEAM_FILE    = path.join(__dirname, 'data', 'team.json');
+const helmet       = require('helmet');
+const { createApp } = require('./src/app');
+const { runtimeEnv } = require('./src/config/env');
+const { createPaths } = require('./src/config/paths');
+const { createDatabasePool } = require('./src/db/client');
+const { createAuthentication } = require('./src/middleware/authenticate');
+const { requireAnyRole, requireRole } = require('./src/middleware/authorize');
+const { errorHandler } = require('./src/middleware/error-handler');
+const {
+  createPublicWriteLimiter,
+  createStaffLoginLimiter,
+} = require('./src/middleware/rate-limit');
+const { startHttpServer } = require('./src/server');
+const {
+  assertFileIdentifier,
+  InvalidFilePathError,
+  resolveIdentifierPath,
+  resolveWithin,
+} = require('./src/shared/ids');
 
-const app  = express();
-const PORT = process.env.PORT || 4000;
+const app = createApp();
+const PORT = runtimeEnv.PORT;
 
 // Satu request yang error (mis. query DB gagal) sebelumnya bisa menjatuhkan
 // SELURUH server — fatal untuk pilot dengan banyak peserta bersamaan, karena
 // satu siswa bermasalah akan memutus sesi semua siswa lain. Log saja, jangan
 // exit proses.
 process.on('unhandledRejection', (err) => {
-  console.error('⚠️  Unhandled promise rejection (server tetap jalan):', err);
+  console.error('Unhandled promise rejection (server tetap jalan):', err);
 });
 process.on('uncaughtException', (err) => {
-  console.error('⚠️  Uncaught exception (server tetap jalan):', err);
+  console.error('Uncaught exception (server tetap jalan):', err);
 });
 
-const DATA_DIR    = path.join(__dirname, 'data');
-const PUBLIC_DIR  = path.join(__dirname, 'public');
-const VR_DIR      = path.join(PUBLIC_DIR, 'vr');
-const CONFIG_DIR  = path.join(__dirname, 'config');
-const DATASET_DIR = path.join(__dirname, 'Dataset', 'geometry_wbn');
+const runtimePaths = createPaths(__dirname);
+const DATA_DIR = runtimePaths.dataDir;
+const PUBLIC_DIR = runtimePaths.publicDir;
+const VR_DIR = runtimePaths.vrDir;
+const CONFIG_DIR = runtimePaths.configDir;
+const DATASET_DIR = runtimePaths.datasetDir;
+const TEAM_FILE = runtimePaths.teamFile;
 
 // ── JWT secret — auto-generate & persist lokal jika belum ada (kredensial
 // database TETAP harus diisi manual lewat .env, ini cuma untuk menandatangani
 // token, bukan rahasia yang perlu dibagi antar admin) ──
-const secretFile = path.join(CONFIG_DIR, 'jwt-secret.txt');
+const secretFile = runtimePaths.jwtSecretFile;
 if (!fs.existsSync(secretFile)) {
   fs.mkdirSync(CONFIG_DIR, { recursive: true });
   fs.writeFileSync(secretFile, crypto.randomBytes(32).toString('hex'));
@@ -46,69 +64,183 @@ if (!fs.existsSync(secretFile)) {
 const JWT_SECRET = fs.readFileSync(secretFile, 'utf8').trim();
 
 // ── Database (MySQL/MariaDB) ──────────────────────────
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  multipleStatements: true, // hanya dipakai sekali saat inisialisasi skema
-});
+const pool = createDatabasePool(runtimeEnv);
+app.locals.dbPool = pool;
+
+let mlProvider = null;
+let mlLoadPromise = null;
+
+// Module ML memuat native TensorFlow binding pada require-time. Load module
+// dan model hanya setelah server siap atau ketika endpoint ML pertama dipanggil.
+function initializeMlProvider() {
+  if (mlProvider) return Promise.resolve(mlProvider);
+  if (!mlLoadPromise) {
+    mlLoadPromise = Promise.resolve()
+      .then(() => require('./ml/predict'))
+      .then(async provider => {
+        await provider.loadModel();
+        mlProvider = provider;
+        return provider;
+      })
+      .catch(error => {
+        // Izinkan percobaan ulang pada request/startup berikutnya.
+        mlLoadPromise = null;
+        throw error;
+      });
+  }
+  return mlLoadPromise;
+}
+
+function logMlInitializationError(error, logger = app.locals.logger) {
+  logger.error('Gagal memuat model ML server-side:', error.message);
+}
 
 // `CREATE TABLE IF NOT EXISTS` tidak menambah kolom baru ke tabel yang sudah
 // ada dari deploy sebelumnya (mis. `sessions` sudah ada sebelum kolom
 // student_id/class_id ditambahkan ke schema.mysql.sql) — jadi kolom baru
 // perlu ditambah manual lewat migrasi kecil ini, dicek dulu supaya aman
 // dijalankan berkali-kali (idempotent) di semua versi MySQL/MariaDB.
-async function ensureColumn(table, column, definition) {
-  const [rows] = await pool.query(
+async function ensureColumn(table, column, definition, {
+  dbPool = pool,
+  env = runtimeEnv,
+  logger = console,
+} = {}) {
+  const [rows] = await dbPool.query(
     `SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS
      WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
-    [process.env.DB_NAME, table, column]
+    [env.DB_NAME, table, column]
   );
   if (rows[0].cnt === 0) {
-    await pool.query(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
-    console.log(`⚙️  Migrasi: kolom "${column}" ditambahkan ke tabel "${table}"`);
+    await dbPool.query(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+    logger.log(`Migrasi: kolom "${column}" ditambahkan ke tabel "${table}"`);
   }
 }
 
 // Sama seperti ensureColumn — ALTER TABLE ... MODIFY COLUMN untuk menambah
 // nilai ENUM baru ('school_admin') ke deploy lama yang masih pakai ENUM lama.
-async function ensureAccountsRoleEnum() {
-  const [[row]] = await pool.query(
+async function ensureAccountsRoleEnum({
+  dbPool = pool,
+  env = runtimeEnv,
+  logger = console,
+} = {}) {
+  const [[row]] = await dbPool.query(
     `SELECT COLUMN_TYPE AS type FROM information_schema.COLUMNS
      WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'accounts' AND COLUMN_NAME = 'role'`,
-    [process.env.DB_NAME]
+    [env.DB_NAME]
   );
   if (row && !row.type.includes('school_admin')) {
-    await pool.query(`ALTER TABLE accounts MODIFY COLUMN role ENUM('super_admin','school_admin','teacher') NOT NULL DEFAULT 'teacher'`);
-    console.log('⚙️  Migrasi: role "school_admin" ditambahkan ke enum accounts.role');
+    await dbPool.query(`ALTER TABLE accounts MODIFY COLUMN role ENUM('super_admin','school_admin','teacher') NOT NULL DEFAULT 'teacher'`);
+    logger.log('Migrasi: role "school_admin" ditambahkan ke enum accounts.role');
   }
 }
 
-async function initDb() {
-  const schema = fs.readFileSync(path.join(__dirname, 'db', 'schema.mysql.sql'), 'utf8');
-  await pool.query(schema);
+async function ensureMustChangePasswordMigration({
+  dbPool = pool,
+  env = runtimeEnv,
+  logger = console,
+} = {}) {
+  const [columns] = await dbPool.query(
+    `SELECT IS_NULLABLE AS is_nullable, COLUMN_DEFAULT AS column_default
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'accounts'
+       AND COLUMN_NAME = 'must_change_password'`,
+    [env.DB_NAME]
+  );
 
-  await ensureColumn('sessions', 'student_id', 'student_id INT NULL REFERENCES students(id)');
-  await ensureColumn('sessions', 'class_id', 'class_id INT NULL REFERENCES classes(id)');
-  await ensureAccountsRoleEnum();
-
-  // Bootstrap: kalau belum ada akun sama sekali, buat super_admin default
-  // (kredensial sama seperti config/admin.json lama supaya tim yang sudah
-  // tahu passwordnya tidak perlu reset — hanya dicatat di console, TIDAK
-  // ditampilkan di layar login).
-  const [[{ cnt }]] = await pool.query('SELECT COUNT(*) AS cnt FROM accounts');
-  if (cnt === 0) {
-    const hash = await bcrypt.hash('geonusa2026', 10);
-    await pool.query(
-      'INSERT INTO accounts (username, password_hash, role, school_id) VALUES (?, ?, ?, NULL)',
-      ['admin', hash, 'super_admin']
+  let column = columns[0];
+  if (!column) {
+    // NULL menjadi penanda durable untuk baris yang berasal dari deployment
+    // lama. Jika startup terputus, retry dapat melanjutkan tanpa rotasi ulang.
+    await dbPool.query(
+      'ALTER TABLE accounts ADD COLUMN must_change_password BOOLEAN NULL DEFAULT NULL'
     );
-    console.log('⚙️  Akun super_admin default dibuat. Login: admin / geonusa2026 (ganti setelah login pertama)');
+    logger.log('Migrasi: kolom "must_change_password" ditambahkan ke tabel "accounts"');
+    column = { is_nullable: 'YES', column_default: null };
+  }
+
+  if (String(column.is_nullable).toUpperCase() !== 'YES') return;
+
+  const [[legacyAdmin]] = await dbPool.query(
+    `SELECT id FROM accounts
+     WHERE username = ? AND role = ? AND must_change_password IS NULL
+     LIMIT 1`,
+    ['admin', 'super_admin']
+  );
+
+  if (legacyAdmin) {
+    const bootstrapPassword = env.BOOTSTRAP_ADMIN_PASSWORD;
+    if (typeof bootstrapPassword !== 'string' || bootstrapPassword.length === 0) {
+      throw new Error(
+        'Konfigurasi BOOTSTRAP_ADMIN_PASSWORD wajib diisi untuk memigrasikan admin legacy'
+      );
+    }
+
+    const hash = await bcrypt.hash(bootstrapPassword, 10);
+    const [result] = await dbPool.query(
+      `UPDATE accounts
+       SET password_hash = ?, must_change_password = TRUE
+       WHERE id = ? AND must_change_password IS NULL`,
+      [hash, legacyAdmin.id]
+    );
+    if (result.affectedRows > 0) {
+      logger.log('Password akun admin legacy dirotasi; ganti password setelah login');
+    }
+  }
+
+  await dbPool.query(
+    `UPDATE accounts SET must_change_password = FALSE
+     WHERE must_change_password IS NULL
+       AND NOT (username = 'admin' AND role = 'super_admin')`
+  );
+
+  const [[{ cnt }]] = await dbPool.query(
+    'SELECT COUNT(*) AS cnt FROM accounts WHERE must_change_password IS NULL'
+  );
+  if (Number(cnt) !== 0) {
+    throw new Error('Migrasi must_change_password belum dapat diselesaikan dengan aman');
+  }
+
+  await dbPool.query(
+    `ALTER TABLE accounts MODIFY COLUMN
+     must_change_password BOOLEAN NOT NULL DEFAULT FALSE`
+  );
+  logger.log('Migrasi: kolom "must_change_password" difinalisasi');
+}
+
+async function initDb({
+  dbPool = pool,
+  env = runtimeEnv,
+  logger = console,
+} = {}) {
+  const schema = fs.readFileSync(runtimePaths.schemaFile, 'utf8');
+  await dbPool.query(schema);
+
+  const migrationContext = { dbPool, env, logger };
+  await ensureColumn('sessions', 'student_id', 'student_id INT NULL REFERENCES students(id)', migrationContext);
+  await ensureColumn('sessions', 'class_id', 'class_id INT NULL REFERENCES classes(id)', migrationContext);
+  await ensureColumn('sessions', 'write_token_hash', 'write_token_hash VARCHAR(64) NULL', migrationContext);
+  await ensureAccountsRoleEnum(migrationContext);
+  await ensureMustChangePasswordMigration(migrationContext);
+
+  // Bootstrap hanya berjalan pada database kosong. Secret wajib disediakan
+  // operator dan tidak pernah ditulis ke log atau disimpan sebagai plaintext.
+  const [[{ cnt }]] = await dbPool.query('SELECT COUNT(*) AS cnt FROM accounts');
+  if (cnt === 0) {
+    const bootstrapPassword = env.BOOTSTRAP_ADMIN_PASSWORD;
+    if (typeof bootstrapPassword !== 'string' || bootstrapPassword.length === 0) {
+      throw new Error(
+        'Konfigurasi BOOTSTRAP_ADMIN_PASSWORD wajib diisi untuk membuat admin pada database kosong'
+      );
+    }
+
+    const hash = await bcrypt.hash(bootstrapPassword, 10);
+    await dbPool.query(
+      `INSERT INTO accounts
+       (username, password_hash, role, school_id, must_change_password)
+       VALUES (?, ?, ?, NULL, ?)`,
+      ['admin', hash, 'super_admin', 1]
+    );
+    logger.log('Akun super_admin bootstrap dibuat; ganti password setelah login pertama');
   }
 }
 
@@ -123,13 +255,47 @@ async function upsertObject({ object_code, object_name, geometry_label }) {
   return row.id;
 }
 
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", 'data:'],
+      formAction: ["'self'"],
+      frameAncestors: ["'self'"],
+      frameSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https://cdn.aframe.io'],
+      mediaSrc: ["'self'", 'blob:'],
+      objectSrc: ["'none'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        'https://aframe.io',
+        'https://cdn.jsdelivr.net',
+      ],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      workerSrc: ["'self'", 'blob:'],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  strictTransportSecurity: runtimeEnv.NODE_ENV === 'production' ? undefined : false,
+}));
 app.use(cors());
 app.use(express.json());
 
 // ── Auth helpers ─────────────────────────────────────
 function generateToken(account) {
   return jwt.sign(
-    { account_id: account.id, username: account.username, role: account.role, school_id: account.school_id },
+    {
+      account_id: account.id,
+      username: account.username,
+      role: account.role,
+      school_id: account.school_id,
+      must_change_password: Number(account.must_change_password) === 1,
+    },
     JWT_SECRET,
     { expiresIn: '24h' }
   );
@@ -140,55 +306,161 @@ function verifyToken(token) {
   catch { return null; }
 }
 
+const AUTH_COOKIE_NAME = 'vgn_auth';
+const AUTH_COOKIE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function authCookieOptions({ includeMaxAge = true } = {}) {
+  return {
+    httpOnly: true,
+    secure: runtimeEnv.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/api',
+    ...(includeMaxAge ? { maxAge: AUTH_COOKIE_MAX_AGE_MS } : {}),
+  };
+}
+
+const { readAuthToken, requireAuth } = createAuthentication({
+  cookieName: AUTH_COOKIE_NAME,
+  verifyToken,
+});
+
 // ── Auth middleware (lindungi endpoint write) ─────────
-function requireAuth(req, res, next) {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-  const account = token ? verifyToken(token) : null;
-  if (!account) {
-    return res.status(401).json({ success: false, message: 'Unauthorized — login terlebih dahulu' });
+// Filter laporan menggunakan scope dari token. Hanya super_admin yang boleh
+// memilih sekolah; school_admin dan teacher selalu memakai sekolah akunnya.
+function parseReportFilterId(value, fieldName) {
+  if (value === undefined || value === null || value === '') {
+    return { value: null };
   }
-  req.account = account;
-  next();
-}
 
-function requireRole(role) {
-  return (req, res, next) => {
-    if (req.account.role !== role) {
-      return res.status(403).json({ success: false, message: 'Tidak punya akses untuk aksi ini' });
-    }
-    next();
-  };
-}
-
-// Untuk endpoint yang boleh diakses lebih dari satu role staf, mis.
-// super_admin (semua sekolah) DAN school_admin (sekolahnya sendiri).
-function requireAnyRole(...roles) {
-  return (req, res, next) => {
-    if (!roles.includes(req.account.role)) {
-      return res.status(403).json({ success: false, message: 'Tidak punya akses untuk aksi ini' });
-    }
-    next();
-  };
-}
-
-// Guru hanya boleh melihat sekolahnya sendiri — school_id dari query/body
-// diabaikan untuk role selain super_admin, supaya tidak bisa dipalsukan.
-function effectiveSchoolId(req, requestedSchoolId) {
-  if (req.account.role === 'super_admin') {
-    return requestedSchoolId ? Number(requestedSchoolId) : null; // null = semua sekolah
+  const text = String(value);
+  const parsed = Number(text);
+  if (!/^[1-9]\d*$/.test(text) || !Number.isSafeInteger(parsed)) {
+    return {
+      error: {
+        status: 400,
+        message: `${fieldName} harus berupa bilangan bulat positif`,
+      },
+    };
   }
-  return req.account.school_id;
+
+  return { value: parsed };
+}
+
+async function resolveReportScope(req) {
+  const role = req.account.role;
+  let requestedSchool = { value: null };
+  if (role === 'super_admin') {
+    requestedSchool = parseReportFilterId(req.query.school_id, 'school_id');
+    if (requestedSchool.error) return requestedSchool;
+  }
+
+  const requestedClass = parseReportFilterId(req.query.class_id, 'class_id');
+  if (requestedClass.error) return requestedClass;
+
+  const schoolId = role === 'super_admin'
+    ? requestedSchool.value
+    : Number(req.account.school_id);
+
+  if (role !== 'super_admin' && !Number.isSafeInteger(schoolId)) {
+    return {
+      error: {
+        status: 403,
+        message: 'Scope laporan akun tidak valid',
+      },
+    };
+  }
+
+  if (role === 'super_admin' && schoolId !== null) {
+    const [[school]] = await req.app.locals.dbPool.query(
+      'SELECT id FROM schools WHERE id = ?',
+      [schoolId]
+    );
+    if (!school) {
+      return {
+        error: {
+          status: 403,
+          message: 'Filter laporan di luar cakupan akun',
+        },
+      };
+    }
+  }
+
+  const classId = requestedClass.value;
+  if (classId !== null) {
+    let classSql = 'SELECT id FROM classes WHERE id = ?';
+    const classParams = [classId];
+    if (schoolId !== null) {
+      classSql += ' AND school_id = ?';
+      classParams.push(schoolId);
+    }
+    if (role === 'teacher') {
+      classSql += ' AND teacher_account_id = ?';
+      classParams.push(req.account.account_id);
+    }
+
+    const [[classroom]] = await req.app.locals.dbPool.query(classSql, classParams);
+    if (!classroom) {
+      return {
+        error: {
+          status: 403,
+          message: 'Filter laporan di luar cakupan akun',
+        },
+      };
+    }
+  }
+
+  const sessionClauses = [];
+  const sessionParams = [];
+  if (schoolId !== null) {
+    sessionClauses.push('s.school_id = ?');
+    sessionParams.push(schoolId);
+  }
+  if (role === 'teacher') {
+    sessionClauses.push(`EXISTS (
+      SELECT 1 FROM classes report_scope_class
+      WHERE report_scope_class.id = s.class_id
+        AND report_scope_class.teacher_account_id = ?
+    )`);
+    sessionParams.push(req.account.account_id);
+  }
+  if (classId !== null) {
+    sessionClauses.push('s.class_id = ?');
+    sessionParams.push(classId);
+  }
+
+  const classClauses = [];
+  const classParams = [];
+  if (schoolId !== null) {
+    classClauses.push('c.school_id = ?');
+    classParams.push(schoolId);
+  }
+  if (role === 'teacher') {
+    classClauses.push('c.teacher_account_id = ?');
+    classParams.push(req.account.account_id);
+  }
+
+  const selectedClassClauses = [...classClauses];
+  const selectedClassParams = [...classParams];
+  if (classId !== null) {
+    selectedClassClauses.push('c.id = ?');
+    selectedClassParams.push(classId);
+  }
+
+  return {
+    sessionFilterSql: sessionClauses.length ? `AND ${sessionClauses.join(' AND ')}` : '',
+    sessionParams,
+    availableClassFilterSql: classClauses.length ? `AND ${classClauses.join(' AND ')}` : '',
+    availableClassParams: classParams,
+    selectedClassFilterSql: selectedClassClauses.length
+      ? `AND ${selectedClassClauses.join(' AND ')}`
+      : '',
+    selectedClassParams,
+  };
 }
 
 // ── Rate limit endpoint publik (tulis data siswa) ─────
-const publicWriteLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60, // 60 request/menit per IP — cukup longgar untuk pemakaian normal, menahan banjir
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Terlalu banyak permintaan, coba lagi sebentar.' },
-});
+const publicWriteLimiter = createPublicWriteLimiter();
+const staffLoginLimiter = createStaffLoginLimiter();
 
 // ── Route eksplisit halaman ───────────────────────────
 app.get('/',             (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
@@ -205,18 +477,19 @@ app.get('/api/ml-placeholder.json', (req, res) =>
 
 // ── Helper JSON ───────────────────────────────────────
 function readScene(sceneId) {
-  const file = path.join(DATA_DIR, `${sceneId}.json`);
+  const file = resolveIdentifierPath(DATA_DIR, { id: sceneId, suffix: '.json', label: 'scene_id' });
   if (!fs.existsSync(file)) return null;
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 function writeScene(sceneId, data) {
+  assertFileIdentifier(sceneId, 'scene_id');
   const json = JSON.stringify(data, null, 2);
   // Tulis ke data/ (sumber backend)
-  fs.writeFileSync(path.join(DATA_DIR, `${sceneId}.json`), json, 'utf8');
+  fs.writeFileSync(resolveIdentifierPath(DATA_DIR, { id: sceneId, suffix: '.json', label: 'scene_id' }), json, 'utf8');
   // Sinkron ke public/data/ agar GitHub Pages selalu up-to-date
   const pubDataDir = path.join(PUBLIC_DIR, 'data');
   if (!fs.existsSync(pubDataDir)) fs.mkdirSync(pubDataDir, { recursive: true });
-  fs.writeFileSync(path.join(pubDataDir, `${sceneId}.json`), json, 'utf8');
+  fs.writeFileSync(resolveIdentifierPath(pubDataDir, { id: sceneId, suffix: '.json', label: 'scene_id' }), json, 'utf8');
 }
 
 // ── Pemetaan soal kuis → konsep geometri (untuk rekomendasi dashboard guru) ──
@@ -328,7 +601,7 @@ function generateVrPage(scene) {
     <div class="ctx-label">Konteks Budaya</div>
     <div id="info-context">—</div>
   </div>
-  <button id="quiz-trigger-btn" onclick="openQuiz()">📝 Uji Pemahaman</button>
+  <button id="quiz-trigger-btn" onclick="openQuiz()"> Uji Pemahaman</button>
 </div>
 <div id="quiz-overlay">
   <button class="close" onclick="closeQuiz()" aria-label="Tutup">×</button>
@@ -338,7 +611,7 @@ function generateVrPage(scene) {
   <div id="quiz-feedback" class="quiz-feedback"></div>
 </div>
 <button id="scene-btn" onclick="window.location.href='/'">← Portal</button>
-<button id="student-results-toggle" onclick="toggleStudentResults()">📊 Hasil Saya</button>
+<button id="student-results-toggle" onclick="toggleStudentResults()"> Hasil Saya</button>
 <div id="student-results-panel"></div>
 <a-scene id="vrscene"
   vr-mode-ui="enabled: true"
@@ -368,6 +641,7 @@ function generateVrPage(scene) {
   </a-entity>
 </a-scene>
 <script src="../js/scene-loader.js"></script>
+<script src="../js/html-sanitize.js"></script>
 <script src="../js/app.js"></script>
 <script>
 currentScene = ${JSON.stringify(scene.scene_id)};
@@ -412,7 +686,7 @@ async function loadObjects() {
 // ══════════════════════════════════════════════════════
 
 // POST /api/auth/login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', staffLoginLimiter, async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password)
     return res.status(400).json({ success: false, message: 'Username dan password wajib diisi' });
@@ -424,16 +698,38 @@ app.post('/api/auth/login', async (req, res) => {
   if (!ok) return res.status(401).json({ success: false, message: 'Username atau password salah' });
 
   const token = generateToken(account);
-  res.json({ success: true, token, username: account.username, role: account.role, school_id: account.school_id });
+  const cookieMode = String(req.get('X-Auth-Mode') || '').toLowerCase() === 'cookie';
+  if (cookieMode) {
+    res.cookie(AUTH_COOKIE_NAME, token, authCookieOptions());
+  }
+  res.json({
+    success: true,
+    ...(!cookieMode ? { token } : {}),
+    username: account.username,
+    role: account.role,
+    school_id: account.school_id,
+    must_change_password: Number(account.must_change_password) === 1,
+  });
 });
 
 // GET /api/auth/verify
 app.get('/api/auth/verify', (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  const token = readAuthToken(req);
   const data = token ? verifyToken(token) : null;
   if (!data) return res.status(401).json({ success: false, message: 'Token tidak valid atau expired' });
-  res.json({ success: true, username: data.username, role: data.role, school_id: data.school_id });
+  res.json({
+    success: true,
+    username: data.username,
+    role: data.role,
+    school_id: data.school_id,
+    must_change_password: data.must_change_password === true,
+  });
+});
+
+// POST /api/auth/logout
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie(AUTH_COOKIE_NAME, authCookieOptions({ includeMaxAge: false }));
+  res.json({ success: true, message: 'Logout berhasil' });
 });
 
 // POST /api/auth/change-password
@@ -449,7 +745,10 @@ app.post('/api/auth/change-password', requireAuth, async (req, res) => {
   if (!ok) return res.status(401).json({ success: false, message: 'Password lama salah' });
 
   const newHash = await bcrypt.hash(new_password, 10);
-  await pool.query('UPDATE accounts SET password_hash = ? WHERE id = ?', [newHash, account.id]);
+  await pool.query(
+    'UPDATE accounts SET password_hash = ?, must_change_password = 0 WHERE id = ?',
+    [newHash, account.id]
+  );
   res.json({ success: true, message: 'Password berhasil diubah' });
 });
 
@@ -806,7 +1105,7 @@ app.post('/api/scenes', requireAuth, requireRole('super_admin'), (req, res) => {
   const { scene_id, name, location, era, sky_color, ground_color, cursor_color, label_color } = req.body;
   if (!scene_id || !name)
     return res.status(400).json({ success: false, message: 'scene_id dan name wajib diisi' });
-  const id = scene_id.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const id = assertFileIdentifier(scene_id, 'scene_id');
   if (readScene(id))
     return res.status(409).json({ success: false, message: `Scene "${id}" sudah ada` });
   const newScene = {
@@ -818,7 +1117,7 @@ app.post('/api/scenes', requireAuth, requireRole('super_admin'), (req, res) => {
   writeScene(id, newScene);
   // Generate VR HTML page
   const vrPage = generateVrPage(newScene);
-  fs.writeFileSync(path.join(VR_DIR, `${id}.html`), vrPage, 'utf8');
+  fs.writeFileSync(resolveIdentifierPath(VR_DIR, { id, suffix: '.html', label: 'scene_id' }), vrPage, 'utf8');
   res.status(201).json({ success: true, data: newScene, vr_url: `/vr/${id}.html` });
 });
 
@@ -830,21 +1129,21 @@ app.put('/api/scenes/:id', requireAuth, requireRole('super_admin'), (req, res) =
   allowed.forEach(k => { if (req.body[k] !== undefined) data[k] = req.body[k]; });
   writeScene(req.params.id, data);
   // Regenerate VR page
-  fs.writeFileSync(path.join(VR_DIR, `${req.params.id}.html`), generateVrPage(data), 'utf8');
+  fs.writeFileSync(resolveIdentifierPath(VR_DIR, { id: req.params.id, suffix: '.html', label: 'scene_id' }), generateVrPage(data), 'utf8');
   res.json({ success: true, data });
 });
 
 // DELETE /api/scenes/:id — hapus scene (auth required)
 app.delete('/api/scenes/:id', requireAuth, requireRole('super_admin'), (req, res) => {
-  const id = req.params.id;
+  const id = assertFileIdentifier(req.params.id, 'scene_id');
   if (['prambanan'].includes(id))
     return res.status(403).json({ success: false, message: 'Scene default tidak bisa dihapus' });
-  const file = path.join(DATA_DIR, `${id}.json`);
+  const file = resolveIdentifierPath(DATA_DIR, { id, suffix: '.json', label: 'scene_id' });
   if (!fs.existsSync(file)) return res.status(404).json({ success: false, message: 'Scene tidak ditemukan' });
   fs.unlinkSync(file);
-  const pubFile = path.join(PUBLIC_DIR, 'data', `${id}.json`);
+  const pubFile = resolveIdentifierPath(path.join(PUBLIC_DIR, 'data'), { id, suffix: '.json', label: 'scene_id' });
   if (fs.existsSync(pubFile)) fs.unlinkSync(pubFile);
-  const vrFile = path.join(VR_DIR, `${id}.html`);
+  const vrFile = resolveIdentifierPath(VR_DIR, { id, suffix: '.html', label: 'scene_id' });
   if (fs.existsSync(vrFile)) fs.unlinkSync(vrFile);
   res.json({ success: true, message: `Scene "${id}" berhasil dihapus` });
 });
@@ -906,7 +1205,7 @@ function readGeometryClassIds() {
 // POST /api/dataset/:classId — simpan crop hasil capture dari tur 360° (auth required)
 // Body: raw image bytes (Content-Type: image/jpeg atau image/png), max 5MB.
 app.post('/api/dataset/:classId', requireAuth, requireRole('super_admin'), (req, res) => {
-  const classId = req.params.classId;
+  const classId = assertFileIdentifier(req.params.classId, 'class_id');
   const validIds = readGeometryClassIds();
   if (!validIds.includes(classId))
     return res.status(400).json({ success: false, message: `class_id "${classId}" tidak dikenal. Valid: ${validIds.join(', ')}` });
@@ -921,13 +1220,13 @@ app.post('/api/dataset/:classId', requireAuth, requireRole('super_admin'), (req,
 
       const ct = req.headers['content-type'] || '';
       const ext = ct.includes('png') ? 'png' : 'jpg';
-      const classDir = path.join(DATASET_DIR, 'train', classId);
+      const classDir = resolveIdentifierPath(resolveWithin(DATASET_DIR, 'train'), { id: classId, label: 'class_id' });
       if (!fs.existsSync(classDir)) fs.mkdirSync(classDir, { recursive: true });
 
       const existing = fs.readdirSync(classDir).filter(f => f.endsWith('.jpg') || f.endsWith('.png'));
       const nextIndex = existing.length + 1;
       const filename = `${classId}_${String(nextIndex).padStart(4, '0')}.${ext}`;
-      fs.writeFileSync(path.join(classDir, filename), buf);
+      fs.writeFileSync(resolveWithin(classDir, filename), buf);
 
       res.status(201).json({ success: true, filename, class_id: classId, total: nextIndex });
     } catch (e) {
@@ -940,9 +1239,10 @@ app.post('/api/dataset/:classId', requireAuth, requireRole('super_admin'), (req,
 app.get('/api/dataset/stats', (req, res) => {
   const validIds = readGeometryClassIds();
   const stats = validIds.map(classId => {
+    assertFileIdentifier(classId, 'class_id');
     const counts = {};
     ['train', 'val', 'test'].forEach(split => {
-      const dir = path.join(DATASET_DIR, split, classId);
+      const dir = resolveIdentifierPath(resolveWithin(DATASET_DIR, split), { id: classId, label: 'class_id' });
       counts[split] = fs.existsSync(dir)
         ? fs.readdirSync(dir).filter(f => f.endsWith('.jpg') || f.endsWith('.png')).length
         : 0;
@@ -961,16 +1261,22 @@ app.get('/api/dataset/stats', (req, res) => {
 // ══════════════════════════════════════════════════════
 
 function readTour(tourId) {
-  const file = path.join(DATA_DIR, `tour-${tourId}.json`);
+  const file = resolveIdentifierPath(DATA_DIR, { id: tourId, prefix: 'tour-', suffix: '.json', label: 'tour_id' });
   if (!fs.existsSync(file)) return null;
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
+
+function readQuizQuestion(questionId) {
+  const quiz = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'quiz.json'), 'utf8'));
+  return (quiz.questions || []).find(question => question.id === questionId) || null;
+}
 function writeTour(tourId, data) {
+  assertFileIdentifier(tourId, 'tour_id');
   const json = JSON.stringify(data, null, 2);
-  fs.writeFileSync(path.join(DATA_DIR, `tour-${tourId}.json`), json, 'utf8');
+  fs.writeFileSync(resolveIdentifierPath(DATA_DIR, { id: tourId, prefix: 'tour-', suffix: '.json', label: 'tour_id' }), json, 'utf8');
   const pubDataDir = path.join(PUBLIC_DIR, 'data');
   if (!fs.existsSync(pubDataDir)) fs.mkdirSync(pubDataDir, { recursive: true });
-  fs.writeFileSync(path.join(pubDataDir, `tour-${tourId}.json`), json, 'utf8');
+  fs.writeFileSync(resolveIdentifierPath(pubDataDir, { id: tourId, prefix: 'tour-', suffix: '.json', label: 'tour_id' }), json, 'utf8');
 }
 
 // GET /api/tours — daftar semua tur 360° yang ada (untuk admin & portal)
@@ -996,7 +1302,8 @@ app.get('/api/tours', (req, res) => {
 // untuk semua node di satu area sekaligus (auth required).
 // Body: { class_id: string|null, element?: string, context?: string, conf?: number }
 app.put('/api/tour/:tourId/folder/:folder', requireAuth, requireRole('super_admin'), (req, res) => {
-  const tour = readTour(req.params.tourId);
+  const tourId = assertFileIdentifier(req.params.tourId, 'tour_id');
+  const tour = readTour(tourId);
   if (!tour) return res.status(404).json({ success: false, message: 'Tur tidak ditemukan' });
 
   const folder = decodeURIComponent(req.params.folder);
@@ -1027,7 +1334,7 @@ app.put('/api/tour/:tourId/folder/:folder', requireAuth, requireRole('super_admi
     nodesInFolder.forEach(n => n.identify = identify);
   }
 
-  writeTour(req.params.tourId, tour);
+  writeTour(tourId, tour);
   res.json({ success: true, folder, applied_to: nodesInFolder.length, identify: nodesInFolder[0].identify || null });
 });
 
@@ -1039,8 +1346,15 @@ app.put('/api/tour/:tourId/folder/:folder', requireAuth, requireRole('super_admi
 // disk sendiri (tidak perlu upload gambar) lalu jalankan model TF.js
 // (@tensorflow/tfjs-node) untuk prediksi kelas geometri.
 app.post('/api/ml/predict/:tourId/:nodeId', publicWriteLimiter, async (req, res) => {
+  const tourId = assertFileIdentifier(req.params.tourId, 'tour_id');
+  const nodeId = assertFileIdentifier(req.params.nodeId, 'node_id');
+  if (!mlProvider) {
+    initializeMlProvider().catch(error => logMlInitializationError(error));
+    return res.status(503).json({ success: false, message: 'Layanan prediksi ML belum siap' });
+  }
+
   try {
-    const result = await mlPredict.predictNode(req.params.tourId, req.params.nodeId);
+    const result = await mlProvider.predictNode(tourId, nodeId);
     res.json({ success: true, data: result });
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
@@ -1064,6 +1378,41 @@ function getOptionalStudent(req) {
   return data && data.role === 'student' ? data : null;
 }
 
+function hashSessionToken(token) {
+  return crypto.createHash('sha256').update(token, 'utf8').digest('hex');
+}
+
+async function hasSessionOwnership(req, sessionId) {
+  const [[session]] = await pool.query(
+    'SELECT id, student_id, write_token_hash FROM sessions WHERE id = ?',
+    [sessionId]
+  );
+  if (!session) return false;
+
+  const student = getOptionalStudent(req);
+  if (
+    student
+    && session.student_id !== null
+    && String(session.student_id) === String(student.student_id)
+  ) {
+    return true;
+  }
+
+  const suppliedToken = req.get('X-Session-Token');
+  if (!suppliedToken || !session.write_token_hash) return false;
+
+  const suppliedHash = Buffer.from(hashSessionToken(suppliedToken), 'hex');
+  const storedHash = Buffer.from(String(session.write_token_hash), 'hex');
+  return suppliedHash.length === storedHash.length
+    && crypto.timingSafeEqual(suppliedHash, storedHash);
+}
+
+async function requireSessionOwnership(req, res, sessionId) {
+  if (await hasSessionOwnership(req, sessionId)) return true;
+  res.status(403).json({ success: false, message: 'Tidak punya akses ke sesi ini' });
+  return false;
+}
+
 // POST /api/sessions — mulai sesi eksplorasi
 app.post('/api/sessions', publicWriteLimiter, async (req, res) => {
   const student = getOptionalStudent(req);
@@ -1072,20 +1421,35 @@ app.post('/api/sessions', publicWriteLimiter, async (req, res) => {
   const name = student ? student.name : (student_name || 'Anonim').trim().slice(0, 100);
   const effectiveSchool = student ? student.school_id : (school_id || null);
   const classId = student ? student.class_id : null;
+  const sessionToken = student ? null : crypto.randomBytes(32).toString('base64url');
+  const writeTokenHash = sessionToken ? hashSessionToken(sessionToken) : null;
 
   const [userResult] = await pool.query(
     'INSERT INTO users (name, role, school_id) VALUES (?, ?, ?)',
     [name, role || 'siswa', effectiveSchool]
   );
   const [sessionResult] = await pool.query(
-    'INSERT INTO sessions (user_id, student_id, school_id, class_id, scene_name, device_type) VALUES (?, ?, ?, ?, ?, ?)',
-    [userResult.insertId, student ? student.student_id : null, effectiveSchool, classId, scene_name || 'borobudur-360', device_type || 'desktop']
+    `INSERT INTO sessions
+     (user_id, student_id, school_id, class_id, scene_name, device_type, write_token_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      userResult.insertId,
+      student ? student.student_id : null,
+      effectiveSchool,
+      classId,
+      scene_name || 'borobudur-360',
+      device_type || 'desktop',
+      writeTokenHash,
+    ]
   );
-  res.status(201).json({ success: true, session_id: sessionResult.insertId });
+  const response = { success: true, session_id: sessionResult.insertId };
+  if (sessionToken) response.session_token = sessionToken;
+  res.status(201).json(response);
 });
 
 // PUT /api/sessions/:id/end — tutup sesi, hitung durasi
 app.put('/api/sessions/:id/end', publicWriteLimiter, async (req, res) => {
+  if (!await requireSessionOwnership(req, res, req.params.id)) return;
   const [[row]] = await pool.query('SELECT started_at FROM sessions WHERE id = ?', [req.params.id]);
   if (!row) return res.status(404).json({ success: false, message: 'Sesi tidak ditemukan' });
   await pool.query(
@@ -1100,6 +1464,7 @@ app.post('/api/interactions', publicWriteLimiter, async (req, res) => {
   const { session_id, object_code, object_name, geometry_label, interaction_type, gaze_duration } = req.body || {};
   if (!session_id || !object_code)
     return res.status(400).json({ success: false, message: 'session_id dan object_code wajib diisi' });
+  if (!await requireSessionOwnership(req, res, session_id)) return;
   const objectId = await upsertObject({ object_code, object_name, geometry_label });
   await pool.query(
     'INSERT INTO interactions (session_id, object_id, interaction_type, gaze_duration) VALUES (?, ?, ?, ?)',
@@ -1113,6 +1478,7 @@ app.post('/api/predictions', publicWriteLimiter, async (req, res) => {
   const { session_id, object_code, object_name, geometry_label, predicted_label, confidence_score } = req.body || {};
   if (!session_id || !object_code)
     return res.status(400).json({ success: false, message: 'session_id dan object_code wajib diisi' });
+  if (!await requireSessionOwnership(req, res, session_id)) return;
   const objectId = await upsertObject({ object_code, object_name, geometry_label });
   await pool.query(
     'INSERT INTO predictions (session_id, object_id, predicted_label, confidence_score) VALUES (?, ?, ?, ?)',
@@ -1123,28 +1489,59 @@ app.post('/api/predictions', publicWriteLimiter, async (req, res) => {
 
 // POST /api/quiz-results — log jawaban kuis
 app.post('/api/quiz-results', publicWriteLimiter, async (req, res) => {
-  const { session_id, question_id, answer, is_correct, response_time } = req.body || {};
+  const { session_id, question_id, answer, response_time } = req.body || {};
   if (!session_id || !question_id)
     return res.status(400).json({ success: false, message: 'session_id dan question_id wajib diisi' });
+  if (!await requireSessionOwnership(req, res, session_id)) return;
+
+  const question = readQuizQuestion(question_id);
+  if (!question) {
+    return res.status(400).json({ success: false, message: 'question_id tidak valid' });
+  }
+  if (
+    typeof answer !== 'string'
+    || !Array.isArray(question.options)
+    || !question.options.includes(answer)
+  ) {
+    return res.status(400).json({ success: false, message: 'answer tidak valid' });
+  }
+
+  const responseTime = response_time == null ? null : response_time;
+  if (
+    responseTime !== null
+    && (
+      typeof responseTime !== 'number'
+      || !Number.isFinite(responseTime)
+      || responseTime < 0
+      || responseTime > 600
+    )
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'response_time harus berupa angka antara 0 dan 600 detik',
+    });
+  }
+
+  const isCorrect = answer === question.correct_answer;
   await pool.query(
     'INSERT INTO quiz_results (session_id, question_id, answer, is_correct, response_time) VALUES (?, ?, ?, ?, ?)',
-    [session_id, question_id, answer || '', is_correct ? 1 : 0, response_time || null]
+    [session_id, question_id, answer, isCorrect ? 1 : 0, responseTime]
   );
   res.status(201).json({ success: true });
 });
 
 // GET /api/reports/summary — rekap untuk guru (auth required, diskop per
 // sekolah, dengan filter opsional per kelas)
-app.get('/api/reports/summary', requireAuth, async (req, res) => {
-  const schoolId = effectiveSchoolId(req, req.query.school_id);
-  const classId = req.query.class_id ? Number(req.query.class_id) : null;
+app.get('/api/reports/summary', requireAuth, requireAnyRole('super_admin', 'school_admin', 'teacher'), async (req, res) => {
+  const scope = await resolveReportScope(req);
+  if (scope.error) {
+    return res.status(scope.error.status).json({
+      success: false,
+      message: scope.error.message,
+    });
+  }
 
-  const clauses = [];
-  const filterParams = [];
-  if (schoolId) { clauses.push('s.school_id = ?'); filterParams.push(schoolId); }
-  if (classId)  { clauses.push('s.class_id = ?');  filterParams.push(classId); }
-  const filterSql = clauses.length ? 'AND ' + clauses.join(' AND ') : '';
-  const params = filterParams;
+  const { sessionFilterSql: filterSql, sessionParams: params } = scope;
 
   const [[totals]] = await pool.query(`
     SELECT
@@ -1200,32 +1597,28 @@ app.get('/api/reports/summary', requireAuth, async (req, res) => {
     ? await pool.query(`
         SELECT sc.id AS school_id, sc.name AS school_name, COUNT(*) AS session_count
         FROM sessions s LEFT JOIN schools sc ON sc.id = s.school_id
+        WHERE 1=1 ${filterSql}
         GROUP BY sc.id, sc.name ORDER BY session_count DESC
-      `)
+      `, params)
     : [[]];
 
   // Kelas dalam cakupan (guru: kelasnya sendiri; school_admin: semua kelas
   // di sekolahnya; super_admin: kelas di sekolah yang sedang difilter, atau
   // semua kalau tidak difilter) — dipakai dropdown filter kelas di dashboard,
   // dan rekap sesi per kelas.
-  let classScopeSql = 'SELECT id, class_name FROM classes WHERE 1=1';
-  const classScopeParams = [];
-  if (req.account.role === 'teacher') {
-    classScopeSql += ' AND teacher_account_id = ?';
-    classScopeParams.push(req.account.account_id);
-  } else if (schoolId) {
-    classScopeSql += ' AND school_id = ?';
-    classScopeParams.push(schoolId);
-  }
-  const [availableClasses] = await pool.query(classScopeSql + ' ORDER BY class_name', classScopeParams);
+  const [availableClasses] = await pool.query(
+    `SELECT id, class_name FROM classes c
+     WHERE 1=1 ${scope.availableClassFilterSql}
+     ORDER BY class_name`,
+    scope.availableClassParams
+  );
 
-  const teacherScoped = req.account.role === 'teacher';
   const [perClass] = await pool.query(`
     SELECT c.id AS class_id, c.class_name, COUNT(s.id) AS session_count
     FROM classes c LEFT JOIN sessions s ON s.class_id = c.id
-    WHERE 1=1 ${schoolId ? 'AND c.school_id = ?' : ''} ${teacherScoped ? 'AND c.teacher_account_id = ?' : ''}
+    WHERE 1=1 ${scope.selectedClassFilterSql}
     GROUP BY c.id, c.class_name ORDER BY session_count DESC
-  `, [...(schoolId ? [schoolId] : []), ...(teacherScoped ? [req.account.account_id] : [])]);
+  `, scope.selectedClassParams);
 
   // Pagination pada sesi terbaru — penting begitu volume data tumbuh (ratusan/ribuan siswa)
   const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -1255,14 +1648,16 @@ app.get('/api/reports/summary', requireAuth, async (req, res) => {
 });
 
 // GET /api/reports/export.csv — ekspor sesi untuk analisis offline (auth, diskop per sekolah)
-app.get('/api/reports/export.csv', requireAuth, async (req, res) => {
-  const schoolId = effectiveSchoolId(req, req.query.school_id);
-  const classId = req.query.class_id ? Number(req.query.class_id) : null;
-  const clauses = [];
-  const params = [];
-  if (schoolId) { clauses.push('s.school_id = ?'); params.push(schoolId); }
-  if (classId)  { clauses.push('s.class_id = ?');  params.push(classId); }
-  const filterSql = clauses.length ? 'AND ' + clauses.join(' AND ') : '';
+app.get('/api/reports/export.csv', requireAuth, requireAnyRole('super_admin', 'school_admin', 'teacher'), async (req, res) => {
+  const scope = await resolveReportScope(req);
+  if (scope.error) {
+    return res.status(scope.error.status).json({
+      success: false,
+      message: scope.error.message,
+    });
+  }
+
+  const { sessionFilterSql: filterSql, sessionParams: params } = scope;
 
   const [rows] = await pool.query(`
     SELECT s.id, u.name AS student_name, sc.name AS school_name, cl.class_name, s.scene_name,
@@ -1311,6 +1706,7 @@ app.post('/api/team', requireAuth, requireRole('super_admin'), (req, res) => {
   const member = req.body;
   if (!member.id || !member.name)
     return res.status(400).json({ success: false, message: 'id dan name wajib diisi' });
+  assertFileIdentifier(member.id, 'team_id');
   if (team.find(m => m.id === member.id))
     return res.status(409).json({ success: false, message: `ID "${member.id}" sudah ada` });
   member.order = member.order ?? (team.length + 1);
@@ -1321,6 +1717,7 @@ app.post('/api/team', requireAuth, requireRole('super_admin'), (req, res) => {
 
 // PUT /api/team/:id — update anggota
 app.put('/api/team/:id', requireAuth, requireRole('super_admin'), (req, res) => {
+  assertFileIdentifier(req.params.id, 'team_id');
   const team = readTeam();
   const idx = team.findIndex(m => m.id === req.params.id);
   if (idx < 0) return res.status(404).json({ success: false, message: 'Anggota tidak ditemukan' });
@@ -1331,6 +1728,7 @@ app.put('/api/team/:id', requireAuth, requireRole('super_admin'), (req, res) => 
 
 // DELETE /api/team/:id
 app.delete('/api/team/:id', requireAuth, requireRole('super_admin'), (req, res) => {
+  assertFileIdentifier(req.params.id, 'team_id');
   const team = readTeam();
   const before = team.length;
   const filtered = team.filter(m => m.id !== req.params.id);
@@ -1353,8 +1751,9 @@ app.patch('/api/team/reorder', requireAuth, requireRole('super_admin'), (req, re
 
 // POST /api/team/:id/photo — upload foto anggota (multipart, max 2MB)
 app.post('/api/team/:id/photo', requireAuth, requireRole('super_admin'), (req, res) => {
+  const teamId = assertFileIdentifier(req.params.id, 'team_id');
   const team = readTeam();
-  const member = team.find(m => m.id === req.params.id);
+  const member = team.find(m => m.id === teamId);
   if (!member) return res.status(404).json({ success: false, message: 'Anggota tidak ditemukan' });
 
   const chunks = [];
@@ -1367,13 +1766,13 @@ app.post('/api/team/:id/photo', requireAuth, requireRole('super_admin'), (req, r
 
       const ct = req.headers['content-type'] || '';
       const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : 'jpg';
-      const filename = `${req.params.id}.${ext}`;
+      const filename = `${teamId}.${ext}`;
       const teamImgDir = path.join(PUBLIC_DIR, 'assets', 'images', 'team');
       if (!fs.existsSync(teamImgDir)) fs.mkdirSync(teamImgDir, { recursive: true });
-      fs.writeFileSync(path.join(teamImgDir, filename), buf);
+      fs.writeFileSync(resolveWithin(teamImgDir, filename), buf);
 
       const photoPath = `/assets/images/team/${filename}`;
-      const idx = team.findIndex(m => m.id === req.params.id);
+      const idx = team.findIndex(m => m.id === teamId);
       team[idx].photo = photoPath;
       writeTeam(team);
       res.json({ success: true, photo: photoPath });
@@ -1385,7 +1784,7 @@ app.post('/api/team/:id/photo', requireAuth, requireRole('super_admin'), (req, r
 
 // ── Health check ─────────────────────────────────────
 app.get('/api/health', async (req, res) => {
-  const [[{ ok }]] = await pool.query('SELECT 1 AS ok');
+  const [[{ ok }]] = await req.app.locals.dbPool.query('SELECT 1 AS ok');
   res.json({ success: true, message: 'VR-GeoNusa server running', version: '2.0.0', db: ok === 1 ? 'connected' : 'error',
     timestamp: new Date().toISOString(),
     scenes: fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json')).map(f => f.replace('.json','')),
@@ -1394,24 +1793,50 @@ app.get('/api/health', async (req, res) => {
 
 // ── Fallback ─────────────────────────────────────────
 app.get('*', (req, res) => {
-  const filePath = path.join(PUBLIC_DIR, req.path);
+  let filePath;
+  try {
+    filePath = resolveWithin(PUBLIC_DIR, req.path.replace(/^[/\\]+/, ''));
+  } catch (error) {
+    if (!(error instanceof InvalidFilePathError)) throw error;
+    return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  }
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return res.sendFile(filePath);
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
+// Centralized error handler harus menjadi middleware terakhir. Response tidak
+// membocorkan detail error internal, sementara logger tetap menerima detailnya.
+app.use(errorHandler);
+
 // ── Start ─────────────────────────────────────────────
-initDb().then(() => {
-  app.listen(PORT, () => {
-    console.log(`\n🏛️  VR-GeoNusa Server v2.0 (MySQL + multi-sekolah + ML server-side)`);
-    console.log(`   Portal   → http://localhost:${PORT}`);
-    console.log(`   Admin    → http://localhost:${PORT}/admin`);
-    console.log(`   API      → http://localhost:${PORT}/api/scenes`);
-    console.log(`   DB       → ${process.env.DB_NAME}@${process.env.DB_HOST}\n`);
+async function startServer({
+  port = PORT,
+  initializeDatabase = initDb,
+  initializeMl = initializeMlProvider,
+  logger = console,
+} = {}) {
+  return startHttpServer({
+    app,
+    port,
+    initializeDatabase,
+    initializeMl,
+    logger,
+    databaseLabel: `${runtimeEnv.DB_NAME}@${runtimeEnv.DB_HOST}`,
+    onMlError: logMlInitializationError,
   });
-  // Model dimuat setelah server mulai jalan (tidak blokir startup) — endpoint
-  // /api/ml/predict akan mengembalikan error singkat sampai model siap.
-  mlPredict.loadModel().catch(err => console.error('⚠️  Gagal memuat model ML server-side:', err.message));
-}).catch(err => {
-  console.error('❌ Gagal konek/inisialisasi database:', err.message);
-  process.exit(1);
-});
+}
+
+if (require.main === module) {
+  startServer().catch(error => {
+    console.error('Gagal konek/inisialisasi database:', error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  app,
+  ensureMustChangePasswordMigration,
+  initDb,
+  staffLoginLimiter,
+  startServer,
+};

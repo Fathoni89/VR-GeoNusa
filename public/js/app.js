@@ -18,6 +18,7 @@ const SCENES = {
 let currentScene = 'prambanan';
 let hintsVisible = true;
 let sessionId = null;
+let sessionWriteToken = null;
 let quizData = null;
 let currentQuizClass = null;
 let quizShownAt = null;
@@ -195,13 +196,20 @@ async function startSession() {
       body: JSON.stringify({ student_name: studentName, school_id: schoolId, scene_name: currentScene, device_type: deviceType }),
     });
     const json = await res.json();
-    if (json.success) sessionId = json.session_id;
+    if (json.success) {
+      sessionId = json.session_id;
+      sessionWriteToken = json.session_token || null;
+    }
   } catch (e) { /* logging best-effort */ }
 }
 
 function endSession() {
   if (!sessionId) return;
-  fetch(`/api/sessions/${sessionId}/end`, { method: 'PUT', keepalive: true });
+  fetch(`/api/sessions/${sessionId}/end`, {
+    method: 'PUT',
+    headers: sessionOwnershipHeaders(),
+    keepalive: true,
+  });
 }
 window.addEventListener('beforeunload', endSession);
 
@@ -212,6 +220,17 @@ window.addEventListener('beforeunload', endSession);
 // ══════════════════════════════════════════════════════
 let studentResultsLoaded = false;
 
+function sessionOwnershipHeaders() {
+  const headers = {};
+  if (studentAuthToken) headers.Authorization = 'Bearer ' + studentAuthToken;
+  else if (sessionWriteToken) headers['X-Session-Token'] = sessionWriteToken;
+  return headers;
+}
+
+function sessionJsonHeaders() {
+  return { 'Content-Type': 'application/json', ...sessionOwnershipHeaders() };
+}
+
 async function toggleStudentResults() {
   const panel = document.getElementById('student-results-panel');
   if (!panel) return;
@@ -220,18 +239,25 @@ async function toggleStudentResults() {
   if (willShow && !studentResultsLoaded) await loadStudentResults();
 }
 
+function setStudentResultsMessage(panel, message) {
+  const content = document.createElement('div');
+  content.className = 'sr-empty';
+  content.textContent = message;
+  panel.replaceChildren(content);
+}
+
 async function loadStudentResults() {
   const panel = document.getElementById('student-results-panel');
   if (!panel || !studentAuthToken) return;
-  panel.innerHTML = '<div class="sr-empty">Memuat…</div>';
+  setStudentResultsMessage(panel, 'Memuat…');
   try {
     const res = await fetch('/api/students/me/results', { headers: { Authorization: 'Bearer ' + studentAuthToken } });
     const json = await res.json();
-    if (!json.success) { panel.innerHTML = `<div class="sr-empty">${json.message || 'Gagal memuat'}</div>`; return; }
+    if (!json.success) { setStudentResultsMessage(panel, json.message || 'Gagal memuat'); return; }
     studentResultsLoaded = true;
     renderStudentResults(json.data);
   } catch (e) {
-    panel.innerHTML = '<div class="sr-empty">Gagal menghubungi server</div>';
+    setStudentResultsMessage(panel, 'Gagal menghubungi server');
   }
 }
 
@@ -240,16 +266,16 @@ function renderStudentResults(data) {
   const t = data.totals;
   const rows = (data.perQuestion || []).slice(0, 10).map(q => `
     <div class="sr-row ${q.is_correct ? 'correct' : 'wrong'}">
-      <span>${q.question_id}</span>
-      <span class="sr-badge">${q.is_correct ? '✓ Benar' : '✗ Salah'}</span>
+      <span>${escapeHtml(q.question_id)}</span>
+      <span class="sr-badge">${q.is_correct ? 'Benar' : 'Salah'}</span>
     </div>`).join('');
   panel.innerHTML = `
-    <div class="sr-name">👤 ${data.name}</div>
+    <div class="sr-name">${escapeHtml(data.name)}</div>
     <div class="sr-stats">
-      <div class="sr-stat"><div class="val">${t.total_sessions}</div><div class="lbl">Sesi</div></div>
-      <div class="sr-stat"><div class="val">${t.quiz_accuracy_pct}%</div><div class="lbl">Akurasi Kuis</div></div>
-      <div class="sr-stat"><div class="val">${t.total_quiz_attempts}</div><div class="lbl">Kuis Dijawab</div></div>
-      <div class="sr-stat"><div class="val">${t.total_interactions}</div><div class="lbl">Interaksi</div></div>
+      <div class="sr-stat"><div class="val">${escapeHtml(t.total_sessions)}</div><div class="lbl">Sesi</div></div>
+      <div class="sr-stat"><div class="val">${escapeHtml(t.quiz_accuracy_pct)}%</div><div class="lbl">Akurasi Kuis</div></div>
+      <div class="sr-stat"><div class="val">${escapeHtml(t.total_quiz_attempts)}</div><div class="lbl">Kuis Dijawab</div></div>
+      <div class="sr-stat"><div class="val">${escapeHtml(t.total_interactions)}</div><div class="lbl">Interaksi</div></div>
     </div>
     <div class="sr-section-label">Riwayat Kuis Terbaru</div>
     ${rows || '<div class="sr-empty">Belum ada kuis dijawab</div>'}`;
@@ -259,7 +285,7 @@ function logInteraction(objectCode, objectName, geometryLabel, type) {
   if (!sessionId) return;
   fetch('/api/interactions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: sessionJsonHeaders(),
     body: JSON.stringify({ session_id: sessionId, object_code: objectCode, object_name: objectName, geometry_label: geometryLabel, interaction_type: type }),
   }).catch(() => {});
 }
@@ -268,7 +294,7 @@ function logPrediction(objectCode, objectName, geometryLabel, predictedLabel, co
   if (!sessionId) return;
   fetch('/api/predictions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: sessionJsonHeaders(),
     body: JSON.stringify({ session_id: sessionId, object_code: objectCode, object_name: objectName, geometry_label: geometryLabel, predicted_label: predictedLabel, confidence_score: confidence }),
   }).catch(() => {});
 }
@@ -320,13 +346,13 @@ function answerQuiz(question, selected, btnEl) {
     else if (b === btnEl) b.classList.add('wrong');
   });
   document.getElementById('quiz-feedback').textContent =
-    (isCorrect ? '✓ Benar! ' : '✗ Kurang tepat. ') + question.explanation;
+    (isCorrect ? 'Benar! ' : 'Kurang tepat. ') + question.explanation;
 
   if (sessionId) {
     fetch('/api/quiz-results', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, question_id: question.id, answer: selected, is_correct: isCorrect, response_time: responseTime }),
+      headers: sessionJsonHeaders(),
+      body: JSON.stringify({ session_id: sessionId, question_id: question.id, answer: selected, response_time: responseTime }),
     }).catch(() => {});
   }
 }
