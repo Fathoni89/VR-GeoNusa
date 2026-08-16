@@ -545,6 +545,8 @@ async function loadTeam() {
            <div class="tc-photo-fallback ${grad}" style="display:none" aria-hidden="true">${initials(m.name)}</div>`
         : `<div class="tc-photo-fallback ${grad}" aria-hidden="true">${initials(m.name)}</div>`;
       const roleClass = ROLE_COLOR[i % ROLE_COLOR.length];
+      const expertise = Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(s=>s.trim()).filter(Boolean);
+      const tags = expertise.length ? `<div class="tc-tags">${expertise.map(e=>`<span class="tc-tag">${e}</span>`).join('')}</div>` : '';
       const links = [
         m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${m.sinta_id}" target="_blank" rel="noopener">SINTA</a>` : '',
         m.orcid    ? `<a href="https://orcid.org/${m.orcid}" target="_blank" rel="noopener">ORCID</a>` : '',
@@ -555,7 +557,10 @@ async function loadTeam() {
         <div class="tc-body">
           <span class="tc-role ${roleClass}">${m.role_type === 'peneliti' ? 'Peneliti' : 'Dosen'}</span>
           <div class="tc-name">${m.name}</div>
+          ${m.department ? `<div class="tc-dept">${m.department}</div>` : ''}
           <div class="tc-inst">${m.institution}</div>
+          ${m.bio ? `<div class="tc-bio">${m.bio}</div>` : ''}
+          ${tags}
           ${links ? `<div class="tc-links">${links}</div>` : ''}
         </div>
       </article>`;
@@ -568,12 +573,16 @@ async function loadTeam() {
                onerror="this.style.opacity='0';this.nextElementSibling.style.display='grid'">
            <div class="tc-photo-fallback ${grad}" style="display:none" aria-hidden="true">${initials(m.name)}</div>`
         : `<div class="tc-photo-fallback ${grad}" aria-hidden="true">${initials(m.name)}</div>`;
+      const expertise = Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(s=>s.trim()).filter(Boolean);
+      const tags = expertise.length ? `<div class="ts-tags">${expertise.map(e=>`<span class="ts-tag">${e}</span>`).join('')}</div>` : '';
       return `<article class="team-card student" aria-label="${m.name}">
         <div class="ts-photo">${photoHtml}</div>
         <div class="ts-body">
           <div class="ts-role">Mahasiswa</div>
           <div class="ts-name">${m.name}</div>
+          ${m.department ? `<div class="ts-dept">${m.department}</div>` : ''}
           <div class="ts-inst">${m.institution}</div>
+          ${tags}
         </div>
       </article>`;
     };
