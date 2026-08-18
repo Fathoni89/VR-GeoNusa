@@ -11,6 +11,7 @@ const { app } = require(path.join(PROJECT_ROOT, 'server.js'));
 const { FakeDb } = require(path.join(PROJECT_ROOT, 'tests', 'fixtures', 'fake-db.js'));
 
 const originalQuery = app.locals.dbPool.query;
+const originalGetConnection = app.locals.dbPool.getConnection;
 const originalLogger = app.locals.logger;
 let fakeDb;
 let sessionId;
@@ -19,6 +20,7 @@ let sessionToken;
 beforeEach(async () => {
   fakeDb = new FakeDb();
   app.locals.dbPool.query = fakeDb.query.bind(fakeDb);
+  app.locals.dbPool.getConnection = fakeDb.getConnection.bind(fakeDb);
   app.locals.logger = { log() {}, error() {} };
 
   const created = await request(app).post('/api/sessions').send({
@@ -32,6 +34,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   app.locals.dbPool.query = originalQuery;
+  app.locals.dbPool.getConnection = originalGetConnection;
   app.locals.logger = originalLogger;
 });
 

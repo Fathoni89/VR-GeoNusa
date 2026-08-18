@@ -1,9 +1,10 @@
 # Rencana Migrasi Arsitektur VR-GeoNusa
 
 Status: **Draft untuk eksekusi bertahap**  
-Target: **Feature-based modular monolith dengan Clean Architecture pragmatis dan ML worker terisolasi**  
+Target: **Feature-based modular monolith dengan Clean Architecture pragmatis dan ML hybrid terverifikasi admin pada worker terisolasi**
 Strategi: **Incremental strangler migration**  
 Tanggal penyusunan: **13 Agustus 2026**
+Pembaruan strategi ML hybrid: **16 Agustus 2026**
 
 ## 1. Tujuan
 
@@ -15,7 +16,9 @@ Migrasikan VR-GeoNusa dari backend Express monolitik satu file dan frontend stat
 - aplikasi VR Vite + TypeScript + A-Frame;
 - kontrak API bersama menggunakan Zod;
 - migrasi MySQL yang versioned;
-- inferensi ML pada worker terisolasi;
+- ML hybrid yang memisahkan label terverifikasi admin dari prediksi model;
+- inferensi ML pada worker terisolasi dengan kebijakan confidence, mismatch, dan audit versi model;
+- kandidat hotspot otomatis yang wajib ditinjau admin sebelum dipublikasikan;
 - test otomatis dan quality gate CI;
 - deployment server dan demo GitHub Pages yang tetap kompatibel.
 
@@ -31,6 +34,10 @@ Temuan baseline yang harus dianggap sebagai konteks eksekusi:
 - Repository belum memiliki unit test, integration test, E2E test, lint, TypeScript, atau build frontend.
 - Backend memakai Express 4, MySQL, JWT, bcrypt, dan `@tensorflow/tfjs-node`.
 - Import TensorFlow.js Node gagal pada Node.js 24 LTS karena native binding tidak tersedia.
+- Model saat ini adalah classifier MobileNetV2 atas crop panorama yang diarahkan oleh `identify.local_angle`, bukan object detector yang mencari seluruh bangun ruang.
+- `public/js/tour.js` saat ini dapat mengganti `identify.class_id` terverifikasi dengan kelas prediksi tanpa threshold minimum; `ml_matches_area` hanya dicatat dan belum menjadi kebijakan keputusan.
+- `MLTraining/train.py` hanya melaporkan validation accuracy dan belum mengevaluasi split test secara eksplisit.
+- Metadata tur saat ini memiliki node terverifikasi untuk lima kelas, sedangkan model menghasilkan enam kelas; coverage kelas dan generalisasi lintas situs belum tervalidasi.
 - Terdapat source/data yang diduplikasi antara root dan `public/`.
 - GitHub Pages hanya dapat menjalankan mode statis; fitur login, laporan, dan penyimpanan memerlukan Node.js + MySQL.
 - Saat rencana dibuat, `package.json` telah dimodifikasi pengguna dan `.agents/` serta `bun.lock` masih untracked. Perubahan tersebut tidak boleh ditimpa atau dihapus tanpa izin.
@@ -88,10 +95,30 @@ repository
 MySQL atau filesystem
 ```
 
-Alur ML:
+Alur ML hybrid saat menyiapkan panorama:
 
 ```text
-API → ML service → worker_threads → ONNX Runtime → model
+panorama
+    ↓
+candidate proposal worker
+    ↓
+antrean review admin
+    ↓ accept/edit/reject
+hotspot + label terverifikasi
+```
+
+Alur ML hybrid saat siswa menggunakan tur:
+
+```text
+hotspot terverifikasi
+    ↓
+crop panorama deterministik
+    ↓
+ML service → worker_threads → ONNX Runtime → classifier
+    ↓
+decision policy (match / uncertain / mismatch / unavailable)
+    ↓
+label terverifikasi tetap ditampilkan + prediksi dicatat terpisah
 ```
 
 ## 4. Keputusan Arsitektur
@@ -131,6 +158,21 @@ Jangan membuat generic base repository, service superclass, atau abstraction lai
 - Admin baru berjalan di `/admin-v2` sebelum menggantikan `/admin`.
 - Demo statis GitHub Pages tetap dipertahankan.
 
+### 4.4 ML hybrid dengan human verification
+
+Invarian domain berikut wajib dipertahankan:
+
+- `identify.class_id` yang berasal dari admin diperlakukan sebagai **label terverifikasi** dan tetap menjadi nilai efektif untuk materi pembelajaran selama masa kompatibilitas.
+- Prediksi ML adalah data turunan. Prediksi tidak boleh menimpa label terverifikasi, teks pembelajaran, rumus, atau konteks budaya.
+- Response dan event baru harus membedakan minimal `verified_class_id`, `predicted_class_id`, `confidence`, `decision_status`, `prediction_source`, `model_version`, dan `preprocessing_version`.
+- `decision_status` minimal mendukung `match`, `uncertain`, `mismatch`, dan `unavailable`.
+- Threshold tidak boleh ditetapkan hanya berdasarkan intuisi atau warna UI. Threshold ditentukan per versi model, dan bila perlu per kelas, dari evaluation set yang bebas data leakage.
+- Nilai `identify.conf` legacy tidak boleh dianggap sebagai confidence model. Field tersebut harus didokumentasikan sebagai metadata legacy, lalu didepresiasi setelah client lama tidak bergantung kepadanya.
+- Prediksi browser fallback harus diberi sumber berbeda dan tidak boleh dicampur dengan evaluasi resmi server tanpa `model_version` dan `preprocessing_version` yang identik.
+- Kandidat hotspot dari model hanya terlihat pada workflow admin. Kandidat tidak boleh menjadi hotspot siswa sebelum admin menerima atau mengeditnya.
+- Penerimaan kandidat harus menghasilkan audit metadata tentang reviewer, waktu, proposal awal, dan perubahan yang dilakukan.
+- Otomatisasi penuh pada runtime siswa berada di luar target migrasi ini sampai dataset lintas panorama/situs dan gate metrik disetujui.
+
 ## 5. Aturan Eksekusi untuk Model
 
 Aturan ini wajib diikuti oleh setiap model yang mengeksekusi rencana:
@@ -150,6 +192,8 @@ Aturan ini wajib diikuti oleh setiap model yang mengeksekusi rencana:
 13. Setiap perubahan behavior harus memiliki regression test.
 14. Jika keputusan tidak tercantum pada rencana, berhenti dan tanyakan kepada pengguna.
 15. Setelah task selesai, laporkan file berubah, behavior berubah, test yang dijalankan, hasil test, dan risiko tersisa.
+16. Jangan pernah memakai prediksi ML sebagai ground truth atau menimpa label terverifikasi admin.
+17. Jangan mengaktifkan candidate proposal untuk siswa atau auto-publish hotspot tanpa gate manual yang eksplisit.
 
 ## 6. Checklist Fase
 
@@ -174,8 +218,11 @@ Aturan ini wajib diikuti oleh setiap model yang mengeksekusi rencana:
 - [ ] Fase 6H — Ekstrak module team
 - [ ] Fase 6I — Ekstrak health dan static application
 - [ ] Fase 7 — Migrasi database versioned
-- [ ] Fase 8A — Isolasi ML dalam worker
-- [ ] Fase 8B — Migrasi model ke ONNX
+- [ ] Fase 8A — Bentuk kontrak dan data ML hybrid
+- [ ] Fase 8B — Isolasi inferensi classifier dalam worker
+- [ ] Fase 8C — Migrasi classifier ke ONNX dengan parity
+- [ ] Fase 8D — Terapkan decision policy dan pengalaman runtime hybrid
+- [ ] Fase 8E — Tambahkan candidate hotspot berbasis review admin
 - [ ] Fase 9 — Migrasi frontend VR
 - [ ] Fase 10 — Migrasi admin
 - [ ] Fase 11 — Bentuk npm workspaces
@@ -658,9 +705,11 @@ Pekerjaan:
 Pekerjaan:
 
 - listing tour;
-- update identifikasi folder;
+- update hotspot/identifikasi terverifikasi tanpa mencampurnya dengan prediksi ML;
 - upload dataset;
 - statistik dataset;
+- provenance dataset dan source panorama/node;
+- validasi taxonomy version serta pemisahan train/validation/test berdasarkan source ID;
 - validasi MIME berdasarkan isi file;
 - batasi ukuran ketika streaming, bukan setelah seluruh body masuk memory;
 - cegah filename collision dengan UUID atau atomic counter.
@@ -762,53 +811,228 @@ Model wajib berhenti sebelum menjalankan migration production dan meminta:
 
 ---
 
-## 15. Fase 8 — Isolasi dan Migrasi ML
+## 15. Fase 8 — Migrasi ke ML Hybrid Terverifikasi Admin
 
-### 15.1 Fase 8A — Worker Interface
+Fase 8 harus dijalankan sebagai lima subfase terpisah. Migrasi runtime, perubahan kebijakan keputusan, dan pengembangan candidate detector tidak boleh digabung dalam satu task atau satu perubahan behavior besar.
 
-Struktur:
+### Prinsip yang tidak boleh dilanggar
+
+1. Label admin adalah label terverifikasi dan sumber materi pembelajaran.
+2. Prediksi classifier tidak pernah menimpa label terverifikasi.
+3. Confidence adalah skor model, bukan probabilitas kebenaran, sampai kalibrasi dibuktikan.
+4. Golden dataset parity runtime berbeda dari evaluation set kualitas model.
+5. Candidate detector hanya memberi proposal kepada admin dan tidak melakukan auto-publish.
+6. Semua hasil harus dapat ditelusuri ke versi model, preprocessing, taxonomy, dataset, dan asset panorama.
+
+### 15.1 Fase 8A — Kontrak dan Data ML Hybrid
+
+#### Tujuan
+
+Memisahkan ground truth terverifikasi, prediksi model, keputusan policy, dan metadata audit tanpa memutus client lama.
+
+#### Lokasi utama
+
+- `data/tour-*.json` sebagai sumber label/hotspot terverifikasi selama penyimpanan tur masih file-backed;
+- `db/schema.mysql.sql` dan migration versioned untuk event prediksi;
+- `src/modules/ml/` untuk kontrak dan decision types;
+- `packages/contracts/` setelah workspace tersedia;
+- `public/js/tour.js` hanya untuk compatibility test pada tahap ini, bukan redesign UI.
+
+#### Pekerjaan
+
+1. Tambahkan characterization test yang membuktikan behavior saat ini, termasuk kasus model cocok, model berbeda, confidence rendah, server unavailable, dan browser fallback.
+2. Definisikan kontrak prediksi hybrid yang minimal memuat:
+   - `verified_class_id`;
+   - `predicted_class_id`;
+   - `confidence`;
+   - optional `top_k` bila diperlukan untuk evaluasi;
+   - `decision_status` (`match`, `uncertain`, `mismatch`, `unavailable`);
+   - `prediction_source` (`server`, `browser`, atau `none`);
+   - `model_version`;
+   - `preprocessing_version`;
+   - `taxonomy_version`;
+   - `asset_version` atau checksum panorama;
+   - `latency_ms` untuk prediksi server.
+3. Pertahankan `identify.class_id` sebagai alias legacy untuk label terverifikasi. Jangan mengubahnya ketika inferensi selesai.
+4. Jangan menyimpan output prediksi sebagai bagian dari `identify` di JSON tur. Simpan sebagai event/audit atau cache yang dapat dibuang dan dihitung ulang.
+5. Tambahkan kolom versioned yang diperlukan pada tabel `predictions`, termasuk label terverifikasi, status keputusan, sumber prediksi, versi model/preprocessing, dan latency. Pertahankan kolom legacy selama compatibility window.
+6. Dokumentasikan bahwa `identify.conf` adalah metadata legacy, bukan confidence model. Jangan gunakan field itu untuk evaluasi.
+7. Tentukan cache key dari tour/node, checksum atau versi asset, yaw/pitch/FOV, model version, dan preprocessing version agar cache lama tidak dipakai setelah salah satu input berubah.
+8. Response endpoint lama tetap menyediakan `class_id` dan `confidence`; response baru boleh menambahkan objek `verified`, `prediction`, dan `decision` secara backward-compatible.
+
+#### Test wajib
+
+- Prediksi match tidak mengubah label terverifikasi.
+- Prediksi mismatch tidak mengubah label, rumus, atau konteks budaya.
+- Event menyimpan verified dan predicted label secara terpisah.
+- Cache invalid ketika model, preprocessing, crop, atau asset berubah.
+- Client lama masih dapat membaca response legacy.
+- Browser fallback selalu ditandai sebagai sumber yang berbeda.
+
+#### Acceptance criteria
+
+- Tidak ada jalur kode yang menulis `predicted_class_id` ke `identify.class_id` atau menjadikannya label efektif untuk materi/kuis, baik di memory maupun persistence.
+- Setiap event prediksi resmi dapat ditelusuri ke seluruh versi input yang relevan.
+- Migration fresh install dan upgrade lulus beserta rollback/recovery yang disetujui.
+
+### 15.2 Fase 8B — Isolasi Inferensi Classifier dalam Worker
+
+Struktur target:
 
 ```text
 src/modules/ml/
 ├── ml.router.ts
 ├── ml.schema.ts
 ├── ml.service.ts
+├── ml.policy.ts
 ├── ml.provider.ts
-└── ml.worker.ts
+├── ml.worker.ts
+├── ml.types.ts
+└── ml.evaluation.ts
 ```
 
 Pekerjaan:
 
-1. Jalankan inferensi melalui `worker_threads`.
+1. Jalankan crop dan inferensi classifier melalui `worker_threads`.
 2. Muat model satu kali per worker.
-3. Tambahkan timeout.
-4. Batasi panjang antrean.
-5. Kembalikan `503` bila worker/model belum siap.
-6. Tambahkan graceful shutdown.
-7. Cache hasil per tour/node jika input deterministik.
+3. Tambahkan timeout dan pembatalan hasil yang sudah kedaluwarsa.
+4. Batasi panjang antrean dan concurrency.
+5. Kembalikan `503` bila worker/model belum siap tanpa mengganti label terverifikasi.
+6. Tambahkan graceful shutdown dan restart worker yang terkontrol.
+7. Gunakan cache key terversi dari Fase 8A.
+8. Catat latency, timeout, worker restart, dan queue rejection tanpa menulis panorama, token, atau data sensitif ke log.
 
 Test:
 
 - API non-ML tetap responsif saat inferensi berjalan.
 - Worker crash tidak mematikan API.
-- Timeout menghasilkan response terkontrol.
+- Timeout menghasilkan response terkontrol dan `decision_status: unavailable`.
 - Antrean berlebih ditolak tanpa kehabisan memory.
+- Hasil dari request yang dibatalkan tidak ditulis sebagai event sukses.
+- Shutdown tidak meninggalkan worker atau promise menggantung.
 
-### 15.2 Fase 8B — TensorFlow.js ke ONNX
+### 15.3 Fase 8C — TensorFlow.js ke ONNX dengan Parity
 
-1. Buat golden dataset dari panorama/node yang ada.
-2. Rekam output model lama pada environment yang mendukungnya.
-3. Konversi model ke ONNX.
-4. Jalankan menggunakan `onnxruntime-node`.
-5. Bandingkan class, confidence, dan latency.
+1. Buat **golden parity set** dari panorama/node/crop yang ada; set ini hanya menguji kesetaraan runtime, bukan kualitas model.
+2. Rekam raw output vector, top class, preprocessing input, dan latency model lama pada environment yang mendukungnya.
+3. Konversi classifier yang sama ke ONNX tanpa retraining atau perubahan taxonomy.
+4. Jalankan menggunakan `onnxruntime-node` pada worker.
+5. Bandingkan raw scores, top class, confidence, preprocessing output, dan latency.
 6. Tentukan tolerance numerik sebelum pengujian.
-7. Pertahankan model lama sampai parity lulus.
-8. Hapus `@tensorflow/tfjs-node` hanya setelah seluruh test lulus.
-9. Jalankan `npm audit` ulang.
+7. Pertahankan provider TensorFlow.js di balik interface yang sama sampai parity lulus.
+8. Jalankan shadow comparison pada sampel non-production atau fixture tanpa mengubah response siswa.
+9. Hapus `@tensorflow/tfjs-node` hanya setelah seluruh parity, contract, load, dan rollback test lulus.
+10. Jalankan `npm audit` ulang.
 
-### Gate manual
+#### Gate manual
 
-Jika output model berbeda di luar tolerance, model eksekutor harus berhenti. Jangan memilih model baru atau mengubah preprocessing tanpa persetujuan.
+Jika output berbeda di luar tolerance, model eksekutor harus berhenti. Jangan melakukan retraining, memilih model baru, mengubah preprocessing, atau menaikkan tolerance tanpa persetujuan pengguna.
+
+### 15.4 Fase 8D — Decision Policy dan Pengalaman Runtime Hybrid
+
+#### Persiapan evaluasi
+
+1. Buat evaluation manifest yang immutable dan terpisah dari golden parity set.
+2. Split dataset berdasarkan panorama/node sumber, dan bila data mencukupi berdasarkan situs, bukan berdasarkan crop acak, agar crop dari sumber yang sama tidak bocor ke train dan test.
+3. Tambahkan evaluasi test set eksplisit pada pipeline training.
+4. Hasil evaluasi minimal memuat confusion matrix serta precision, recall, dan F1 per kelas. Tambahkan metrik kalibrasi bila confidence ditampilkan sebagai tingkat keyakinan.
+5. Laporkan kelas yang tidak memiliki coverage cukup; jangan menyembunyikannya di dalam rata-rata keseluruhan.
+
+#### Kebijakan keputusan
+
+1. Implementasikan `ml.policy.ts` sebagai fungsi deterministik dan teruji.
+2. Tentukan threshold dari evaluation set per versi model dan, bila diperlukan, per kelas.
+3. Aturan minimal:
+   - prediksi tersedia, di atas threshold, dan sama dengan verified label → `match`;
+   - prediksi di bawah threshold → `uncertain`;
+   - prediksi di atas threshold tetapi berbeda → `mismatch`;
+   - model gagal, timeout, atau versi tidak cocok → `unavailable`.
+4. Untuk seluruh status, label efektif yang dipakai materi dan kuis tetap `verified_class_id`.
+5. UI boleh menampilkan prediksi sebagai informasi tambahan dengan bahasa yang tidak menyamakan confidence dengan akurasi.
+6. `uncertain` dan `mismatch` masuk antrean review peneliti/admin; jangan diperlihatkan sebagai kebenaran baru kepada siswa.
+7. Laporan penelitian harus dapat memfilter sumber prediksi, versi model, status keputusan, dan kelas terverifikasi.
+
+#### Test wajib
+
+- Boundary test tepat di bawah, sama dengan, dan di atas setiap threshold.
+- Match, uncertain, mismatch, dan unavailable mempertahankan label terverifikasi.
+- Kuis memilih pertanyaan berdasarkan label terverifikasi, bukan prediksi.
+- Confidence model tidak mengambil nilai dari `identify.conf`.
+- UI dan log menyebut sumber prediksi serta versi model dengan benar.
+- Evaluation pipeline gagal bila manifest test tumpang tindih dengan train/validation berdasarkan source ID.
+
+#### Acceptance criteria
+
+- Tidak ada salah prediksi yang dapat mengubah materi siswa.
+- Threshold memiliki artefak evaluasi dan approval yang dapat ditelusuri.
+- Hasil test set dan confusion matrix tersimpan sebagai artifact CI/release model.
+
+### 15.5 Fase 8E — Candidate Hotspot dengan Review Admin
+
+Subfase ini baru boleh dimulai setelah Fase 8A–8D selesai dan taxonomy bangun ruang disetujui. Candidate proposal adalah fitur authoring/admin, bukan fitur runtime siswa.
+
+#### Prasyarat data
+
+1. Buat annotation guideline yang membedakan elemen budaya, komponen geometri, dan bentuk gabungan.
+2. Anotasi kandidat menggunakan koordinat panorama yang tidak ambigu, minimal `yaw`, `pitch`, dan `fov` atau representasi ekuivalen yang mendukung seam panorama 360°.
+3. Simpan reviewer, status review, taxonomy version, asset checksum, dan provenance anotasi.
+4. Pisahkan train/validation/test berdasarkan panorama dan situs. Tetapkan jumlah minimum data per kelas serta gate lintas situs sebelum training.
+5. Jangan melatih candidate detector dari label folder atau `local_angle` saja bila area objek yang sebenarnya belum dianotasi.
+
+#### Workflow target
+
+```text
+panorama terversi
+    ↓
+candidate detector/proposer
+    ↓
+proposal { lokasi, top-k kelas, confidence, versi }
+    ↓
+antrean admin
+    ├── accept → buat hotspot terverifikasi
+    ├── edit   → simpan perubahan + audit
+    └── reject → simpan feedback untuk evaluasi/retraining
+```
+
+#### Pekerjaan
+
+1. Evaluasi kandidat pendekatan/model pada dataset representatif; pemilihan model merupakan gate manual dan tidak diasumsikan oleh plan.
+2. Jalankan proposal secara asynchronous pada worker dengan timeout, queue limit, dan feature flag default `off`.
+3. Tambahkan endpoint admin-only untuk membuat job, melihat proposal, menerima, mengedit, dan menolak proposal.
+4. Terapkan authorization, audit log, idempotency, validasi koordinat, dan optimistic concurrency agar review lama tidak menimpa tur yang lebih baru.
+5. Penerimaan/edit proposal harus melalui service tur yang sama dengan edit manual dan menghasilkan label terverifikasi baru.
+6. Proposal tidak boleh muncul pada JSON/build publik atau UI siswa sebelum diterima.
+7. Ukur precision, recall, mAP atau metrik deteksi yang disepakati, false positive per panorama, acceptance/edit/rejection rate admin, dan latency per panorama.
+8. Sediakan kill switch dan kemampuan menghapus proposal turunan tanpa menghapus hotspot terverifikasi atau panorama sumber.
+
+#### Test wajib
+
+- Teacher tanpa hak pengelolaan tur tidak dapat mereview proposal.
+- Proposal tidak membuat atau mengubah hotspot tanpa tindakan admin eksplisit.
+- Accept, edit, reject, retry, dan duplicate job bersifat idempotent.
+- Proposal untuk asset/taxonomy versi lama ditolak atau ditandai stale.
+- Koordinat di sekitar seam 0°/360° divalidasi dengan benar.
+- Worker/job failure tidak mengubah tur.
+- Build publik tidak membocorkan proposal pending atau rejected.
+
+#### Acceptance criteria
+
+- Tidak ada auto-publish.
+- Seluruh hotspot baru memiliki reviewer dan audit trail.
+- Gate metrik yang disetujui tercapai pada test set yang tidak bocor dan mencakup panorama/situs yang representatif.
+- Feature flag dapat menonaktifkan proposer tanpa mengganggu classifier runtime.
+
+### Gate manual akhir Fase 8
+
+Eksekutor wajib berhenti dan meminta keputusan pengguna untuk:
+
+- taxonomy dan definisi bagian bangun ruang gabungan;
+- siapa yang berwenang menetapkan label terverifikasi;
+- threshold per kelas dan metrik minimum classifier;
+- tolerance parity TensorFlow.js ke ONNX;
+- pendekatan/model candidate proposal;
+- jumlah minimum anotasi serta metrik minimum candidate detector;
+- apakah prediksi browser boleh masuk laporan penelitian resmi.
 
 ---
 
@@ -829,7 +1053,8 @@ apps/vr/
 │   ├── tour.ts
 │   ├── scene-loader.ts
 │   ├── api-client.ts
-│   └── session-client.ts
+│   ├── session-client.ts
+│   └── ml-client.ts
 └── vite.config.ts
 ```
 
@@ -844,8 +1069,10 @@ apps/vr/
    - `server`: API aktif;
    - `static`: demo GitHub Pages.
 7. Gunakan satu sumber asset canonical.
-8. Upgrade A-Frame pada task terpisah setelah parity.
-9. Jangan migrasikan scene A-Frame ke React.
+8. Pertahankan kontrak hybrid: materi dan kuis memakai label terverifikasi; prediksi hanya informasi tambahan.
+9. Static mode boleh memakai browser fallback, tetapi harus menandai sumber/versi dan tidak mengirimkannya sebagai telemetry resmi bila versi tidak tervalidasi.
+10. Upgrade A-Frame pada task terpisah setelah parity.
+11. Jangan migrasikan scene A-Frame ke React.
 
 ### E2E minimum
 
@@ -853,6 +1080,7 @@ apps/vr/
 - Prambanan terbuka;
 - Borobudur berpindah node;
 - informasi geometri terbuka;
+- status ML match, uncertain, mismatch, dan unavailable tidak mengubah label terverifikasi;
 - kuis bekerja;
 - sesi guest bekerja;
 - login siswa bekerja;
@@ -889,8 +1117,10 @@ Admin baru dibuat di `/admin-v2`. Jangan mengganti admin lama sekaligus.
 4. Sekolah dan akun.
 5. Scene dan object.
 6. Tour dan dataset.
-7. Team.
-8. Settings.
+7. Review prediction mismatch/uncertain.
+8. Review candidate hotspot: accept, edit, reject, stale, dan retry.
+9. Team.
+10. Settings.
 
 ### Aturan
 
@@ -900,6 +1130,8 @@ Admin baru dibuat di `/admin-v2`. Jangan mengganti admin lama sekaligus.
 - Jangan menyimpan token baru dalam `localStorage`.
 - Semua aksi destructive memiliki confirmation dan error state.
 - Semua halaman memiliki loading, empty, dan error state.
+- UI harus membedakan label terverifikasi, prediksi model, confidence, status keputusan, dan versi model.
+- Tidak ada tombol atau bulk action yang dapat mempublikasikan proposal tanpa review eksplisit dan authorization server-side.
 
 ### Cutover
 
@@ -965,7 +1197,10 @@ Pipeline menjalankan:
 6. build;
 7. E2E smoke test;
 8. dependency audit;
-9. artifact verification.
+9. artifact verification;
+10. ML contract dan decision-policy test pada setiap PR;
+11. ML parity/evaluation job dengan Git LFS hanya ketika model, preprocessing, taxonomy, atau dataset manifest berubah, serta dapat dijalankan manual/terjadwal;
+12. upload confusion matrix, per-class metrics, calibration report bila dipakai, dan parity report sebagai artifact tanpa mengunggah dataset privat.
 
 ### Deployment
 
@@ -975,6 +1210,8 @@ Pipeline menjalankan:
 - GitHub Pages menerima hanya static VR build.
 - Database migration dijalankan sebagai langkah terpisah setelah backup.
 - Readiness harus memisahkan status database dan ML.
+- Readiness ML classifier dan candidate proposer dilaporkan terpisah; proposer yang dinonaktifkan tidak membuat aplikasi siswa dianggap down.
+- Candidate proposer default `off` sampai gate data, metrik, authorization, dan admin review disetujui.
 
 ### Cleanup
 
@@ -992,6 +1229,7 @@ Jangan menghapus:
 - panorama;
 - dataset penelitian;
 - model yang masih dibutuhkan untuk reproduksibilitas;
+- dataset manifest, annotation guideline, audit review, dan artifact evaluasi model;
 - asset Git LFS;
 - backup database.
 
@@ -1010,7 +1248,11 @@ Fokus pada:
 - tenant scoping;
 - session ownership;
 - CSV escaping;
-- ML preprocessing.
+- ML preprocessing;
+- cache key versioning;
+- decision policy match/uncertain/mismatch/unavailable;
+- threshold boundary;
+- pemisahan label terverifikasi dan prediksi.
 
 ### Integration test
 
@@ -1021,7 +1263,10 @@ Fokus pada:
 - database constraint;
 - migration;
 - filesystem atomic write;
-- upload validation.
+- upload validation;
+- penyimpanan prediction event beserta version metadata;
+- ownership dan authorization job/review candidate;
+- idempotency accept/edit/reject proposal.
 
 ### E2E test
 
@@ -1033,6 +1278,8 @@ Fokus pada:
 - guest/student VR session;
 - kuis;
 - navigasi scene/tour;
+- label terverifikasi tetap tampil pada match, uncertain, mismatch, dan unavailable;
+- admin mereview candidate hotspot tanpa proposal pending masuk ke build publik;
 - admin cutover.
 
 ### Security regression test
@@ -1047,7 +1294,26 @@ Wajib mencakup:
 - session event forgery;
 - oversized upload;
 - invalid MIME;
+- akses proposal ML lintas role/tenant;
+- manipulasi `verified_class_id`, confidence, model version, atau candidate coordinate dari client;
+- kebocoran dataset/panorama privat melalui artifact CI atau response API;
 - error leakage.
+
+### ML evaluation test
+
+Wajib memisahkan dua tujuan:
+
+- **runtime parity:** raw output TensorFlow.js dan ONNX pada crop yang sama berada dalam tolerance;
+- **model quality:** classifier/detector dinilai pada evaluation manifest yang tidak bocor dari train/validation.
+
+Verification minimal:
+
+- source IDs pada train, validation, dan test saling lepas;
+- confusion matrix dan precision/recall/F1 per kelas classifier;
+- coverage setiap kelas dan situs dilaporkan;
+- calibration report bila confidence ditampilkan kepada pengguna;
+- metrik candidate detector dan false positive per panorama;
+- seluruh artifact menyertakan model, preprocessing, taxonomy, dataset manifest, dan code commit version.
 
 ## 21. Data, API, dan Configuration Changes
 
@@ -1057,7 +1323,9 @@ Wajib mencakup:
 - `accounts.must_change_password`;
 - foreign key eksplisit;
 - index sesuai query utama;
-- migration metadata table.
+- migration metadata table;
+- metadata prediction event: verified label, decision status, source, model/preprocessing/taxonomy/asset version, dan latency;
+- audit candidate hotspot: proposal, status review, reviewer, perubahan, dan versi tour/asset.
 
 ### Perubahan API terencana
 
@@ -1065,6 +1333,9 @@ Wajib mencakup:
 - Session event memerlukan capability token atau JWT siswa.
 - Quiz result tidak mempercayai `is_correct` dari client.
 - Auth mulai mendukung cookie aman selama compatibility Bearer masih aktif.
+- Endpoint prediksi menambahkan kontrak `verified`, `prediction`, dan `decision` tanpa menghapus field legacy selama compatibility window.
+- Endpoint log prediksi tidak mempercayai verified label, decision status, model version, atau confidence yang dikirim client; server mengikatnya ke hasil server atau menandai sumber browser secara eksplisit.
+- Endpoint candidate job/review bersifat admin-only, idempotent, terversi, dan tidak pernah auto-publish.
 - URL endpoint lainnya dipertahankan.
 
 ### Environment target
@@ -1079,6 +1350,9 @@ Nama final harus ditetapkan dalam `env.ts`, tetapi minimal mencakup:
 - trust proxy;
 - ML model path;
 - ML timeout dan queue limit;
+- ML model, preprocessing, taxonomy, dan dataset manifest version;
+- ML threshold configuration per versi/kelas;
+- candidate proposer feature flag, model path, timeout, concurrency, dan queue limit;
 - static/server frontend mode.
 
 Jangan memberikan nilai default production untuk secret.
@@ -1092,6 +1366,12 @@ Jangan memberikan nilai default production untuk secret.
 | Migration merusak data | Backup, dry run, orphan audit, restore rehearsal |
 | ML memblokir API | Worker thread, timeout, queue limit, circuit breaker sederhana |
 | Perbedaan output ONNX | Golden dataset dan tolerance yang disetujui |
+| Prediksi ML menimpa materi terverifikasi | Invarian domain, kontrak terpisah, decision-policy test, dan label efektif selalu dari admin |
+| Confidence dianggap sebagai probabilitas benar | Evaluasi kalibrasi, bahasa UI yang tepat, dan threshold terversi dari evaluation set |
+| Data leakage membuat metrik terlalu optimistis | Split berdasarkan panorama/node/situs dan validasi source ID di pipeline |
+| Bentuk candi gabungan memiliki label ambigu | Annotation guideline, taxonomy versioned, dan gate reviewer manusia |
+| Candidate detector menghasilkan false positive | Admin review wajib, no auto-publish, metrik false positive per panorama, dan kill switch |
+| Proposal lama menimpa tour baru | Asset/tour version check dan optimistic concurrency |
 | Frontend lama dan baru drift | Strangler route dan E2E parity sebelum cutover |
 | Asset hilang saat cleanup | Referensi `rg`, manifest asset, dan larangan delete LFS |
 | Shared hosting tidak mendukung worker/native module | Gate deployment dan fallback service terpisah yang disetujui pengguna |
@@ -1104,6 +1384,12 @@ Migrasi selesai hanya jika:
 - seluruh URL API yang dipertahankan lulus contract test;
 - tidak ada route bisnis di entry point;
 - backend dapat menyala tanpa ML;
+- label terverifikasi tidak pernah ditimpa hasil prediksi;
+- match, uncertain, mismatch, dan unavailable memiliki behavior yang teruji dan dapat diaudit;
+- kuis dan materi selalu menggunakan verified label;
+- setiap prediction event resmi dapat ditelusuri ke model, preprocessing, taxonomy, asset, dan source;
+- classifier memiliki test-set report tanpa leakage dan metrik per kelas;
+- candidate hotspot tidak pernah dipublikasikan tanpa reviewer;
 - error async selalu menghasilkan response terkontrol;
 - tidak ada akses lintas sekolah atau lintas guru;
 - nilai kuis dihitung server;
@@ -1131,7 +1417,13 @@ Model harus meminta keputusan pengguna sebelum fase terkait jika belum tersedia:
 7. Domain/origin production untuk cookie.
 8. Kemampuan hosting menjalankan worker thread dan ONNX native binding.
 9. Tolerance output yang diterima untuk migrasi TFJS ke ONNX.
-10. Maintenance window dan backup sebelum migration production.
+10. Taxonomy/definisi komponen geometri pada objek budaya yang tersusun dari beberapa bangun ruang.
+11. Role atau daftar reviewer yang berwenang menetapkan label terverifikasi.
+12. Threshold serta metrik minimum per kelas untuk classifier.
+13. Apakah prediksi browser fallback boleh masuk laporan penelitian resmi.
+14. Pendekatan/model candidate proposal yang akan diuji.
+15. Jumlah minimum anotasi, coverage situs, dan metrik minimum sebelum proposer diaktifkan.
+16. Maintenance window dan backup sebelum migration production.
 
 ## 25. Template Prompt untuk Model Eksekutor
 
@@ -1150,10 +1442,12 @@ Aturan:
 7. Jalankan semua verification yang disebutkan pada fase.
 8. Jika keputusan tidak ditentukan oleh plan, berhenti dan tanyakan kepada pengguna.
 9. Jangan menganggap task selesai bila test gagal.
-10. Setelah selesai, laporkan:
+10. Untuk Fase 8, jangan menimpa label terverifikasi, jangan menyamakan prediksi dengan ground truth, dan jangan auto-publish candidate hotspot.
+11. Setelah selesai, laporkan:
    - file yang berubah;
    - behavior yang berubah;
    - test/verification yang dijalankan dan hasilnya;
+   - untuk Fase 8: versi model/preprocessing/taxonomy/dataset manifest dan artifact evaluasi yang digunakan;
    - risiko dan pekerjaan tersisa;
    - apakah acceptance criteria fase telah terpenuhi.
 ```
@@ -1177,6 +1471,12 @@ Aturan:
 
 - command: hasil
 
+### ML evidence (wajib untuk Fase 8)
+
+- model/preprocessing/taxonomy/dataset manifest version
+- parity atau evaluation artifact
+- threshold dan approval yang digunakan
+
 ### Acceptance criteria
 
 - [x] kriteria terpenuhi
@@ -1190,4 +1490,3 @@ Aturan:
 
 Berhenti. Jangan otomatis mengerjakan fase berikutnya.
 ```
-

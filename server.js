@@ -22,6 +22,49 @@ const { errorHandler } = require('./src/middleware/error-handler');
 const { createAuthRepository } = require('./src/modules/auth/auth.repository');
 const { createAuthService } = require('./src/modules/auth/auth.service');
 const { createAuthRouter } = require('./src/modules/auth/auth.router');
+const { createSchoolsRepository } = require('./src/modules/schools/schools.repository');
+const { createSchoolsService } = require('./src/modules/schools/schools.service');
+const { createSchoolsRouter } = require('./src/modules/schools/schools.router');
+const { createAccountsRepository } = require('./src/modules/accounts/accounts.repository');
+const { createAccountsService } = require('./src/modules/accounts/accounts.service');
+const { createAccountsRouter } = require('./src/modules/accounts/accounts.router');
+const { createClassesRepository } = require('./src/modules/classes/classes.repository');
+const { createClassesService } = require('./src/modules/classes/classes.service');
+const { createClassesRouter } = require('./src/modules/classes/classes.router');
+const { createStudentsRepository } = require('./src/modules/students/students.repository');
+const { createStudentsService } = require('./src/modules/students/students.service');
+const { createStudentsRouter } = require('./src/modules/students/students.router');
+const { createSessionsRepository } = require('./src/modules/sessions/sessions.repository');
+const { createSessionsService } = require('./src/modules/sessions/sessions.service');
+const { createSessionsRouter } = require('./src/modules/sessions/sessions.router');
+const {
+  createLearningEventsRepository,
+} = require('./src/modules/learning-events/learning-events.repository');
+const {
+  createLearningEventsService,
+} = require('./src/modules/learning-events/learning-events.service');
+const {
+  createLearningEventsRouter,
+} = require('./src/modules/learning-events/learning-events.router');
+const { createScenesRepository } = require('./src/modules/scenes/scenes.repository');
+const { createScenesService } = require('./src/modules/scenes/scenes.service');
+const { createScenesRouter } = require('./src/modules/scenes/scenes.router');
+const {
+  escapeGeneratedHtml,
+  serializeInlineScriptValue,
+} = require('./src/modules/scenes/scenes.renderer');
+const { createObjectsRepository } = require('./src/modules/objects/objects.repository');
+const { createObjectsService } = require('./src/modules/objects/objects.service');
+const { createObjectsRouter } = require('./src/modules/objects/objects.router');
+const { createToursRepository } = require('./src/modules/tours/tours.repository');
+const { createToursService } = require('./src/modules/tours/tours.service');
+const { createToursRouter } = require('./src/modules/tours/tours.router');
+const { createDatasetRepository } = require('./src/modules/dataset/dataset.repository');
+const { createDatasetService } = require('./src/modules/dataset/dataset.service');
+const { createDatasetRouter } = require('./src/modules/dataset/dataset.router');
+const { createReportsRepository } = require('./src/modules/reports/reports.repository');
+const { createReportsService } = require('./src/modules/reports/reports.service');
+const { createReportsRouter } = require('./src/modules/reports/reports.router');
 const {
   createPublicWriteLimiter,
   createStaffLoginLimiter,
@@ -30,7 +73,6 @@ const { startHttpServer } = require('./src/server');
 const {
   assertFileIdentifier,
   InvalidFilePathError,
-  resolveIdentifierPath,
   resolveWithin,
 } = require('./src/shared/ids');
 
@@ -323,139 +365,30 @@ const { readAuthToken, requireAuth } = createAuthentication({
   verifyToken: token => authService.verifyToken(token),
 });
 
-// ── Auth middleware (lindungi endpoint write) ─────────
-// Filter laporan menggunakan scope dari token. Hanya super_admin yang boleh
-// memilih sekolah; school_admin dan teacher selalu memakai sekolah akunnya.
-function parseReportFilterId(value, fieldName) {
-  if (value === undefined || value === null || value === '') {
-    return { value: null };
-  }
-
-  const text = String(value);
-  const parsed = Number(text);
-  if (!/^[1-9]\d*$/.test(text) || !Number.isSafeInteger(parsed)) {
-    return {
-      error: {
-        status: 400,
-        message: `${fieldName} harus berupa bilangan bulat positif`,
-      },
-    };
-  }
-
-  return { value: parsed };
-}
-
-async function resolveReportScope(req) {
-  const role = req.account.role;
-  let requestedSchool = { value: null };
-  if (role === 'super_admin') {
-    requestedSchool = parseReportFilterId(req.query.school_id, 'school_id');
-    if (requestedSchool.error) return requestedSchool;
-  }
-
-  const requestedClass = parseReportFilterId(req.query.class_id, 'class_id');
-  if (requestedClass.error) return requestedClass;
-
-  const schoolId = role === 'super_admin'
-    ? requestedSchool.value
-    : Number(req.account.school_id);
-
-  if (role !== 'super_admin' && !Number.isSafeInteger(schoolId)) {
-    return {
-      error: {
-        status: 403,
-        message: 'Scope laporan akun tidak valid',
-      },
-    };
-  }
-
-  if (role === 'super_admin' && schoolId !== null) {
-    const [[school]] = await req.app.locals.dbPool.query(
-      'SELECT id FROM schools WHERE id = ?',
-      [schoolId]
-    );
-    if (!school) {
-      return {
-        error: {
-          status: 403,
-          message: 'Filter laporan di luar cakupan akun',
-        },
-      };
-    }
-  }
-
-  const classId = requestedClass.value;
-  if (classId !== null) {
-    let classSql = 'SELECT id FROM classes WHERE id = ?';
-    const classParams = [classId];
-    if (schoolId !== null) {
-      classSql += ' AND school_id = ?';
-      classParams.push(schoolId);
-    }
-    if (role === 'teacher') {
-      classSql += ' AND teacher_account_id = ?';
-      classParams.push(req.account.account_id);
-    }
-
-    const [[classroom]] = await req.app.locals.dbPool.query(classSql, classParams);
-    if (!classroom) {
-      return {
-        error: {
-          status: 403,
-          message: 'Filter laporan di luar cakupan akun',
-        },
-      };
-    }
-  }
-
-  const sessionClauses = [];
-  const sessionParams = [];
-  if (schoolId !== null) {
-    sessionClauses.push('s.school_id = ?');
-    sessionParams.push(schoolId);
-  }
-  if (role === 'teacher') {
-    sessionClauses.push(`EXISTS (
-      SELECT 1 FROM classes report_scope_class
-      WHERE report_scope_class.id = s.class_id
-        AND report_scope_class.teacher_account_id = ?
-    )`);
-    sessionParams.push(req.account.account_id);
-  }
-  if (classId !== null) {
-    sessionClauses.push('s.class_id = ?');
-    sessionParams.push(classId);
-  }
-
-  const classClauses = [];
-  const classParams = [];
-  if (schoolId !== null) {
-    classClauses.push('c.school_id = ?');
-    classParams.push(schoolId);
-  }
-  if (role === 'teacher') {
-    classClauses.push('c.teacher_account_id = ?');
-    classParams.push(req.account.account_id);
-  }
-
-  const selectedClassClauses = [...classClauses];
-  const selectedClassParams = [...classParams];
-  if (classId !== null) {
-    selectedClassClauses.push('c.id = ?');
-    selectedClassParams.push(classId);
-  }
-
-  return {
-    sessionFilterSql: sessionClauses.length ? `AND ${sessionClauses.join(' AND ')}` : '',
-    sessionParams,
-    availableClassFilterSql: classClauses.length ? `AND ${classClauses.join(' AND ')}` : '',
-    availableClassParams: classParams,
-    selectedClassFilterSql: selectedClassClauses.length
-      ? `AND ${selectedClassClauses.join(' AND ')}`
-      : '',
-    selectedClassParams,
-  };
-}
+const schoolsService = createSchoolsService(createSchoolsRepository(pool));
+const schoolsRouter = createSchoolsRouter({ service: schoolsService, requireAuth });
+const accountsService = createAccountsService(
+  createAccountsRepository(pool),
+  { hash: bcrypt.hash },
+);
+const accountsRouter = createAccountsRouter({ service: accountsService, requireAuth });
+const classesService = createClassesService(createClassesRepository(pool));
+const studentsService = createStudentsService(
+  createStudentsRepository(pool),
+  classesService,
+  { hash: bcrypt.hash },
+  { generate: () => String(crypto.randomInt(100000, 1000000)) },
+);
+const classesRouter = createClassesRouter({
+  service: classesService,
+  studentsService,
+  requireAuth,
+});
+const studentsRouter = createStudentsRouter({
+  service: studentsService,
+  requireAuth,
+  verifyToken: token => authService.verifyToken(token),
+});
 
 // ── Rate limit endpoint publik (tulis data siswa) ─────
 const publicWriteLimiter = createPublicWriteLimiter();
@@ -474,58 +407,23 @@ app.get('/api/ml-placeholder.json', (req, res) =>
   res.sendFile(path.join(__dirname, 'api', 'ml-placeholder.json'))
 );
 
-// ── Helper JSON ───────────────────────────────────────
-function readScene(sceneId) {
-  const file = resolveIdentifierPath(DATA_DIR, { id: sceneId, suffix: '.json', label: 'scene_id' });
-  if (!fs.existsSync(file)) return null;
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
-}
-function writeScene(sceneId, data) {
-  assertFileIdentifier(sceneId, 'scene_id');
-  const json = JSON.stringify(data, null, 2);
-  // Tulis ke data/ (sumber backend)
-  fs.writeFileSync(resolveIdentifierPath(DATA_DIR, { id: sceneId, suffix: '.json', label: 'scene_id' }), json, 'utf8');
-  // Sinkron ke public/data/ agar GitHub Pages selalu up-to-date
-  const pubDataDir = path.join(PUBLIC_DIR, 'data');
-  if (!fs.existsSync(pubDataDir)) fs.mkdirSync(pubDataDir, { recursive: true });
-  fs.writeFileSync(resolveIdentifierPath(pubDataDir, { id: sceneId, suffix: '.json', label: 'scene_id' }), json, 'utf8');
-}
-
-// ── Pemetaan soal kuis → konsep geometri (untuk rekomendasi dashboard guru) ──
-const GEOMETRY_LABELS_ID = {
-  'balok': 'Balok', 'kerucut': 'Kerucut', 'limas-segiempat': 'Limas Segiempat',
-  'prisma-segitiga': 'Prisma Segitiga', 'setengah-bola': 'Setengah Bola', 'tabung': 'Tabung',
-};
-let quizConceptMapCache = null;
-function questionIdToConcept(questionId) {
-  if (!quizConceptMapCache) {
-    quizConceptMapCache = {};
-    try {
-      const quiz = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'quiz.json'), 'utf8'));
-      (quiz.questions || []).forEach(q => { quizConceptMapCache[q.id] = q.class_id; });
-    } catch { /* quiz.json opsional — rekomendasi konsep cuma dilewati */ }
-  }
-  return quizConceptMapCache[questionId] || null;
-}
-function conceptRecommendation(label, accuracyPct, attempts) {
-  const name = GEOMETRY_LABELS_ID[label] || label;
-  if (attempts < 3) return `Data untuk konsep ${name} masih sedikit (${attempts} percobaan) — belum cukup untuk rekomendasi yang andal.`;
-  if (accuracyPct < 60) return `Sebagian besar siswa masih kesulitan dengan konsep ${name} (akurasi ${accuracyPct}%). Guru disarankan memberi contoh konkret tambahan sebelum sesi VR berikutnya.`;
-  if (accuracyPct < 85) return `Siswa sudah cukup baik pada konsep ${name} (akurasi ${accuracyPct}%), tapi masih perlu penguatan pada beberapa siswa.`;
-  return `Siswa sudah menguasai konsep ${name} dengan baik (akurasi ${accuracyPct}%).`;
-}
-
 // ── VR HTML template generator ────────────────────────
 function generateVrPage(scene) {
-  const cursorColor = scene.cursor_color || '#00e5ff';
-  const labelColor  = scene.label_color  || '#00e5ff';
+  const sceneName = escapeGeneratedHtml(scene.name);
+  const sceneNameUpper = escapeGeneratedHtml(scene.name.toUpperCase());
+  const sceneLocation = escapeGeneratedHtml(scene.location);
+  const sceneEra = escapeGeneratedHtml(scene.era);
+  const skyColor = escapeGeneratedHtml(scene.sky_color || '#1a2744');
+  const groundColor = escapeGeneratedHtml(scene.ground_color || '#2d4a2a');
+  const cursorColor = escapeGeneratedHtml(scene.cursor_color || '#00e5ff');
+  const labelColor = escapeGeneratedHtml(scene.label_color || '#00e5ff');
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0F172A">
-  <title>VR-GeoNusa — ${scene.name}</title>
+  <title>VR-GeoNusa — ${sceneName}</title>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
   <link rel="stylesheet" href="../css/ui.css">
@@ -541,13 +439,13 @@ function generateVrPage(scene) {
     </svg>
   </div>
   <h1>VR-GeoNusa</h1>
-  <p class="tagline">${scene.name} — ${scene.location}</p>
+  <p class="tagline">${sceneName} — ${sceneLocation}</p>
   <div class="scene-list">
     <div class="scene-card" onclick="window.location.href='../vr/tour-borobudur.html'">
       <div class="sc-name">Candi Borobudur</div><div class="sc-loc">Magelang, Jawa Tengah</div>
     </div>
     <div class="scene-card active">
-      <div class="sc-name">${scene.name}</div><div class="sc-loc">${scene.location}</div>
+      <div class="sc-name">${sceneName}</div><div class="sc-loc">${sceneLocation}</div>
     </div>
   </div>
   <div class="login-mode-tabs">
@@ -571,8 +469,8 @@ function generateVrPage(scene) {
 <div id="hud" style="display:none">
   <div id="hud-scene">
     <div class="hud-label">VR-GeoNusa</div>
-    <div class="hud-name" id="hud-name">${scene.name}</div>
-    <div class="hud-loc" id="hud-loc">${scene.location}</div>
+    <div class="hud-name" id="hud-name">${sceneName}</div>
+    <div class="hud-loc" id="hud-loc">${sceneLocation}</div>
   </div>
 </div>
 <div id="controls-hint">WASD bergerak &nbsp;·&nbsp; Mouse lihat &nbsp;·&nbsp; Tahan kursor ke objek untuk identifikasi</div>
@@ -618,13 +516,13 @@ function generateVrPage(scene) {
   loading-screen="enabled:false"
   style="display:none">
   <a-assets timeout="10000"></a-assets>
-  <a-sky color="${scene.sky_color || '#1a2744'}"></a-sky>
+  <a-sky color="${skyColor}"></a-sky>
   <a-entity light="type:ambient; color:#8899aa; intensity:0.45"></a-entity>
   <a-entity light="type:directional; color:#ffeedd; intensity:0.85" position="2 4 2"></a-entity>
-  <a-plane position="0 0 0" rotation="-90 0 0" width="80" height="80" color="${scene.ground_color || '#2d4a2a'}" roughness="1" data-ground></a-plane>
+  <a-plane position="0 0 0" rotation="-90 0 0" width="80" height="80" color="${groundColor}" roughness="1" data-ground></a-plane>
   <a-entity id="scene-label-wrap" position="0 5 -8">
-    <a-text id="scene-label-main" value="${scene.name.toUpperCase()}" align="center" color="${labelColor}" width="10" opacity="0.55"></a-text>
-    <a-text id="scene-label-sub"  value="${scene.era}" align="center" color="#ffffff" width="6" position="0 -0.45 0" opacity="0.25"></a-text>
+    <a-text id="scene-label-main" value="${sceneNameUpper}" align="center" color="${labelColor}" width="10" opacity="0.55"></a-text>
+    <a-text id="scene-label-sub"  value="${sceneEra}" align="center" color="#ffffff" width="6" position="0 -0.45 0" opacity="0.25"></a-text>
   </a-entity>
   <a-text value="Arahkan kursor ke objek berwarna · tahan 1.5 detik · identifikasi geometri"
     align="center" color="#ffffff" width="7" opacity="0.2"
@@ -643,14 +541,14 @@ function generateVrPage(scene) {
 <script src="../js/html-sanitize.js"></script>
 <script src="../js/app.js"></script>
 <script>
-currentScene = ${JSON.stringify(scene.scene_id)};
+currentScene = ${serializeInlineScriptValue(scene.scene_id)};
 // Scene buatan admin tidak ada di SCENES statis bawaan app.js (cuma
 // berisi 'prambanan') — daftarkan di sini supaya loadScene() di app.js
 // tidak diam-diam berhenti dan gagal menampilkan scene-nya.
 SCENES[currentScene] = {
-  name: ${JSON.stringify(scene.name)},
-  location: ${JSON.stringify(scene.location || '')},
-  era: ${JSON.stringify(scene.era || '')},
+  name: ${serializeInlineScriptValue(scene.name)},
+  location: ${serializeInlineScriptValue(scene.location || '')},
+  era: ${serializeInlineScriptValue(scene.era || '')},
 };
 document.addEventListener('DOMContentLoaded', () => {
   const vrscene = document.getElementById('vrscene');
@@ -704,105 +602,8 @@ app.post('/api/auth/logout', (req, res) => {
 // REST API — SEKOLAH & AKUN GURU (super_admin only kecuali GET publik)
 // ══════════════════════════════════════════════════════
 
-// GET /api/schools — publik (dipakai dropdown sekolah di splash screen)
-app.get('/api/schools', async (req, res) => {
-  const [rows] = await pool.query('SELECT id, name FROM schools ORDER BY name');
-  res.json({ success: true, data: rows });
-});
-
-// POST /api/schools (super_admin)
-app.post('/api/schools', requireAuth, requireRole('super_admin'), async (req, res) => {
-  const { name, code } = req.body || {};
-  if (!name) return res.status(400).json({ success: false, message: 'name wajib diisi' });
-  const [result] = await pool.query('INSERT INTO schools (name, code) VALUES (?, ?)', [name, code || null]);
-  res.status(201).json({ success: true, data: { id: result.insertId, name, code } });
-});
-
-// DELETE /api/schools/:id (super_admin)
-app.delete('/api/schools/:id', requireAuth, requireRole('super_admin'), async (req, res) => {
-  await pool.query('DELETE FROM schools WHERE id = ?', [req.params.id]);
-  res.json({ success: true, message: 'Sekolah dihapus' });
-});
-
-// GET /api/accounts — super_admin: semua akun; school_admin: akun guru di
-// sekolahnya sendiri saja (tanpa password_hash)
-app.get('/api/accounts', requireAuth, requireAnyRole('super_admin', 'school_admin'), async (req, res) => {
-  let sql = `
-    SELECT a.id, a.username, a.role, a.school_id, s.name AS school_name, a.created_at
-    FROM accounts a LEFT JOIN schools s ON s.id = a.school_id
-    WHERE 1=1`;
-  const params = [];
-  if (req.account.role !== 'super_admin') { sql += ' AND a.school_id = ?'; params.push(req.account.school_id); }
-  sql += ' ORDER BY a.created_at DESC';
-  const [rows] = await pool.query(sql, params);
-  res.json({ success: true, data: rows });
-});
-
-// POST /api/accounts — super_admin: bikin akun peran apa saja, sekolah mana
-// saja; school_admin: cuma bisa bikin akun guru, otomatis di sekolahnya
-// sendiri (school_id dari body diabaikan supaya tidak bisa dipalsukan).
-app.post('/api/accounts', requireAuth, requireAnyRole('super_admin', 'school_admin'), async (req, res) => {
-  const { username, password, role } = req.body || {};
-  let { school_id } = req.body || {};
-  if (!username || !password) return res.status(400).json({ success: false, message: 'username dan password wajib diisi' });
-  if (password.length < 6) return res.status(400).json({ success: false, message: 'Password minimal 6 karakter' });
-
-  let finalRole;
-  if (req.account.role === 'super_admin') {
-    finalRole = ['super_admin', 'school_admin', 'teacher'].includes(role) ? role : 'teacher';
-    if (finalRole !== 'super_admin' && !school_id)
-      return res.status(400).json({ success: false, message: 'school_id wajib untuk akun school_admin/guru' });
-  } else {
-    // school_admin cuma boleh bikin akun guru di sekolahnya sendiri
-    finalRole = 'teacher';
-    school_id = req.account.school_id;
-  }
-
-  const [[existing]] = await pool.query('SELECT id FROM accounts WHERE username = ?', [username]);
-  if (existing) return res.status(409).json({ success: false, message: `Username "${username}" sudah dipakai` });
-
-  const hash = await bcrypt.hash(password, 10);
-  const [result] = await pool.query(
-    'INSERT INTO accounts (username, password_hash, role, school_id) VALUES (?, ?, ?, ?)',
-    [username, hash, finalRole, finalRole === 'super_admin' ? null : school_id]
-  );
-  res.status(201).json({ success: true, data: { id: result.insertId, username, role: finalRole, school_id: school_id || null } });
-});
-
-// Helper: school_admin cuma boleh mengubah akun guru di sekolahnya sendiri
-// (bukan sesama school_admin/super_admin, bukan akun di sekolah lain).
-async function assertAccountAccess(req, accountId) {
-  const [[acc]] = await pool.query('SELECT * FROM accounts WHERE id = ?', [accountId]);
-  if (!acc) return { error: 404, message: 'Akun tidak ditemukan' };
-  if (req.account.role === 'super_admin') return { acc };
-  if (acc.role === 'teacher' && acc.school_id === req.account.school_id) return { acc };
-  return { error: 403, message: 'Tidak punya akses untuk akun ini' };
-}
-
-// PUT /api/accounts/:id/reset-password (super_admin: semua; school_admin: guru di sekolahnya)
-app.put('/api/accounts/:id/reset-password', requireAuth, requireAnyRole('super_admin', 'school_admin'), async (req, res) => {
-  const check = await assertAccountAccess(req, req.params.id);
-  if (check.error) return res.status(check.error).json({ success: false, message: check.message });
-  const { new_password } = req.body || {};
-  if (!new_password || new_password.length < 6)
-    return res.status(400).json({ success: false, message: 'Password minimal 6 karakter' });
-  const hash = await bcrypt.hash(new_password, 10);
-  await pool.query(
-    'UPDATE accounts SET password_hash = ?, auth_version = auth_version + 1 WHERE id = ?',
-    [hash, req.params.id]
-  );
-  res.json({ success: true, message: 'Password akun berhasil direset' });
-});
-
-// DELETE /api/accounts/:id (super_admin: semua; school_admin: guru di sekolahnya)
-app.delete('/api/accounts/:id', requireAuth, requireAnyRole('super_admin', 'school_admin'), async (req, res) => {
-  if (Number(req.params.id) === req.account.account_id)
-    return res.status(400).json({ success: false, message: 'Tidak bisa menghapus akun sendiri' });
-  const check = await assertAccountAccess(req, req.params.id);
-  if (check.error) return res.status(check.error).json({ success: false, message: check.message });
-  await pool.query('DELETE FROM accounts WHERE id = ?', [req.params.id]);
-  res.json({ success: true, message: 'Akun dihapus' });
-});
+app.use('/api/schools', schoolsRouter);
+app.use('/api/accounts', accountsRouter);
 
 // ══════════════════════════════════════════════════════
 // REST API — KELAS & SISWA (login siswa sungguhan)
@@ -811,469 +612,68 @@ app.delete('/api/accounts/:id', requireAuth, requireAnyRole('super_admin', 'scho
 // dengan peserta yang sudah diketahui, bukan pendaftaran publik terbuka.
 // ══════════════════════════════════════════════════════
 
-function generateStudentPassword() {
-  // PIN 6 digit — cukup untuk siswa SMP, gampang dibagikan guru ke kelas,
-  // bukan level keamanan akun staf (yang pakai password bebas + bcrypt sama).
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-async function assertClassAccess(req, classId) {
-  const [[cls]] = await pool.query('SELECT * FROM classes WHERE id = ?', [classId]);
-  if (!cls) return { error: 404, message: 'Kelas tidak ditemukan' };
-  if (req.account.role === 'super_admin') return { cls };
-  if (req.account.role === 'school_admin' && cls.school_id === req.account.school_id) return { cls };
-  if (req.account.role === 'teacher' && cls.teacher_account_id === req.account.account_id) return { cls };
-  return { error: 403, message: 'Bukan kelas Anda' };
-}
-
-// GET /api/classes — guru: kelasnya sendiri; school_admin: semua kelas di
-// sekolahnya; super_admin: semua (bisa filter ?school_id=)
-app.get('/api/classes', requireAuth, async (req, res) => {
-  let sql = `
-    SELECT c.*, s.name AS school_name, a.username AS teacher_username,
-      (SELECT COUNT(*) FROM students st WHERE st.class_id = c.id) AS student_count
-    FROM classes c
-    JOIN schools s ON s.id = c.school_id
-    JOIN accounts a ON a.id = c.teacher_account_id
-    WHERE 1=1`;
-  const params = [];
-  if (req.account.role === 'super_admin') {
-    if (req.query.school_id) { sql += ' AND c.school_id = ?'; params.push(req.query.school_id); }
-  } else if (req.account.role === 'school_admin') {
-    sql += ' AND c.school_id = ?';
-    params.push(req.account.school_id);
-  } else {
-    sql += ' AND c.teacher_account_id = ?';
-    params.push(req.account.account_id);
-  }
-  sql += ' ORDER BY c.created_at DESC';
-  const [rows] = await pool.query(sql, params);
-  res.json({ success: true, data: rows });
-});
-
-// POST /api/classes — guru membuat kelas untuk dirinya sendiri; school_admin
-// membuat kelas untuk salah satu guru di sekolahnya (wajib pilih teacher_account_id)
-app.post('/api/classes', requireAuth, async (req, res) => {
-  if (req.account.role === 'super_admin')
-    return res.status(400).json({ success: false, message: 'super_admin tidak mengajar kelas — buat lewat akun guru' });
-  const { class_name, grade_level, academic_year } = req.body || {};
-  if (!class_name) return res.status(400).json({ success: false, message: 'class_name wajib diisi' });
-
-  let teacherAccountId = req.account.account_id;
-  if (req.account.role === 'school_admin') {
-    const requestedTeacherId = req.body?.teacher_account_id;
-    if (!requestedTeacherId) return res.status(400).json({ success: false, message: 'teacher_account_id wajib dipilih' });
-    const [[teacher]] = await pool.query(
-      "SELECT id FROM accounts WHERE id = ? AND role = 'teacher' AND school_id = ?",
-      [requestedTeacherId, req.account.school_id]
-    );
-    if (!teacher) return res.status(400).json({ success: false, message: 'Guru tidak ditemukan di sekolah ini' });
-    teacherAccountId = teacher.id;
-  }
-
-  const [result] = await pool.query(
-    'INSERT INTO classes (school_id, teacher_account_id, class_name, grade_level, academic_year) VALUES (?, ?, ?, ?, ?)',
-    [req.account.school_id, teacherAccountId, class_name, grade_level || null, academic_year || null]
-  );
-  res.status(201).json({ success: true, data: { id: result.insertId, class_name } });
-});
-
-// DELETE /api/classes/:id
-app.delete('/api/classes/:id', requireAuth, async (req, res) => {
-  const check = await assertClassAccess(req, req.params.id);
-  if (check.error) return res.status(check.error).json({ success: false, message: check.message });
-  await pool.query('DELETE FROM classes WHERE id = ?', [req.params.id]);
-  res.json({ success: true, message: 'Kelas dihapus (siswa di kelas ini tidak ikut terhapus)' });
-});
-
-// GET /api/classes/:id/students — roster satu kelas
-app.get('/api/classes/:id/students', requireAuth, async (req, res) => {
-  const check = await assertClassAccess(req, req.params.id);
-  if (check.error) return res.status(check.error).json({ success: false, message: check.message });
-  const [rows] = await pool.query(
-    'SELECT id, name, student_number, created_at FROM students WHERE class_id = ? ORDER BY name', [req.params.id]
-  );
-  res.json({ success: true, data: rows });
-});
-
-// POST /api/classes/:id/students/bulk — tambah banyak siswa sekaligus.
-// Body: { students: [{ name, student_number }, ...] }
-// Password dibuat otomatis & DIKEMBALIKAN SEKALI di response ini saja (tidak
-// disimpan plaintext) — guru harus salin/cetak sekarang untuk dibagikan.
-app.post('/api/classes/:id/students/bulk', requireAuth, async (req, res) => {
-  const check = await assertClassAccess(req, req.params.id);
-  if (check.error) return res.status(check.error).json({ success: false, message: check.message });
-  const list = Array.isArray(req.body?.students) ? req.body.students : [];
-  if (list.length === 0) return res.status(400).json({ success: false, message: 'Kirim array "students" (minimal 1)' });
-
-  const created = [];
-  const skipped = [];
-  for (const s of list) {
-    const name = (s.name || '').trim();
-    const studentNumber = (s.student_number || '').trim();
-    if (!name || !studentNumber) { skipped.push({ ...s, reason: 'nama/nomor induk kosong' }); continue; }
-    const [[existing]] = await pool.query(
-      'SELECT id FROM students WHERE school_id = ? AND student_number = ?', [check.cls.school_id, studentNumber]
-    );
-    if (existing) { skipped.push({ ...s, reason: 'nomor induk sudah dipakai di sekolah ini' }); continue; }
-    const plainPassword = generateStudentPassword();
-    const hash = await bcrypt.hash(plainPassword, 10);
-    const [result] = await pool.query(
-      'INSERT INTO students (school_id, class_id, name, student_number, password_hash) VALUES (?, ?, ?, ?, ?)',
-      [check.cls.school_id, req.params.id, name, studentNumber, hash]
-    );
-    created.push({ id: result.insertId, name, student_number: studentNumber, password: plainPassword });
-  }
-  res.status(201).json({ success: true, created, skipped });
-});
-
-// PUT /api/students/:id/reset-password
-app.put('/api/students/:id/reset-password', requireAuth, async (req, res) => {
-  const [[student]] = await pool.query('SELECT * FROM students WHERE id = ?', [req.params.id]);
-  if (!student) return res.status(404).json({ success: false, message: 'Siswa tidak ditemukan' });
-  const check = await assertClassAccess(req, student.class_id);
-  if (check.error) return res.status(check.error).json({ success: false, message: check.message });
-  const plainPassword = generateStudentPassword();
-  const hash = await bcrypt.hash(plainPassword, 10);
-  await pool.query(
-    'UPDATE students SET password_hash = ?, auth_version = auth_version + 1 WHERE id = ?',
-    [hash, student.id]
-  );
-  res.json({ success: true, password: plainPassword });
-});
-
-// DELETE /api/students/:id
-app.delete('/api/students/:id', requireAuth, async (req, res) => {
-  const [[student]] = await pool.query('SELECT * FROM students WHERE id = ?', [req.params.id]);
-  if (!student) return res.status(404).json({ success: false, message: 'Siswa tidak ditemukan' });
-  const check = await assertClassAccess(req, student.class_id);
-  if (check.error) return res.status(check.error).json({ success: false, message: check.message });
-  await pool.query('DELETE FROM students WHERE id = ?', [student.id]);
-  res.json({ success: true, message: 'Siswa dihapus' });
-});
-
-async function requireStudent(req, res, next) {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-  try {
-    const data = token ? await authService.verifyToken(token) : null;
-    if (!data || data.kind !== 'student') {
-      return res.status(401).json({ success: false, message: 'Unauthorized — login siswa terlebih dahulu' });
-    }
-    req.student = data;
-    next();
-  } catch (error) {
-    next(error);
-  }
-}
-
-// GET /api/students/me/results — siswa melihat hasil belajarnya sendiri
-// (sesi eksplorasi + akurasi kuis). Diskop lewat student_id dari token,
-// bukan dari parameter — siswa tidak bisa melihat hasil siswa lain.
-app.get('/api/students/me/results', requireStudent, async (req, res) => {
-  const studentId = req.student.student_id;
-
-  const [sessions] = await pool.query(`
-    SELECT id, scene_name, started_at, ended_at, duration_seconds
-    FROM sessions WHERE student_id = ? ORDER BY started_at DESC LIMIT 50
-  `, [studentId]);
-
-  const [[quizTotals]] = await pool.query(`
-    SELECT COUNT(*) AS total_attempts,
-      SUM(q.is_correct) AS total_correct,
-      ROUND(100.0 * SUM(q.is_correct) / COUNT(*), 1) AS accuracy_pct
-    FROM quiz_results q JOIN sessions s ON s.id = q.session_id
-    WHERE s.student_id = ?
-  `, [studentId]);
-
-  const [perQuestion] = await pool.query(`
-    SELECT q.question_id, q.answer, q.is_correct, q.created_at
-    FROM quiz_results q JOIN sessions s ON s.id = q.session_id
-    WHERE s.student_id = ? ORDER BY q.created_at DESC LIMIT 50
-  `, [studentId]);
-
-  const [[interactionTotals]] = await pool.query(`
-    SELECT COUNT(*) AS total_interactions
-    FROM interactions i JOIN sessions s ON s.id = i.session_id
-    WHERE s.student_id = ?
-  `, [studentId]);
-
-  res.json({
-    success: true,
-    data: {
-      name: req.student.name,
-      totals: {
-        total_sessions: sessions.length,
-        total_quiz_attempts: quizTotals.total_attempts || 0,
-        quiz_accuracy_pct: quizTotals.accuracy_pct || 0,
-        total_interactions: interactionTotals.total_interactions || 0,
-      },
-      sessions, perQuestion,
-    },
-  });
-});
+app.use('/api/classes', classesRouter);
+app.use('/api/students', studentsRouter);
 
 // ══════════════════════════════════════════════════════
 // REST API — SCENES (CRUD)
 // ══════════════════════════════════════════════════════
 
-// GET /api/scenes
-app.get('/api/scenes', (req, res) => {
-  const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json'));
-  const scenes = files
-    .map(f => readScene(path.basename(f, '.json')))
-    // data/ juga menyimpan config non-scene (geometry-labels.json, quiz.json,
-    // tour-borobudur.json) — hanya file berbentuk scene (scene_id + objects[])
-    // yang dianggap scene oleh admin panel.
-    .filter(data => data && typeof data.scene_id === 'string' && Array.isArray(data.objects))
-    .map(data => ({ scene_id: data.scene_id, name: data.name, location: data.location, era: data.era, obj_count: data.objects.length }));
-  res.json({ success: true, data: scenes });
+const scenesRepository = createScenesRepository({
+  dataDir: DATA_DIR,
+  publicDataDir: path.join(PUBLIC_DIR, 'data'),
+  vrDir: VR_DIR,
+});
+const scenesService = createScenesService(
+  scenesRepository,
+  { render: scene => generateVrPage(scene) },
+);
+const objectsService = createObjectsService(createObjectsRepository(scenesRepository));
+const superAdminOnly = requireRole('super_admin');
+const scenesRouter = createScenesRouter({
+  service: scenesService,
+  requireAuth,
+  requireSuperAdmin: superAdminOnly,
+});
+const objectsRouter = createObjectsRouter({
+  service: objectsService,
+  requireAuth,
+  requireSuperAdmin: superAdminOnly,
 });
 
-// GET /api/scenes/:id
-app.get('/api/scenes/:id', (req, res) => {
-  const data = readScene(req.params.id);
-  if (!data) return res.status(404).json({ success: false, message: 'Scene tidak ditemukan' });
-  res.json({ success: true, data });
-});
-
-// POST /api/scenes — buat scene baru (auth required)
-app.post('/api/scenes', requireAuth, requireRole('super_admin'), (req, res) => {
-  const { scene_id, name, location, era, sky_color, ground_color, cursor_color, label_color } = req.body;
-  if (!scene_id || !name)
-    return res.status(400).json({ success: false, message: 'scene_id dan name wajib diisi' });
-  const id = assertFileIdentifier(scene_id, 'scene_id');
-  if (readScene(id))
-    return res.status(409).json({ success: false, message: `Scene "${id}" sudah ada` });
-  const newScene = {
-    scene_id: id, name, location: location || '', era: era || '',
-    sky_color: sky_color || '#1a2744', ground_color: ground_color || '#2d4a2a',
-    cursor_color: cursor_color || '#00e5ff', label_color: label_color || '#00e5ff',
-    objects: [],
-  };
-  writeScene(id, newScene);
-  // Generate VR HTML page
-  const vrPage = generateVrPage(newScene);
-  fs.writeFileSync(resolveIdentifierPath(VR_DIR, { id, suffix: '.html', label: 'scene_id' }), vrPage, 'utf8');
-  res.status(201).json({ success: true, data: newScene, vr_url: `/vr/${id}.html` });
-});
-
-// PUT /api/scenes/:id — update metadata (auth required)
-app.put('/api/scenes/:id', requireAuth, requireRole('super_admin'), (req, res) => {
-  const data = readScene(req.params.id);
-  if (!data) return res.status(404).json({ success: false, message: 'Scene tidak ditemukan' });
-  const allowed = ['name','location','era','sky_color','ground_color','cursor_color','label_color'];
-  allowed.forEach(k => { if (req.body[k] !== undefined) data[k] = req.body[k]; });
-  writeScene(req.params.id, data);
-  // Regenerate VR page
-  fs.writeFileSync(resolveIdentifierPath(VR_DIR, { id: req.params.id, suffix: '.html', label: 'scene_id' }), generateVrPage(data), 'utf8');
-  res.json({ success: true, data });
-});
-
-// DELETE /api/scenes/:id — hapus scene (auth required)
-app.delete('/api/scenes/:id', requireAuth, requireRole('super_admin'), (req, res) => {
-  const id = assertFileIdentifier(req.params.id, 'scene_id');
-  if (['prambanan'].includes(id))
-    return res.status(403).json({ success: false, message: 'Scene default tidak bisa dihapus' });
-  const file = resolveIdentifierPath(DATA_DIR, { id, suffix: '.json', label: 'scene_id' });
-  if (!fs.existsSync(file)) return res.status(404).json({ success: false, message: 'Scene tidak ditemukan' });
-  fs.unlinkSync(file);
-  const pubFile = resolveIdentifierPath(path.join(PUBLIC_DIR, 'data'), { id, suffix: '.json', label: 'scene_id' });
-  if (fs.existsSync(pubFile)) fs.unlinkSync(pubFile);
-  const vrFile = resolveIdentifierPath(VR_DIR, { id, suffix: '.html', label: 'scene_id' });
-  if (fs.existsSync(vrFile)) fs.unlinkSync(vrFile);
-  res.json({ success: true, message: `Scene "${id}" berhasil dihapus` });
-});
+app.use('/api/scenes', scenesRouter);
+app.use('/api/scenes', objectsRouter);
 
 // ══════════════════════════════════════════════════════
-// REST API — OBJECTS (auth required untuk write)
+// REST API — TUR 360° DAN DATASET ML
 // ══════════════════════════════════════════════════════
-
-app.get('/api/scenes/:id/objects', (req, res) => {
-  const data = readScene(req.params.id);
-  if (!data) return res.status(404).json({ success: false, message: 'Scene tidak ditemukan' });
-  res.json({ success: true, data: data.objects });
-});
-
-app.post('/api/scenes/:id/objects', requireAuth, requireRole('super_admin'), (req, res) => {
-  const data = readScene(req.params.id);
-  if (!data) return res.status(404).json({ success: false, message: 'Scene tidak ditemukan' });
-  const obj = req.body;
-  if (!obj.id) return res.status(400).json({ success: false, message: 'Field "id" wajib diisi' });
-  if (data.objects.find(o => o.id === obj.id))
-    return res.status(409).json({ success: false, message: `ID "${obj.id}" sudah ada` });
-  data.objects.push(obj);
-  writeScene(req.params.id, data);
-  res.status(201).json({ success: true, data: obj });
-});
-
-app.put('/api/scenes/:id/objects/:objId', requireAuth, requireRole('super_admin'), (req, res) => {
-  const data = readScene(req.params.id);
-  if (!data) return res.status(404).json({ success: false, message: 'Scene tidak ditemukan' });
-  const idx = data.objects.findIndex(o => o.id === req.params.objId);
-  if (idx < 0) return res.status(404).json({ success: false, message: 'Objek tidak ditemukan' });
-  data.objects[idx] = { ...data.objects[idx], ...req.body, id: req.params.objId };
-  writeScene(req.params.id, data);
-  res.json({ success: true, data: data.objects[idx] });
-});
-
-app.delete('/api/scenes/:id/objects/:objId', requireAuth, requireRole('super_admin'), (req, res) => {
-  const data = readScene(req.params.id);
-  if (!data) return res.status(404).json({ success: false, message: 'Scene tidak ditemukan' });
-  const before = data.objects.length;
-  data.objects = data.objects.filter(o => o.id !== req.params.objId);
-  if (data.objects.length === before)
-    return res.status(404).json({ success: false, message: 'Objek tidak ditemukan' });
-  writeScene(req.params.id, data);
-  res.json({ success: true, message: `Objek "${req.params.objId}" berhasil dihapus` });
-});
-
-// ══════════════════════════════════════════════════════
-// REST API — DATASET ML (capture crop dari tur 360°)
-// ══════════════════════════════════════════════════════
-
-function readGeometryClassIds() {
-  const file = path.join(DATA_DIR, 'geometry-labels.json');
-  if (!fs.existsSync(file)) return [];
-  const json = JSON.parse(fs.readFileSync(file, 'utf8'));
-  return (json.classes || []).map(c => c.class_id);
-}
-
-// POST /api/dataset/:classId — simpan crop hasil capture dari tur 360° (auth required)
-// Body: raw image bytes (Content-Type: image/jpeg atau image/png), max 5MB.
-app.post('/api/dataset/:classId', requireAuth, requireRole('super_admin'), (req, res) => {
-  const classId = assertFileIdentifier(req.params.classId, 'class_id');
-  const validIds = readGeometryClassIds();
-  if (!validIds.includes(classId))
-    return res.status(400).json({ success: false, message: `class_id "${classId}" tidak dikenal. Valid: ${validIds.join(', ')}` });
-
-  const chunks = [];
-  req.on('data', chunk => chunks.push(chunk));
-  req.on('end', () => {
-    try {
-      const buf = Buffer.concat(chunks);
-      if (buf.length > 5 * 1024 * 1024)
-        return res.status(413).json({ success: false, message: 'Gambar maksimal 5MB' });
-
-      const ct = req.headers['content-type'] || '';
-      const ext = ct.includes('png') ? 'png' : 'jpg';
-      const classDir = resolveIdentifierPath(resolveWithin(DATASET_DIR, 'train'), { id: classId, label: 'class_id' });
-      if (!fs.existsSync(classDir)) fs.mkdirSync(classDir, { recursive: true });
-
-      const existing = fs.readdirSync(classDir).filter(f => f.endsWith('.jpg') || f.endsWith('.png'));
-      const nextIndex = existing.length + 1;
-      const filename = `${classId}_${String(nextIndex).padStart(4, '0')}.${ext}`;
-      fs.writeFileSync(resolveWithin(classDir, filename), buf);
-
-      res.status(201).json({ success: true, filename, class_id: classId, total: nextIndex });
-    } catch (e) {
-      res.status(500).json({ success: false, message: e.message });
-    }
-  });
-});
-
-// GET /api/dataset/stats — hitung jumlah gambar per kelas (train/val/test)
-app.get('/api/dataset/stats', (req, res) => {
-  const validIds = readGeometryClassIds();
-  const stats = validIds.map(classId => {
-    assertFileIdentifier(classId, 'class_id');
-    const counts = {};
-    ['train', 'val', 'test'].forEach(split => {
-      const dir = resolveIdentifierPath(resolveWithin(DATASET_DIR, split), { id: classId, label: 'class_id' });
-      counts[split] = fs.existsSync(dir)
-        ? fs.readdirSync(dir).filter(f => f.endsWith('.jpg') || f.endsWith('.png')).length
-        : 0;
-    });
-    return { class_id: classId, ...counts, total: counts.train + counts.val + counts.test };
-  });
-  res.json({ success: true, data: stats });
-});
-
-// ══════════════════════════════════════════════════════
-// REST API — TUR 360° (identifikasi geometri per area, multi-tur)
-// Setiap situs dengan foto 360° punya file data/tour-<id>.json sendiri
-// (mis. tour-borobudur.json). Endpoint di sini generik lewat :tourId,
-// bukan hardcode satu situs — tur baru (mis. Prambanan) otomatis muncul
-// begitu file datanya ada, tanpa perlu ubah kode.
-// ══════════════════════════════════════════════════════
-
-function readTour(tourId) {
-  const file = resolveIdentifierPath(DATA_DIR, { id: tourId, prefix: 'tour-', suffix: '.json', label: 'tour_id' });
-  if (!fs.existsSync(file)) return null;
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
-}
 
 function readQuizQuestion(questionId) {
   const quiz = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'quiz.json'), 'utf8'));
   return (quiz.questions || []).find(question => question.id === questionId) || null;
 }
-function writeTour(tourId, data) {
-  assertFileIdentifier(tourId, 'tour_id');
-  const json = JSON.stringify(data, null, 2);
-  fs.writeFileSync(resolveIdentifierPath(DATA_DIR, { id: tourId, prefix: 'tour-', suffix: '.json', label: 'tour_id' }), json, 'utf8');
-  const pubDataDir = path.join(PUBLIC_DIR, 'data');
-  if (!fs.existsSync(pubDataDir)) fs.mkdirSync(pubDataDir, { recursive: true });
-  fs.writeFileSync(resolveIdentifierPath(pubDataDir, { id: tourId, prefix: 'tour-', suffix: '.json', label: 'tour_id' }), json, 'utf8');
-}
-
-// GET /api/tours — daftar semua tur 360° yang ada (untuk admin & portal)
-app.get('/api/tours', (req, res) => {
-  const files = fs.readdirSync(DATA_DIR).filter(f => /^tour-.+\.json$/.test(f));
-  const tours = files.map(f => {
-    const tourId = f.replace(/^tour-/, '').replace(/\.json$/, '');
-    const data = readTour(tourId);
-    if (!data) return null;
-    return {
-      tour_id: tourId,
-      name: data.name || tourId,
-      source: data.source || '',
-      node_count: (data.nodes || []).length,
-      identified_count: (data.nodes || []).filter(n => n.identify).length,
-      area_count: (data.folder_order || []).length,
-    };
-  }).filter(Boolean);
-  res.json({ success: true, data: tours });
+const toursRepository = createToursRepository({
+  dataDir: DATA_DIR,
+  publicDataDir: path.join(PUBLIC_DIR, 'data'),
+});
+const toursService = createToursService(toursRepository);
+const toursRouter = createToursRouter({
+  service: toursService,
+  requireAuth,
+  requireSuperAdmin: superAdminOnly,
+});
+const datasetService = createDatasetService(
+  createDatasetRepository({ datasetDir: DATASET_DIR }),
+  toursRepository,
+);
+const datasetRouter = createDatasetRouter({
+  service: datasetService,
+  requireAuth,
+  requireSuperAdmin: superAdminOnly,
 });
 
-// PUT /api/tour/:tourId/folder/:folder — set/hapus identifikasi geometri
-// untuk semua node di satu area sekaligus (auth required).
-// Body: { class_id: string|null, element?: string, context?: string, conf?: number }
-app.put('/api/tour/:tourId/folder/:folder', requireAuth, requireRole('super_admin'), (req, res) => {
-  const tourId = assertFileIdentifier(req.params.tourId, 'tour_id');
-  const tour = readTour(tourId);
-  if (!tour) return res.status(404).json({ success: false, message: 'Tur tidak ditemukan' });
-
-  const folder = decodeURIComponent(req.params.folder);
-  const nodesInFolder = tour.nodes.filter(n => n.folder === folder);
-  if (nodesInFolder.length === 0)
-    return res.status(404).json({ success: false, message: `Area "${folder}" tidak ditemukan` });
-
-  const { class_id, element, context, conf } = req.body || {};
-  if (!class_id) {
-    nodesInFolder.forEach(n => delete n.identify);
-  } else {
-    const labelsFile = path.join(DATA_DIR, 'geometry-labels.json');
-    const classes = fs.existsSync(labelsFile) ? JSON.parse(fs.readFileSync(labelsFile, 'utf8')).classes : [];
-    const cls = classes.find(c => c.class_id === class_id);
-    if (!cls) return res.status(400).json({ success: false, message: `class_id "${class_id}" tidak dikenal` });
-
-    const identify = {
-      class_id: cls.class_id,
-      object_id: null,
-      geo: cls.label_id, geo_en: cls.label_en,
-      sisi: cls.sisi, rusuk: cls.rusuk, titik: cls.titik,
-      volume: cls.volume, luas: cls.luas,
-      element: element || cls.label_id,
-      context: context || '',
-      conf: typeof conf === 'number' ? conf : 85,
-      local_angle: 40.0,
-    };
-    nodesInFolder.forEach(n => n.identify = identify);
-  }
-
-  writeTour(tourId, tour);
-  res.json({ success: true, folder, applied_to: nodesInFolder.length, identify: nodesInFolder[0].identify || null });
-});
+app.use('/api', toursRouter);
+app.use('/api/dataset', datasetRouter);
 
 // ══════════════════════════════════════════════════════
 // REST API — ML SERVER-SIDE (inferensi resmi, bukan hasil browser klien)
@@ -1303,319 +703,58 @@ app.post('/api/ml/predict/:tourId/:nodeId', publicWriteLimiter, async (req, res)
 // (log aktivitas siswa selama eksplorasi — dasar laporan guru)
 // ══════════════════════════════════════════════════════
 
-// Token siswa opsional: kalau dikirim & valid, sesi tercatat sebagai siswa
-// sungguhan (student_id + class_id terisi) — kalau tidak ada/tidak valid,
-// tetap jalan mode anonim seperti sebelumnya (nama bebas, tanpa akun) supaya
-// demo publik/GitHub Pages tidak mendadak butuh akun.
-async function getOptionalStudent(req) {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-  if (!token) return null;
-  const data = await authService.verifyToken(token);
-  return data && data.kind === 'student' ? data : null;
-}
-
 function hashSessionToken(token) {
   return crypto.createHash('sha256').update(token, 'utf8').digest('hex');
 }
 
-async function hasSessionOwnership(req, sessionId) {
-  const [[session]] = await pool.query(
-    'SELECT id, student_id, write_token_hash FROM sessions WHERE id = ?',
-    [sessionId]
-  );
-  if (!session) return false;
-
-  const student = await getOptionalStudent(req);
-  if (
-    student
-    && session.student_id !== null
-    && String(session.student_id) === String(student.student_id)
-  ) {
-    return true;
-  }
-
-  const suppliedToken = req.get('X-Session-Token');
-  if (!suppliedToken || !session.write_token_hash) return false;
-
-  const suppliedHash = Buffer.from(hashSessionToken(suppliedToken), 'hex');
-  const storedHash = Buffer.from(String(session.write_token_hash), 'hex');
-  return suppliedHash.length === storedHash.length
-    && crypto.timingSafeEqual(suppliedHash, storedHash);
+function equalSessionTokenHashes(suppliedHash, storedHash) {
+  const supplied = Buffer.from(suppliedHash, 'hex');
+  const stored = Buffer.from(storedHash, 'hex');
+  return supplied.length === stored.length && crypto.timingSafeEqual(supplied, stored);
 }
 
-async function requireSessionOwnership(req, res, sessionId) {
-  if (await hasSessionOwnership(req, sessionId)) return true;
-  res.status(403).json({ success: false, message: 'Tidak punya akses ke sesi ini' });
-  return false;
-}
-
-// POST /api/sessions — mulai sesi eksplorasi
-app.post('/api/sessions', publicWriteLimiter, async (req, res) => {
-  const student = await getOptionalStudent(req);
-  const { student_name, role, school_id, scene_name, device_type } = req.body || {};
-
-  const name = student ? student.name : (student_name || 'Anonim').trim().slice(0, 100);
-  const effectiveSchool = student ? student.school_id : (school_id || null);
-  const classId = student ? student.class_id : null;
-  const sessionToken = student ? null : crypto.randomBytes(32).toString('base64url');
-  const writeTokenHash = sessionToken ? hashSessionToken(sessionToken) : null;
-
-  const [userResult] = await pool.query(
-    'INSERT INTO users (name, role, school_id) VALUES (?, ?, ?)',
-    [name, role || 'siswa', effectiveSchool]
-  );
-  const [sessionResult] = await pool.query(
-    `INSERT INTO sessions
-     (user_id, student_id, school_id, class_id, scene_name, device_type, write_token_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [
-      userResult.insertId,
-      student ? student.student_id : null,
-      effectiveSchool,
-      classId,
-      scene_name || 'borobudur-360',
-      device_type || 'desktop',
-      writeTokenHash,
-    ]
-  );
-  const response = { success: true, session_id: sessionResult.insertId };
-  if (sessionToken) response.session_token = sessionToken;
-  res.status(201).json(response);
+const sessionsService = createSessionsService(
+  createSessionsRepository(pool),
+  {
+    generate: () => crypto.randomBytes(32).toString('base64url'),
+    hash: hashSessionToken,
+    equalHash: equalSessionTokenHashes,
+  },
+);
+const sessionsRouter = createSessionsRouter({
+  service: sessionsService,
+  publicWriteLimiter,
+  verifyToken: token => authService.verifyToken(token),
+});
+const learningEventsService = createLearningEventsService(
+  createLearningEventsRepository(pool),
+  sessionsService,
+  {
+    resolve: reference => upsertObject(reference),
+  },
+  {
+    find: questionId => readQuizQuestion(questionId),
+  },
+);
+const learningEventsRouter = createLearningEventsRouter({
+  service: learningEventsService,
+  publicWriteLimiter,
+  verifyToken: token => authService.verifyToken(token),
 });
 
-// PUT /api/sessions/:id/end — tutup sesi, hitung durasi
-app.put('/api/sessions/:id/end', publicWriteLimiter, async (req, res) => {
-  if (!await requireSessionOwnership(req, res, req.params.id)) return;
-  const [[row]] = await pool.query('SELECT started_at FROM sessions WHERE id = ?', [req.params.id]);
-  if (!row) return res.status(404).json({ success: false, message: 'Sesi tidak ditemukan' });
-  await pool.query(
-    `UPDATE sessions SET ended_at = NOW(), duration_seconds = TIMESTAMPDIFF(SECOND, started_at, NOW()) WHERE id = ?`,
-    [req.params.id]
-  );
-  res.json({ success: true });
+app.use('/api/sessions', sessionsRouter);
+app.use('/api', learningEventsRouter);
+
+const reportsService = createReportsService(createReportsRepository(pool, {
+  quizFile: path.join(DATA_DIR, 'quiz.json'),
+}));
+const reportsRouter = createReportsRouter({
+  service: reportsService,
+  requireAuth,
+  requireStaffReportAccess: requireAnyRole('super_admin', 'school_admin', 'teacher'),
 });
 
-// POST /api/interactions — log gaze/klik pada area tur
-app.post('/api/interactions', publicWriteLimiter, async (req, res) => {
-  const { session_id, object_code, object_name, geometry_label, interaction_type, gaze_duration } = req.body || {};
-  if (!session_id || !object_code)
-    return res.status(400).json({ success: false, message: 'session_id dan object_code wajib diisi' });
-  if (!await requireSessionOwnership(req, res, session_id)) return;
-  const objectId = await upsertObject({ object_code, object_name, geometry_label });
-  await pool.query(
-    'INSERT INTO interactions (session_id, object_id, interaction_type, gaze_duration) VALUES (?, ?, ?, ?)',
-    [session_id, objectId, interaction_type || 'visit', gaze_duration || null]
-  );
-  res.status(201).json({ success: true });
-});
-
-// POST /api/predictions — log identifikasi geometri (hasil ML)
-app.post('/api/predictions', publicWriteLimiter, async (req, res) => {
-  const { session_id, object_code, object_name, geometry_label, predicted_label, confidence_score } = req.body || {};
-  if (!session_id || !object_code)
-    return res.status(400).json({ success: false, message: 'session_id dan object_code wajib diisi' });
-  if (!await requireSessionOwnership(req, res, session_id)) return;
-  const objectId = await upsertObject({ object_code, object_name, geometry_label });
-  await pool.query(
-    'INSERT INTO predictions (session_id, object_id, predicted_label, confidence_score) VALUES (?, ?, ?, ?)',
-    [session_id, objectId, predicted_label || '', confidence_score || 0]
-  );
-  res.status(201).json({ success: true });
-});
-
-// POST /api/quiz-results — log jawaban kuis
-app.post('/api/quiz-results', publicWriteLimiter, async (req, res) => {
-  const { session_id, question_id, answer, response_time } = req.body || {};
-  if (!session_id || !question_id)
-    return res.status(400).json({ success: false, message: 'session_id dan question_id wajib diisi' });
-  if (!await requireSessionOwnership(req, res, session_id)) return;
-
-  const question = readQuizQuestion(question_id);
-  if (!question) {
-    return res.status(400).json({ success: false, message: 'question_id tidak valid' });
-  }
-  if (
-    typeof answer !== 'string'
-    || !Array.isArray(question.options)
-    || !question.options.includes(answer)
-  ) {
-    return res.status(400).json({ success: false, message: 'answer tidak valid' });
-  }
-
-  const responseTime = response_time == null ? null : response_time;
-  if (
-    responseTime !== null
-    && (
-      typeof responseTime !== 'number'
-      || !Number.isFinite(responseTime)
-      || responseTime < 0
-      || responseTime > 600
-    )
-  ) {
-    return res.status(400).json({
-      success: false,
-      message: 'response_time harus berupa angka antara 0 dan 600 detik',
-    });
-  }
-
-  const isCorrect = answer === question.correct_answer;
-  await pool.query(
-    'INSERT INTO quiz_results (session_id, question_id, answer, is_correct, response_time) VALUES (?, ?, ?, ?, ?)',
-    [session_id, question_id, answer, isCorrect ? 1 : 0, responseTime]
-  );
-  res.status(201).json({ success: true });
-});
-
-// GET /api/reports/summary — rekap untuk guru (auth required, diskop per
-// sekolah, dengan filter opsional per kelas)
-app.get('/api/reports/summary', requireAuth, requireAnyRole('super_admin', 'school_admin', 'teacher'), async (req, res) => {
-  const scope = await resolveReportScope(req);
-  if (scope.error) {
-    return res.status(scope.error.status).json({
-      success: false,
-      message: scope.error.message,
-    });
-  }
-
-  const { sessionFilterSql: filterSql, sessionParams: params } = scope;
-
-  const [[totals]] = await pool.query(`
-    SELECT
-      (SELECT COUNT(*) FROM sessions s WHERE 1=1 ${filterSql}) AS total_sessions,
-      (SELECT COUNT(DISTINCT s.user_id) FROM sessions s WHERE 1=1 ${filterSql}) AS total_students,
-      (SELECT ROUND(AVG(s.duration_seconds)) FROM sessions s WHERE s.duration_seconds IS NOT NULL ${filterSql}) AS avg_duration_seconds,
-      (SELECT COUNT(*) FROM quiz_results q JOIN sessions s ON s.id = q.session_id WHERE 1=1 ${filterSql}) AS total_quiz_attempts,
-      (SELECT ROUND(100.0 * SUM(q.is_correct) / COUNT(*), 1) FROM quiz_results q JOIN sessions s ON s.id = q.session_id WHERE 1=1 ${filterSql}) AS quiz_accuracy_pct,
-      (SELECT COUNT(*) FROM interactions i JOIN sessions s ON s.id = i.session_id WHERE 1=1 ${filterSql}) AS total_interactions
-  `, [...params, ...params, ...params, ...params, ...params, ...params]);
-
-  const [perQuestion] = await pool.query(`
-    SELECT q.question_id,
-      COUNT(*) AS attempts,
-      SUM(q.is_correct) AS correct,
-      ROUND(100.0 * SUM(q.is_correct) / COUNT(*), 1) AS accuracy_pct,
-      ROUND(AVG(q.response_time), 1) AS avg_response_time
-    FROM quiz_results q JOIN sessions s ON s.id = q.session_id
-    WHERE 1=1 ${filterSql}
-    GROUP BY q.question_id ORDER BY q.question_id
-  `, params);
-
-  // Rekap per konsep geometri (bukan per soal) — dipetakan dari quiz.json,
-  // dipakai dashboard guru untuk rekomendasi tindak lanjut per konsep.
-  const conceptTotals = {};
-  perQuestion.forEach(q => {
-    const concept = questionIdToConcept(q.question_id);
-    if (!concept) return;
-    if (!conceptTotals[concept]) conceptTotals[concept] = { attempts: 0, correct: 0 };
-    conceptTotals[concept].attempts += q.attempts;
-    conceptTotals[concept].correct  += Number(q.correct);
-  });
-  const conceptRecommendations = Object.entries(conceptTotals).map(([label, t]) => {
-    const accuracyPct = Math.round((t.correct / t.attempts) * 1000) / 10;
-    return {
-      geometry_label: label,
-      geometry_name: GEOMETRY_LABELS_ID[label] || label,
-      attempts: t.attempts, correct: t.correct, accuracy_pct: accuracyPct,
-      recommendation: conceptRecommendation(label, accuracyPct, t.attempts),
-    };
-  }).sort((a, b) => a.accuracy_pct - b.accuracy_pct);
-
-  const [perObject] = await pool.query(`
-    SELECT o.object_code, o.geometry_label, COUNT(*) AS interaction_count
-    FROM interactions i
-    JOIN objects o ON o.id = i.object_id
-    JOIN sessions s ON s.id = i.session_id
-    WHERE 1=1 ${filterSql}
-    GROUP BY o.object_code, o.geometry_label ORDER BY interaction_count DESC
-  `, params);
-
-  const [perSchool] = req.account.role === 'super_admin'
-    ? await pool.query(`
-        SELECT sc.id AS school_id, sc.name AS school_name, COUNT(*) AS session_count
-        FROM sessions s LEFT JOIN schools sc ON sc.id = s.school_id
-        WHERE 1=1 ${filterSql}
-        GROUP BY sc.id, sc.name ORDER BY session_count DESC
-      `, params)
-    : [[]];
-
-  // Kelas dalam cakupan (guru: kelasnya sendiri; school_admin: semua kelas
-  // di sekolahnya; super_admin: kelas di sekolah yang sedang difilter, atau
-  // semua kalau tidak difilter) — dipakai dropdown filter kelas di dashboard,
-  // dan rekap sesi per kelas.
-  const [availableClasses] = await pool.query(
-    `SELECT id, class_name FROM classes c
-     WHERE 1=1 ${scope.availableClassFilterSql}
-     ORDER BY class_name`,
-    scope.availableClassParams
-  );
-
-  const [perClass] = await pool.query(`
-    SELECT c.id AS class_id, c.class_name, COUNT(s.id) AS session_count
-    FROM classes c LEFT JOIN sessions s ON s.class_id = c.id
-    WHERE 1=1 ${scope.selectedClassFilterSql}
-    GROUP BY c.id, c.class_name ORDER BY session_count DESC
-  `, scope.selectedClassParams);
-
-  // Pagination pada sesi terbaru — penting begitu volume data tumbuh (ratusan/ribuan siswa)
-  const page = Math.max(1, parseInt(req.query.page) || 1);
-  const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 20));
-  const offset = (page - 1) * pageSize;
-
-  const [[{ total: sessionTotal }]] = await pool.query(
-    `SELECT COUNT(*) AS total FROM sessions s WHERE 1=1 ${filterSql}`, params
-  );
-  const [recentSessions] = await pool.query(`
-    SELECT s.id, u.name AS student_name, sc.name AS school_name, cl.class_name, s.scene_name, s.started_at, s.duration_seconds
-    FROM sessions s
-    JOIN users u ON u.id = s.user_id
-    LEFT JOIN schools sc ON sc.id = s.school_id
-    LEFT JOIN classes cl ON cl.id = s.class_id
-    WHERE 1=1 ${filterSql}
-    ORDER BY s.started_at DESC LIMIT ? OFFSET ?
-  `, [...params, pageSize, offset]);
-
-  res.json({
-    success: true,
-    data: {
-      totals, perQuestion, perObject, perSchool, perClass, availableClasses, recentSessions, conceptRecommendations,
-      pagination: { page, pageSize, total: sessionTotal, totalPages: Math.ceil(sessionTotal / pageSize) },
-    },
-  });
-});
-
-// GET /api/reports/export.csv — ekspor sesi untuk analisis offline (auth, diskop per sekolah)
-app.get('/api/reports/export.csv', requireAuth, requireAnyRole('super_admin', 'school_admin', 'teacher'), async (req, res) => {
-  const scope = await resolveReportScope(req);
-  if (scope.error) {
-    return res.status(scope.error.status).json({
-      success: false,
-      message: scope.error.message,
-    });
-  }
-
-  const { sessionFilterSql: filterSql, sessionParams: params } = scope;
-
-  const [rows] = await pool.query(`
-    SELECT s.id, u.name AS student_name, sc.name AS school_name, cl.class_name, s.scene_name,
-      s.started_at, s.ended_at, s.duration_seconds, s.device_type
-    FROM sessions s
-    JOIN users u ON u.id = s.user_id
-    LEFT JOIN schools sc ON sc.id = s.school_id
-    LEFT JOIN classes cl ON cl.id = s.class_id
-    WHERE 1=1 ${filterSql}
-    ORDER BY s.started_at DESC
-  `, params);
-
-  const header = 'id,student_name,school_name,class_name,scene_name,started_at,ended_at,duration_seconds,device_type';
-  const csvEscape = (v) => v == null ? '' : `"${String(v).replace(/"/g, '""')}"`;
-  const lines = rows.map(r => [r.id, r.student_name, r.school_name, r.class_name, r.scene_name, r.started_at, r.ended_at, r.duration_seconds, r.device_type].map(csvEscape).join(','));
-  const csv = [header, ...lines].join('\n');
-
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename="vr-geonusa-sessions.csv"');
-  res.send(csv);
-});
+app.use('/api/reports', reportsRouter);
 
 // ══════════════════════════════════════════════════════
 // REST API — TIM PENELITI

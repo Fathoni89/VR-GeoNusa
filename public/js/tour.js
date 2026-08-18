@@ -14,6 +14,9 @@ let quizShownAt = null;
 let mlModel = null;
 let mlClassNames = [];
 let geometryClasses = [];
+let geometryTaxonomyVersion = '';
+
+const DATASET_TOUR_ID = 'borobudur';
 
 const HOTSPOT_RADIUS = 4;
 const HOTSPOT_HEIGHT = 1.2;
@@ -718,6 +721,7 @@ async function loadGeometryClasses() {
   const res = await fetch('../data/geometry-labels.json');
   const json = await res.json();
   geometryClasses = json.classes;
+  geometryTaxonomyVersion = json._version || '';
   const select = document.getElementById('dataset-class');
   json.classes.forEach(c => {
     const opt = document.createElement('option');
@@ -770,8 +774,13 @@ async function datasetLogin() {
 function captureDatasetImage() {
   const status = document.getElementById('dataset-status');
   const classId = document.getElementById('dataset-class').value;
+  const sourceNodeId = currentNodeId;
   const canvas = document.querySelector('a-scene').canvas;
   if (!canvas) { status.textContent = 'Canvas belum siap.'; return; }
+  if (!sourceNodeId || !geometryTaxonomyVersion) {
+    status.textContent = 'Metadata panorama atau taxonomy belum siap.';
+    return;
+  }
 
   status.textContent = 'Menyimpan...';
   canvas.toBlob(async (blob) => {
@@ -781,6 +790,9 @@ function captureDatasetImage() {
         headers: {
           'Content-Type': 'image/jpeg',
           Authorization: 'Bearer ' + getDatasetToken(),
+          'X-Dataset-Tour-Id': DATASET_TOUR_ID,
+          'X-Dataset-Node-Id': sourceNodeId,
+          'X-Taxonomy-Version': geometryTaxonomyVersion,
         },
         body: blob,
       });

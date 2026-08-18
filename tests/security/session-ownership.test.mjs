@@ -13,6 +13,7 @@ const { app } = require(path.join(PROJECT_ROOT, 'server.js'));
 const { FakeDb } = require(path.join(PROJECT_ROOT, 'tests', 'fixtures', 'fake-db.js'));
 
 const originalQuery = app.locals.dbPool.query;
+const originalGetConnection = app.locals.dbPool.getConnection;
 const originalLogger = app.locals.logger;
 let passwordHash;
 let fakeDb;
@@ -43,11 +44,13 @@ beforeEach(() => {
     ],
   });
   app.locals.dbPool.query = fakeDb.query.bind(fakeDb);
+  app.locals.dbPool.getConnection = fakeDb.getConnection.bind(fakeDb);
   app.locals.logger = { log() {}, error() {} };
 });
 
 afterEach(() => {
   app.locals.dbPool.query = originalQuery;
+  app.locals.dbPool.getConnection = originalGetConnection;
   app.locals.logger = originalLogger;
 });
 
@@ -110,6 +113,17 @@ test('guest menerima token pemilik sementara database hanya menyimpan hash', asy
   expect(session.write_token_hash).toBe(
     crypto.createHash('sha256').update(response.body.session_token).digest('hex')
   );
+  expect(fakeDb.transactions).toEqual({ begun: 1, committed: 1, rolledBack: 0, released: 1 });
+});
+
+test('kegagalan insert session me-rollback transaksi pembuatan user dan session', async () => {
+  fakeDb.failSessionInsert = true;
+
+  const response = await createGuestSession();
+
+  expect(response.status).toBe(500);
+  expect(response.body).toEqual({ success: false, message: 'Internal server error' });
+  expect(fakeDb.transactions).toEqual({ begun: 1, committed: 0, rolledBack: 1, released: 1 });
 });
 
 describe.each(['end', 'interactions', 'predictions', 'quiz-results'])('%s ownership', endpoint => {
@@ -117,9 +131,18 @@ describe.each(['end', 'interactions', 'predictions', 'quiz-results'])('%s owners
     const created = await createGuestSession();
     const { session_id: sessionId, session_token: sessionToken } = created.body;
 
+    const callsBefore = fakeDb.calls.length;
     const wrong = await mutationRequest(endpoint, sessionId)
       .set('X-Session-Token', 'token-yang-salah');
     expect(wrong.status).toBe(403);
+    const rejectedCalls = fakeDb.calls.slice(callsBefore);
+    expect(rejectedCalls.some(call =>
+      call.sql.startsWith('insert into objects')
+      || call.sql.startsWith('insert into interactions')
+      || call.sql.startsWith('insert into predictions')
+      || call.sql.startsWith('insert into quiz_results')
+      || call.sql.startsWith('update sessions set ended_at')
+    )).toBe(false);
 
     const accepted = await mutationRequest(endpoint, sessionId)
       .set('X-Session-Token', sessionToken);

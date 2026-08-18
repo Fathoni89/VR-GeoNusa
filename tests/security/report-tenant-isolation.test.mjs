@@ -29,7 +29,73 @@ const classes = [
 
 const sessions = [
   {
+    id: 2001,
+    user_id: 501,
+    student_id: 401,
+    student_name: 'Siswa Sekolah B',
+    school_id: 20,
+    school_name: 'Sekolah B',
+    class_id: 201,
+    class_name: 'Kelas Sekolah B',
+    teacher_account_id: 21,
+    scene_name: 'borobudur',
+    started_at: '2026-08-14T05:00:00.000Z',
+    ended_at: null,
+    duration_seconds: 240,
+    device_type: 'desktop',
+  },
+  {
+    id: 1002,
+    user_id: 502,
+    student_id: 302,
+    student_name: 'Siswa Guru B',
+    school_id: 10,
+    school_name: 'Sekolah A',
+    class_id: 102,
+    class_name: 'Kelas Guru B',
+    teacher_account_id: 12,
+    scene_name: 'prambanan',
+    started_at: '2026-08-14T04:00:00.000Z',
+    ended_at: null,
+    duration_seconds: 180,
+    device_type: 'mobile',
+  },
+  {
+    id: 1004,
+    user_id: 504,
+    student_id: 301,
+    student_name: '=2+2',
+    school_id: 10,
+    school_name: 'Sekolah A',
+    class_id: 101,
+    class_name: 'Kelas Guru A',
+    teacher_account_id: 11,
+    scene_name: 'borobudur',
+    started_at: '2026-08-14T03:00:00.000Z',
+    ended_at: null,
+    duration_seconds: 150,
+    device_type: 'desktop',
+  },
+  {
+    id: 1003,
+    user_id: 503,
+    student_id: null,
+    student_name: 'Guest Memilih Sekolah A',
+    school_id: 10,
+    school_name: 'Sekolah A',
+    class_id: 101,
+    class_name: 'Kelas Guru A',
+    teacher_account_id: 11,
+    scene_name: 'prambanan',
+    started_at: '2026-08-14T02:00:00.000Z',
+    ended_at: null,
+    duration_seconds: 90,
+    device_type: 'mobile',
+  },
+  {
     id: 1001,
+    user_id: 500,
+    student_id: 301,
     student_name: 'Siswa Guru A',
     school_id: 10,
     school_name: 'Sekolah A',
@@ -40,34 +106,6 @@ const sessions = [
     started_at: '2026-08-14T01:00:00.000Z',
     ended_at: null,
     duration_seconds: 120,
-    device_type: 'desktop',
-  },
-  {
-    id: 1002,
-    student_name: 'Siswa Guru B',
-    school_id: 10,
-    school_name: 'Sekolah A',
-    class_id: 102,
-    class_name: 'Kelas Guru B',
-    teacher_account_id: 12,
-    scene_name: 'prambanan',
-    started_at: '2026-08-14T02:00:00.000Z',
-    ended_at: null,
-    duration_seconds: 180,
-    device_type: 'mobile',
-  },
-  {
-    id: 2001,
-    student_name: 'Siswa Sekolah B',
-    school_id: 20,
-    school_name: 'Sekolah B',
-    class_id: 201,
-    class_name: 'Kelas Sekolah B',
-    teacher_account_id: 21,
-    scene_name: 'borobudur',
-    started_at: '2026-08-14T03:00:00.000Z',
-    ended_at: null,
-    duration_seconds: 240,
     device_type: 'desktop',
   },
 ];
@@ -98,6 +136,10 @@ class ReportDb extends FakeDb {
   reportRows(sql, params) {
     let index = 0;
     let rows = sessions;
+
+    if (sql.includes('s.student_id is not null')) {
+      rows = rows.filter(item => item.student_id !== null);
+    }
 
     if (sql.includes('s.school_id = ?')) {
       const schoolId = params[index];
@@ -139,12 +181,17 @@ class ReportDb extends FakeDb {
       return [rows.map(item => ({ id: item.id })), []];
     }
 
-    if (normalized.includes('select (select count(*) from sessions s')) {
+    if (
+      normalized.includes('select (select count(*) from sessions s')
+      || normalized.startsWith('select count(*) as total_sessions')
+    ) {
       this.calls.push({ sql: normalized, params });
       const rows = this.reportRows(normalized, params);
       return [[{
         total_sessions: rows.length,
-        total_students: rows.length,
+        total_students: new Set(rows.map(item => (
+          normalized.includes('distinct s.student_id') ? item.student_id : item.user_id
+        ))).size,
         avg_duration_seconds: rows.length ? 180 : null,
         total_quiz_attempts: 0,
         quiz_accuracy_pct: null,
@@ -198,7 +245,10 @@ class ReportDb extends FakeDb {
       return [[{ total: this.reportRows(normalized, params).length }], []];
     }
 
-    if (normalized.includes('from sessions s') && normalized.includes('join users u')) {
+    if (
+      normalized.includes('from sessions s')
+      && (normalized.includes('join users u') || normalized.includes('join students st'))
+    ) {
       this.calls.push({ sql: normalized, params });
       const rows = this.reportRows(normalized, params);
       return [rows.map(item => ({ ...item })), []];
@@ -252,11 +302,22 @@ test('guru hanya melihat sesi kelas miliknya pada summary dan CSV', async () => 
   const csv = await authenticatedGet('/api/reports/export.csv', token);
 
   expect(summary.status).toBe(200);
-  expect(summary.body.data.totals.total_sessions).toBe(1);
-  expect(summary.body.data.recentSessions.map(item => item.id)).toEqual([1001]);
+  expect(summary.body.data.totals.total_sessions).toBe(2);
+  expect(summary.body.data.totals.total_students).toBe(1);
+  expect(summary.body.data.recentSessions.map(item => item.id)).toEqual([1004, 1001]);
   expect(summary.body.data.availableClasses.map(item => item.id)).toEqual([101]);
   expect(csv.status).toBe(200);
-  expect(csvIds(csv.text)).toEqual([1001]);
+  expect(csvIds(csv.text)).toEqual([1004, 1001]);
+  expect(csv.text).not.toContain('Guest Memilih Sekolah A');
+  expect(csv.text).toContain('"\'=2+2"');
+
+  const sessionQueries = fakeDb.calls.filter(call => (
+    call.sql.includes('from sessions s')
+    || call.sql.includes('join sessions s')
+    || call.sql.includes('left join sessions s')
+  ));
+  expect(sessionQueries.length).toBeGreaterThan(0);
+  expect(sessionQueries.every(call => call.sql.includes('s.student_id is not null'))).toBe(true);
 });
 
 describe.each([
@@ -285,9 +346,9 @@ test('school admin tetap melihat sekolah dari token ketika meminta sekolah lain'
   const csv = await authenticatedGet('/api/reports/export.csv?school_id=20', token);
 
   expect(summary.status).toBe(200);
-  expect(summary.body.data.totals.total_sessions).toBe(2);
-  expect(summary.body.data.recentSessions.map(item => item.id)).toEqual([1001, 1002]);
-  expect(csvIds(csv.text)).toEqual([1001, 1002]);
+  expect(summary.body.data.totals.total_sessions).toBe(3);
+  expect(summary.body.data.recentSessions.map(item => item.id)).toEqual([1002, 1004, 1001]);
+  expect(csvIds(csv.text)).toEqual([1002, 1004, 1001]);
 });
 
 test('super admin dapat memfilter sekolah valid dengan hasil summary dan CSV identik', async () => {

@@ -19,6 +19,18 @@ class FakeDb {
     this.sessions = sessions;
     this.calls = [];
     this.nextInsertId = 1_000;
+    this.failSessionInsert = false;
+    this.transactions = { begun: 0, committed: 0, rolledBack: 0, released: 0 };
+  }
+
+  async getConnection() {
+    return {
+      beginTransaction: async () => { this.transactions.begun += 1; },
+      commit: async () => { this.transactions.committed += 1; },
+      rollback: async () => { this.transactions.rolledBack += 1; },
+      release: () => { this.transactions.released += 1; },
+      query: this.query.bind(this),
+    };
   }
 
   async query(sql, params = []) {
@@ -119,6 +131,7 @@ class FakeDb {
     }
 
     if (normalized.startsWith('insert into sessions')) {
+      if (this.failSessionInsert) throw new Error('simulasi insert sesi gagal');
       const id = this.nextInsertId++;
       this.sessions.push({
         id,
