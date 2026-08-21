@@ -5,227 +5,587 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VR-GeoNusa — Admin Panel</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0F172A; --surface: #1E293B; --surface2: #273549;
-      --border: rgba(255,255,255,0.07); --accent: #38BDF8; --accent2: #818CF8;
-      --green: #00e676; --yellow: #ffd700; --red: #ff5252; --text: #E2E8F0;
-      --muted: #64748B; --radius: 12px;
-    }
-    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
 
-    /* ── LOGIN PAGE ── */
-    #login-page {
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-    }
-    .login-box {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
-      padding: 40px; width: 380px; max-width: 95vw;
-    }
-    .login-logo { font-weight: 900; font-size: 1.5em; text-align: center; margin-bottom: 4px;
-      background: linear-gradient(90deg, #38BDF8, #818CF8);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .login-sub { color: var(--muted); font-size: 12px; text-align: center; margin-bottom: 28px; }
-    .login-field { margin-bottom: 14px; }
-    .login-field label { display: block; font-size: 11px; font-weight: 700; color: var(--muted);
-      letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px; }
-    .login-field input {
-      width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-      color: var(--text); padding: 10px 14px; font-size: 14px; outline: none;
-      transition: border-color .15s;
-    }
-    .login-field input:focus { border-color: var(--accent2); }
-    .login-btn {
-      width: 100%; padding: 12px; border-radius: 10px; border: none; cursor: pointer;
-      background: linear-gradient(135deg, #3730A3, #4338CA); color: #C7D2FE;
-      font-size: 14px; font-weight: 700; margin-top: 8px; transition: opacity .2s;
-    }
-    .login-btn:hover { opacity: .85; }
-    .login-err { color: var(--red); font-size: 12px; text-align: center; margin-top: 10px; min-height: 18px; }
-    .login-hint { color: var(--muted); font-size: 11px; text-align: center; margin-top: 16px; }
+/* ═══════════════════════════════════════════════════════
+   VR-GeoNusa Admin — Light Glassmorphism Design System
+   Aligned with kids landing page (Nunito, emerald, cream)
+   HTML & JS: UNTOUCHED — only CSS changes here
+   ═══════════════════════════════════════════════════════ */
 
-    /* ── APP LAYOUT ── */
-    #app-page { display: none; }
-    .app { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 56px 1fr; min-height: 100vh; }
-    .topbar {
-      grid-column: 1/-1; background: var(--surface); border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; padding: 0 20px; gap: 12px;
-    }
-    .topbar .logo { font-weight: 900; font-size: 1.05em;
-      background: linear-gradient(90deg, #38BDF8, #818CF8);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .topbar .badge { background: rgba(56,189,248,.12); border: 1px solid rgba(56,189,248,.2);
-      color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
-    .topbar .spacer { flex: 1; }
-    .topbar .user-info { color: var(--muted); font-size: 12px; }
-    .topbar a { color: var(--muted); text-decoration: none; font-size: 12px; }
-    .topbar a:hover { color: var(--accent); }
-    .logout-btn {
-      padding: 5px 14px; border-radius: 7px; border: 1px solid var(--border);
-      background: rgba(255,82,82,.08); color: var(--red); font-size: 12px; font-weight: 700;
-      cursor: pointer; transition: background .15s;
-    }
-    .logout-btn:hover { background: rgba(255,82,82,.15); }
+/* ── Tokens ─────────────────────────────────────────── */
+:root {
+  /* Canvas */
+  --bg:      #F8FAFC;
+  --bg-2:    #F1F5F9;
+  --bg-3:    #E9F5FF;
 
-    .sidebar {
-      background: var(--surface); border-right: 1px solid var(--border);
-      padding: 16px 10px; display: flex; flex-direction: column; gap: 3px;
-    }
-    .sidebar-toggle {
-      display: none; background: none; border: 1px solid var(--border); color: var(--text);
-      border-radius: 7px; padding: 6px 11px; font-size: 15px; cursor: pointer; line-height: 1;
-    }
-    .sidebar-backdrop { display: none; }
-    .sidebar .section-label { color: var(--muted); font-size: 10px; font-weight: 700;
-      letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 12px 4px; }
-    .nav-item {
-      display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 8px;
-      cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 500; transition: background .15s, color .15s;
-    }
-    .nav-item:hover { background: var(--surface2); color: var(--text); }
-    .nav-item.active { background: rgba(56,189,248,.1); color: var(--accent); }
-    .nav-item .icon { font-size: 15px; width: 20px; text-align: center; }
+  /* Surfaces */
+  --surface:  #FFFFFF;
+  --surface2: #F8FAFC;
 
-    .main { padding: 24px; overflow-y: auto; }
-    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 12px; }
-    .page-header h1 { font-size: 1.3em; font-weight: 800; }
-    .page-header .sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  /* Borders */
+  --border:   #E2E8F0;
+  --border2:  #CBD5E1;
 
-    /* ── Buttons ── */
-    .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; transition: opacity .15s, transform .1s; }
-    .btn:hover { opacity: .85; transform: translateY(-1px); }
-    .btn-primary { background: linear-gradient(135deg, #3730A3, #4338CA); color: #C7D2FE; }
-    .btn-success { background: rgba(0,230,118,.15); color: var(--green); border: 1px solid rgba(0,230,118,.25); }
-    .btn-danger  { background: rgba(255,82,82,.12); color: var(--red); border: 1px solid rgba(255,82,82,.2); }
-    .btn-ghost   { background: rgba(255,255,255,.05); color: var(--text); border: 1px solid var(--border); }
-    .btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 6px; }
-    .btn-warning { background: rgba(255,215,0,.12); color: var(--yellow); border: 1px solid rgba(255,215,0,.25); }
+  /* Brand palette */
+  --accent:   #10B981;   /* emerald — primary CTA */
+  --accent2:  #0EA5E9;   /* sky — secondary accent */
+  --gold:     #F59E0B;   /* amber — heritage/cultural accent */
 
-    /* ── Scene tabs ── */
-    .scene-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
-    .scene-tab {
-      padding: 7px 16px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px;
-      background: var(--surface2); color: var(--muted); border: 1px solid var(--border); transition: all .15s;
-    }
-    .scene-tab.active { background: rgba(56,189,248,.12); color: var(--accent); border-color: rgba(56,189,248,.3); }
+  /* Semantic */
+  --green:    #059669;
+  --yellow:   #D97706;
+  --red:      #EF4444;
 
-    /* ── Stats ── */
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-    .stat-card .val { font-size: 1.8em; font-weight: 900; color: var(--accent); }
-    .stat-card .lbl { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  /* Text */
+  --text:   #0F172A;
+  --muted:  #64748B;
 
-    /* ── Table ── */
-    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
-    .table-toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-    .table-toolbar h2 { font-size: 13px; font-weight: 700; flex: 1; }
-    table { width: 100%; border-collapse: collapse; }
-    th { padding: 9px 14px; text-align: left; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); background: var(--surface2); }
-    td { padding: 9px 14px; border-top: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background: rgba(255,255,255,.02); }
-    .badge-geo { background: rgba(129,140,248,.12); color: var(--accent2); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
-    .badge-interactive { background: rgba(0,230,118,.1); color: var(--green); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; }
-    .badge-static { background: rgba(100,116,139,.15); color: var(--muted); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; }
-    .badge-model { background: rgba(56,189,248,.1); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; }
-    .conf-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  /* Shape */
+  --radius: 12px;
 
-    /* ── Scene cards grid ── */
-    .scene-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 20px; }
-    .scene-info-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
-    }
-    .scene-info-card .sc-thumb {
-      height: 120px; overflow: hidden; position: relative;
-    }
-    .scene-info-card .sc-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; filter: brightness(.75); }
-    .scene-info-card .sc-thumb .sc-thumb-fallback {
-      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-      font-size: 2.5em;
-    }
-    .scene-info-card .sc-body { padding: 14px; }
-    .scene-info-card .sc-name { font-weight: 800; font-size: 1em; margin-bottom: 2px; }
-    .scene-info-card .sc-loc { color: var(--muted); font-size: 11px; margin-bottom: 10px; }
-    .scene-info-card .sc-stats { display: flex; gap: 12px; margin-bottom: 12px; }
-    .scene-info-card .sc-stat { text-align: center; }
-    .scene-info-card .sc-stat-val { font-weight: 800; color: var(--accent); font-size: 1.1em; }
-    .scene-info-card .sc-stat-lbl { color: var(--muted); font-size: 10px; }
-    .scene-info-card .sc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-    .sc-default-badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,.6);
-      color: var(--accent); border: 1px solid rgba(56,189,248,.3); border-radius: 5px;
-      font-size: 9px; font-weight: 800; padding: 2px 7px; letter-spacing: .5px; }
+  /* Shadows */
+  --shadow-sm:   0 1px 0 #CBD5E1, 0 2px 8px rgba(15,23,42,0.05);
+  --shadow-card: 0 2px 0 #CBD5E1, 0 4px 20px -2px rgba(15,23,42,0.06);
+  --shadow-hover:0 3px 0 #CBD5E1, 0 8px 28px -4px rgba(15,23,42,0.10);
+  --shadow-modal:0 24px 64px -12px rgba(15,23,42,0.18);
+}
 
-    /* ── Modal ── */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 1000;
-      display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .2s;
-    }
-    .modal-overlay.open { opacity: 1; pointer-events: all; }
-    .modal {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
-      width: 640px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 26px;
-      position: relative; transform: translateY(16px); transition: transform .2s;
-    }
-    .modal-overlay.open .modal { transform: translateY(0); }
-    .modal h2 { font-size: 1.1em; font-weight: 800; margin-bottom: 18px; }
-    .modal .close-btn {
-      position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,.06);
-      border: none; color: var(--muted); width: 28px; height: 28px; border-radius: 7px;
-      cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
-    }
-    .modal .close-btn:hover { background: rgba(255,255,255,.1); color: var(--text); }
+/* ── Reset & Base ───────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--green); }
+code { font-family: 'DM Mono', monospace; font-size: .88em; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-2); }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 
-    /* ── Form ── */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .form-grid .full { grid-column: 1/-1; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    .form-group label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
-    .form-group input, .form-group select, .form-group textarea {
-      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-      color: var(--text); padding: 8px 12px; font-size: 13px; outline: none; transition: border-color .15s;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent2); }
-    .form-group textarea { resize: vertical; min-height: 65px; font-family: inherit; }
-    .form-group small { color: var(--muted); font-size: 10px; }
-    .form-divider { grid-column: 1/-1; border: none; border-top: 1px solid var(--border); }
-    .form-section { grid-column: 1/-1; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent2); }
+/* ── LOGIN PAGE ─────────────────────────────────────── */
+#login-page {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 100%);
+  padding: 20px;
+}
+.login-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 400px; max-width: 95vw;
+  box-shadow: var(--shadow-modal);
+}
+.login-logo {
+  font-weight: 900; font-size: 1.6em; text-align: center; margin-bottom: 4px;
+  color: var(--text); letter-spacing: -.02em;
+}
+.login-logo span { color: var(--accent); }
+.login-sub {
+  color: var(--muted); font-size: 13px; text-align: center; margin-bottom: 28px;
+  font-weight: 600;
+}
+.login-field { margin-bottom: 16px; }
+.login-field label {
+  display: block; font-size: 12px; font-weight: 800; color: var(--muted);
+  letter-spacing: .05em; text-transform: uppercase; margin-bottom: 7px;
+}
+.login-field input {
+  width: 100%;
+  background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px;
+  color: var(--text); padding: 11px 14px; font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.login-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(16,185,129,.14);
+}
+.login-btn {
+  width: 100%; padding: 13px; border-radius: 12px; border: none; cursor: pointer;
+  background: var(--accent); color: #fff;
+  font-family: 'Nunito', inherit; font-size: 15px; font-weight: 800;
+  box-shadow: 0 4px 0 var(--green), 0 8px 20px rgba(16,185,129,.25);
+  transition: transform .1s, box-shadow .1s, background .15s;
+  margin-top: 8px;
+}
+.login-btn:hover { background: #0EAF7A; }
+.login-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--green); }
+.login-err {
+  color: var(--red); font-size: 12px; text-align: center; margin-top: 10px;
+  min-height: 18px; font-weight: 700;
+}
+.login-hint { color: var(--muted); font-size: 11px; text-align: center; margin-top: 16px; }
 
-    /* ── Export box ── */
-    .export-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 14px; }
-    .export-box pre { font-size: 11px; color: var(--muted); white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow-y: auto; }
+/* ── APP LAYOUT ─────────────────────────────────────── */
+#app-page { display: none; }
+.app {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  grid-template-rows: 60px 1fr;
+  min-height: 100vh;
+}
 
-    /* ── Toast ── */
-    #toast {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
-      padding: 10px 20px; font-size: 13px; font-weight: 600; z-index: 9999;
-      opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap;
-    }
-    #toast.show { opacity: 1; }
-    #toast.success { border-color: rgba(0,230,118,.3); color: var(--green); }
-    #toast.error   { border-color: rgba(255,82,82,.3); color: var(--red); }
-    #toast.info    { border-color: rgba(56,189,248,.3); color: var(--accent); }
+/* Topbar */
+.topbar {
+  grid-column: 1/-1;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-bottom: 1.5px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 12px;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 1px 0 #E2E8F0, 0 4px 12px rgba(15,23,42,0.04);
+}
+.topbar .logo {
+  font-weight: 900; font-size: 1.1em; color: var(--text); letter-spacing: -.01em;
+}
+.topbar .logo span { color: var(--accent); }
+.topbar .badge {
+  background: #D1FAE5; border: 1.5px solid #6EE7B7;
+  color: var(--green); border-radius: 8px; padding: 3px 10px;
+  font-size: 11px; font-weight: 800; letter-spacing: .04em;
+}
+.topbar .spacer { flex: 1; }
+.topbar .user-info { color: var(--muted); font-size: 13px; font-weight: 600; }
+.topbar a { color: var(--muted); font-size: 13px; font-weight: 600; transition: color .15s; }
+.topbar a:hover { color: var(--accent); }
+.logout-btn {
+  padding: 6px 16px; border-radius: 8px; border: 1.5px solid #FECACA;
+  background: #FEF2F2; color: #DC2626; font-size: 12px; font-weight: 800;
+  font-family: inherit; cursor: pointer; transition: background .15s, border-color .15s;
+}
+.logout-btn:hover { background: #FEE2E2; border-color: #FCA5A5; }
 
-    /* ── Password change ── */
-    .pwd-form { background: var(--surface2); border-radius: 10px; padding: 18px; margin-top: 14px; }
-    .pwd-form h3 { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+/* Sidebar */
+.sidebar {
+  background: var(--surface);
+  border-right: 1.5px solid var(--border);
+  padding: 16px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto;
+}
+.sidebar-toggle {
+  display: none;
+  background: none; border: 1.5px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 6px 11px; font-size: 16px; cursor: pointer;
+  font-family: inherit; line-height: 1;
+  transition: border-color .15s, background .15s;
+}
+.sidebar-toggle:hover { background: var(--bg-2); border-color: var(--border2); }
+.sidebar-backdrop { display: none; }
 
-    @media (max-width: 768px) {
-      .app { grid-template-columns: 1fr; }
-      .sidebar-toggle { display: inline-flex; align-items: center; justify-content: center; }
-      .sidebar {
-        display: none; position: fixed; top: 56px; left: 0; bottom: 0; width: 240px;
-        z-index: 50; overflow-y: auto; box-shadow: 4px 0 24px rgba(0,0,0,.4);
-      }
-      .sidebar.open { display: flex; }
-      .sidebar-backdrop.open {
-        display: block; position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,.5); z-index: 40;
-      }
-      .stats { grid-template-columns: 1fr 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
-    }
+.sidebar .section-label {
+  color: var(--muted); font-size: 10px; font-weight: 800;
+  letter-spacing: .12em; text-transform: uppercase;
+  padding: 8px 12px 4px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 12px; border-radius: 10px;
+  cursor: pointer; color: var(--muted);
+  font-size: 13px; font-weight: 700;
+  transition: background .15s, color .15s;
+}
+.nav-item:hover { background: var(--bg-2); color: var(--text); }
+.nav-item.active { background: #D1FAE5; color: var(--green); }
+/* SVG icon container — monochrome, inherits nav-item color */
+.nav-item .icon {
+  width: 18px; height: 18px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #64748B;
+}
+.nav-item:hover .icon { color: #0F172A; }
+.nav-item.active .icon { color: #059669; }
+.nav-item .icon svg { display: block; width: 18px; height: 18px; }
+
+/* Main content */
+.main { padding: 24px; overflow-y: auto; background: var(--bg); }
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 24px; gap: 12px;
+}
+.page-header h1 { font-size: 1.35em; font-weight: 900; color: var(--text); }
+.page-header .sub { color: var(--muted); font-size: 12px; margin-top: 3px; font-weight: 600; }
+
+/* ── Buttons ─────────────────────────────────────────── */
+.btn {
+  padding: 9px 18px; border-radius: 10px; border: none; cursor: pointer;
+  font-family: 'Nunito', inherit; font-size: 13px; font-weight: 800;
+  transition: transform .1s, box-shadow .1s, background .15s, opacity .15s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { opacity: .9; transform: translateY(-1px); }
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 3px 0 var(--green), 0 6px 16px rgba(16,185,129,.2);
+}
+.btn-primary:hover { background: #0EAF7A; }
+.btn-primary:active { box-shadow: 0 1px 0 var(--green); }
+.btn-success {
+  background: #D1FAE5; color: var(--green);
+  border: 1.5px solid #6EE7B7;
+}
+.btn-success:hover { background: #A7F3D0; }
+.btn-danger {
+  background: #FEF2F2; color: #DC2626;
+  border: 1.5px solid #FECACA;
+}
+.btn-danger:hover { background: #FEE2E2; }
+.btn-ghost {
+  background: var(--surface); color: var(--text);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: #F0FDF4; }
+.btn-warning {
+  background: #FEF3C7; color: var(--yellow);
+  border: 1.5px solid #FDE68A;
+}
+.btn-warning:hover { background: #FDE68A; }
+.btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 8px; gap: 4px; }
+
+/* ── Scene tabs ──────────────────────────────────────── */
+.scene-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.scene-tab {
+  padding: 8px 18px; border-radius: 10px; cursor: pointer;
+  font-weight: 800; font-size: 13px; font-family: inherit;
+  background: var(--surface); color: var(--muted);
+  border: 1.5px solid var(--border);
+  transition: all .15s; box-shadow: var(--shadow-sm);
+}
+.scene-tab:hover { border-color: var(--accent); color: var(--accent); }
+.scene-tab.active {
+  background: #D1FAE5; color: var(--green);
+  border-color: #6EE7B7;
+}
+
+/* ── Stats grid ──────────────────────────────────────── */
+.stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  box-shadow: var(--shadow-card);
+  border-top: 3px solid var(--accent);
+}
+.stat-card .val {
+  font-size: 2em; font-weight: 900; color: var(--accent); line-height: 1;
+  font-family: 'DM Mono', monospace;
+}
+.stat-card .lbl {
+  color: var(--muted); font-size: 11px; font-weight: 800;
+  margin-top: 6px; text-transform: uppercase; letter-spacing: .05em;
+}
+
+/* ── Table ───────────────────────────────────────────── */
+.table-wrap {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  margin-bottom: 20px; box-shadow: var(--shadow-card);
+}
+.table-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px; border-bottom: 1.5px solid var(--border);
+  background: var(--bg);
+}
+.table-toolbar h2 { font-size: 13px; font-weight: 800; flex: 1; color: var(--text); }
+table { width: 100%; border-collapse: collapse; }
+th {
+  padding: 10px 16px; text-align: left;
+  font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); background: var(--bg-2);
+  border-bottom: 1.5px solid var(--border);
+}
+td {
+  padding: 10px 16px; border-top: 1px solid #F1F5F9;
+  vertical-align: middle; color: var(--text); font-size: 13px;
+}
+tr:hover td { background: #F8FAFC; }
+
+/* Badges */
+.badge-geo {
+  background: #EDE9FE; color: #6D28D9;
+  border-radius: 6px; padding: 3px 9px; font-size: 11px; font-weight: 800;
+}
+.badge-interactive {
+  background: #D1FAE5; color: var(--green);
+  border-radius: 6px; padding: 3px 9px; font-size: 10px; font-weight: 800;
+}
+.badge-static {
+  background: var(--bg-2); color: var(--muted);
+  border-radius: 6px; padding: 3px 9px; font-size: 10px; font-weight: 800;
+}
+.badge-model {
+  background: #E0F2FE; color: #0369A1;
+  border-radius: 6px; padding: 3px 9px; font-size: 10px; font-weight: 800;
+}
+.conf-pill {
+  display: inline-block; padding: 3px 9px;
+  border-radius: 20px; font-size: 11px; font-weight: 800;
+}
+
+/* ── Scene cards ─────────────────────────────────────── */
+.scene-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 16px; margin-bottom: 20px;
+}
+.scene-info-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: transform .2s, box-shadow .2s;
+}
+.scene-info-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.scene-info-card .sc-thumb {
+  height: 130px; overflow: hidden; position: relative;
+}
+.scene-info-card .sc-thumb img {
+  width: 100%; height: 100%; object-fit: cover; object-position: center 40%;
+  filter: brightness(.8);
+  transition: transform .4s;
+}
+.scene-info-card:hover .sc-thumb img { transform: scale(1.04); }
+.scene-info-card .sc-thumb .sc-thumb-fallback {
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+  font-size: 2.5em; background: var(--bg-2);
+}
+.scene-info-card .sc-body { padding: 16px; }
+.scene-info-card .sc-name { font-weight: 900; font-size: 1em; margin-bottom: 3px; color: var(--text); }
+.scene-info-card .sc-loc { color: var(--muted); font-size: 11px; margin-bottom: 12px; font-weight: 600; }
+.scene-info-card .sc-stats { display: flex; gap: 16px; margin-bottom: 14px; }
+.scene-info-card .sc-stat { text-align: center; }
+.scene-info-card .sc-stat-val {
+  font-weight: 900; color: var(--accent); font-size: 1.2em;
+  font-family: 'DM Mono', monospace;
+}
+.scene-info-card .sc-stat-lbl { color: var(--muted); font-size: 10px; font-weight: 700; }
+.scene-info-card .sc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.sc-default-badge {
+  position: absolute; top: 8px; left: 8px;
+  background: rgba(255,255,255,.9); color: var(--green);
+  border: 1.5px solid #6EE7B7; border-radius: 6px;
+  font-size: 10px; font-weight: 800; padding: 2px 8px; letter-spacing: .04em;
+  backdrop-filter: blur(4px);
+}
+
+/* ── Modal ───────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,0.35); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 18px; box-shadow: var(--shadow-modal);
+  width: 640px; max-width: 95vw; max-height: 90vh;
+  overflow-y: auto; padding: 28px;
+  position: relative; transform: translateY(20px); transition: transform .2s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal h2 { font-size: 1.15em; font-weight: 900; margin-bottom: 20px; color: var(--text); }
+.modal .close-btn {
+  position: absolute; top: 16px; right: 16px;
+  background: var(--bg-2); border: 1.5px solid var(--border); color: var(--muted);
+  width: 30px; height: 30px; border-radius: 8px;
+  cursor: pointer; font-size: 16px; font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.modal .close-btn:hover { background: #FEF2F2; color: var(--red); border-color: #FECACA; }
+
+/* ── Forms ───────────────────────────────────────────── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-grid .full { grid-column: 1/-1; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label {
+  font-size: 11px; font-weight: 800; color: var(--muted);
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.form-group input, .form-group select, .form-group textarea {
+  background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 10px;
+  color: #1E293B; padding: 10px 14px; font-size: 0.9rem;
+  font-family: 'Nunito', inherit; outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  width: 100%;
+}
+.form-group input:not([type="color"]), .form-group select {
+  height: 42px;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: #10B981;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.15);
+}
+/* Custom select — remove OS arrow, add SVG chevron */
+.form-group select {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 38px;
+  cursor: pointer;
+}
+.form-group select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2310B981' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+/* Inline add-row selects and inputs (class/schools forms outside modals) */
+.table-wrap form input, .table-wrap form select {
+  height: 42px; border: 1.5px solid #CBD5E1; border-radius: 10px;
+  background: #FFFFFF; color: #1E293B; padding: 9px 14px; font-size: 0.88rem;
+  font-family: 'Nunito', inherit; outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.table-wrap form select {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 36px; cursor: pointer;
+}
+.table-wrap form input:focus, .table-wrap form select:focus {
+  border-color: #10B981; box-shadow: 0 0 0 3px rgba(16,185,129,.15);
+}
+.form-group textarea { resize: vertical; min-height: 65px; }
+.form-group small { color: var(--muted); font-size: 11px; font-weight: 600; }
+.form-divider {
+  grid-column: 1/-1; border: none;
+  border-top: 1.5px solid var(--border);
+}
+.form-section {
+  grid-column: 1/-1;
+  font-size: 10px; font-weight: 900; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--accent2);
+}
+
+/* ── Export box ──────────────────────────────────────── */
+.export-box {
+  background: var(--bg-2); border: 1.5px solid var(--border);
+  border-radius: 9px; padding: 14px; margin-top: 14px;
+}
+.export-box pre {
+  font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace;
+  white-space: pre-wrap; word-break: break-all;
+  max-height: 180px; overflow-y: auto;
+}
+
+/* ── Toast ───────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 12px 22px;
+  font-size: 13px; font-weight: 800; z-index: 9999;
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+  white-space: nowrap; box-shadow: var(--shadow-modal);
+}
+#toast.show { opacity: 1; }
+#toast.success { border-color: #6EE7B7; color: var(--green); background: #F0FDF4; }
+#toast.error   { border-color: #FECACA; color: #DC2626; background: #FEF2F2; }
+#toast.info    { border-color: #BAE6FD; color: #0369A1; background: #F0F9FF; }
+
+/* ── Password form ───────────────────────────────────── */
+.pwd-form {
+  background: var(--bg-2); border-radius: 12px;
+  border: 1.5px solid var(--border);
+  padding: 20px; margin-top: 16px;
+}
+.pwd-form h3 { font-size: 14px; font-weight: 800; margin-bottom: 16px; color: var(--text); }
+
+/* ── Team card photo — face-safe square ─────────────── */
+/* Used by renderTeamPage() inline styles; this gives nice defaults */
+#main-content div[id^="photo-wrap-"] {
+  aspect-ratio: 1 / 1 !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+#main-content div[id^="photo-wrap-"] img {
+  width: 100% !important; height: 100% !important;
+  object-fit: cover !important;
+  object-position: top center !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+
+/* ── File upload trigger zone ────────────────────────── */
+label[for^="upload-"] {
+  background: rgba(255,255,255,.92) !important;
+  border: 1.5px dashed #CBD5E1 !important;
+  color: var(--muted) !important; border-radius: 8px !important;
+  font-size: 11px !important; font-weight: 800 !important;
+  cursor: pointer !important; padding: 5px 12px !important;
+  transition: border-color .15s, color .15s, background .15s !important;
+  backdrop-filter: blur(4px) !important;
+}
+label[for^="upload-"]:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: #F0FDF4 !important;
+}
+
+/* ── Back nav item inline style override ─────────────── */
+/* JS renders .nav-item as inline flex for back-buttons; keep consistent */
+.main .nav-item {
+  background: none !important; color: var(--accent-2) !important;
+  padding: 0 !important; border-radius: 0 !important;
+}
+.main .nav-item:hover { background: none !important; color: var(--accent) !important; }
+
+/* ── Inline bulk-student textarea ────────────────────── */
+textarea#bulk-student-input {
+  background: var(--bg-2) !important; border: 1.5px solid var(--border) !important;
+  border-radius: 9px !important; color: var(--text) !important;
+  font-family: 'DM Mono', monospace !important; font-size: 12px !important;
+  padding: 10px !important;
+}
+textarea#bulk-student-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.12) !important;
+  outline: none !important;
+}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar-toggle { display: inline-flex; align-items: center; justify-content: center; }
+  .sidebar {
+    display: none; position: fixed; top: 60px; left: 0; bottom: 0; width: 240px;
+    z-index: 50; overflow-y: auto;
+    box-shadow: 4px 0 24px rgba(15,23,42,0.10);
+  }
+  .sidebar.open { display: flex; }
+  .sidebar-backdrop.open {
+    display: block; position: fixed; top: 60px; left: 0; right: 0; bottom: 0;
+    background: rgba(15,23,42,0.25); z-index: 40;
+  }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .full { grid-column: 1; }
+  table { font-size: 12px; }
+  th, td { padding: 8px 12px; }
+}
+@media (max-width: 480px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  .scene-cards { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; }
+}
   </style>
 </head>
 <body>
@@ -275,38 +635,38 @@
   <nav class="sidebar" id="sidebar">
     <div class="section-label">Konten</div>
     <div class="nav-item active" data-super-admin-only onclick="showPage('objects')">
-      <span class="icon">🏛️</span> Objek Scene
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span> Objek Scene
     </div>
     <div class="nav-item" data-super-admin-only onclick="showPage('scenes')">
-      <span class="icon">🗺️</span> Kelola Scene
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg></span> Kelola Scene
     </div>
     <div class="nav-item" data-super-admin-only onclick="state.currentTourId=null; showPage('tour')">
-      <span class="icon">🧭</span> Tur 360°
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></span> Tur 360°
     </div>
     <div class="nav-item" onclick="state.currentClassId=null; showPage('classes')">
-      <span class="icon">🎓</span> Kelas & Siswa
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span> Kelas &amp; Siswa
     </div>
     <div class="nav-item" onclick="showPage('report')">
-      <span class="icon">📊</span> Laporan Guru
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></span> Laporan Guru
     </div>
     <div class="section-label" style="margin-top:8px" data-admin-only>Multi-Sekolah</div>
     <div class="nav-item" data-admin-only onclick="showPage('schools')">
-      <span class="icon">🏫</span> Sekolah & Akun Guru
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="9" y1="22" x2="9" y2="12"/><line x1="15" y1="12" x2="15" y2="22"/><line x1="3" y1="9" x2="21" y2="9"/></svg></span> Sekolah &amp; Akun Guru
     </div>
     <div class="section-label" style="margin-top:8px" data-super-admin-only>Referensi</div>
     <div class="nav-item" data-super-admin-only onclick="showPage('geometri')">
-      <span class="icon">📐</span> Katalog Geometri
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 22 20 2 20"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="15" x2="16" y2="15"/></svg></span> Katalog Geometri
     </div>
     <div class="nav-item" data-super-admin-only onclick="showPage('export')">
-      <span class="icon">📤</span> Export / Backup
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Export / Backup
     </div>
     <div class="section-label" style="margin-top:8px" data-super-admin-only>Konten Lain</div>
     <div class="nav-item" data-super-admin-only onclick="showPage('team')">
-      <span class="icon">👥</span> Tim Peneliti
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M5.5 20a8.38 8.38 0 0013 0"/></svg></span> Tim Peneliti
     </div>
     <div class="section-label" style="margin-top:8px">Akun</div>
     <div class="nav-item" onclick="showPage('settings')">
-      <span class="icon">⚙️</span> Pengaturan
+      <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.14.63.7 1.09 1.35 1.09H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span> Pengaturan
     </div>
   </nav>
 
@@ -386,7 +746,7 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal('obj-modal')">Batal</button>
-        <button type="submit" class="btn btn-primary">💾 Simpan Objek</button>
+        <button type="submit" class="btn btn-primary">Simpan Objek</button>
       </div>
     </form>
   </div>
@@ -439,7 +799,7 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal('scene-modal')">Batal</button>
-        <button type="submit" class="btn btn-primary">🗺️ Buat Scene</button>
+        <button type="submit" class="btn btn-primary">Buat Scene</button>
       </div>
     </form>
   </div>
@@ -513,7 +873,7 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal('team-modal')">Batal</button>
-        <button type="submit" class="btn btn-primary">💾 Simpan Anggota</button>
+        <button type="submit" class="btn btn-primary">Simpan Anggota</button>
       </div>
     </form>
   </div>
@@ -603,7 +963,7 @@ async function showApp() {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app-page').style.display   = 'block';
   const roleLabel = isSuperAdmin() ? '' : isSchoolAdmin() ? ' (Admin Sekolah)' : ' (Guru)';
-  document.getElementById('topbar-user').textContent  = '👤 ' + state.username + roleLabel;
+  document.getElementById('topbar-user').textContent  = state.username + roleLabel;
   applyRoleVisibility();
   if (isSuperAdmin()) await loadAllScenes();
   showPage(state.currentPage);
@@ -725,8 +1085,8 @@ function renderObjectsPage(main) {
                 ${obj.model_src?'<span class="badge-model" style="margin-left:4px">GLTF</span>':''}
               </td>
               <td>
-                <button class="btn btn-ghost btn-sm" onclick="openEditObjModal('${obj.id}')">✏️ Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteObj('${obj.id}')" style="margin-left:4px">🗑</button>
+                <button class="btn btn-ghost btn-sm" onclick="openEditObjModal('${obj.id}')">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteObj('${obj.id}')" style="margin-left:4px" title="Hapus">×</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -755,20 +1115,20 @@ async function renderScenesPage(main) {
       <div class="scene-info-card">
         <div class="sc-thumb">
           <img src="${thumbPath}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-          <div class="sc-thumb-fallback" style="display:none;background:linear-gradient(135deg,#1a2744,#2d4a2a)">🏛️</div>
+          <div class="sc-thumb-fallback" style="display:none;background:linear-gradient(135deg,#1a2744,#2d4a2a)"></div>
           ${isDefault?'<span class="sc-default-badge">DEFAULT</span>':''}
         </div>
         <div class="sc-body">
           <div class="sc-name">${s.name}</div>
-          <div class="sc-loc">📍 ${s.location||'—'} · ${sc.era||'—'}</div>
+          <div class="sc-loc">${s.location||'—'} · ${sc.era||'—'}</div>
           <div class="sc-stats">
             <div class="sc-stat"><div class="sc-stat-val">${s.obj_count}</div><div class="sc-stat-lbl">Objek</div></div>
             <div class="sc-stat"><div class="sc-stat-val">${(sc.objects||[]).filter(o=>o.interactive).length}</div><div class="sc-stat-lbl">Interaktif</div></div>
           </div>
           <div class="sc-actions">
-            <button class="btn btn-ghost btn-sm" onclick="switchScene('${s.scene_id}'); showPage('objects')">📋 Kelola Objek</button>
+            <button class="btn btn-ghost btn-sm" onclick="switchScene('${s.scene_id}'); showPage('objects')">Kelola Objek</button>
             <a href="/vr/${s.scene_id}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka VR</a>
-            ${!isDefault?`<button class="btn btn-danger btn-sm" onclick="deleteScene('${s.scene_id}')">🗑 Hapus</button>`:''}
+            ${!isDefault?`<button class="btn btn-danger btn-sm" onclick="deleteScene('${s.scene_id}')">Hapus</button>`:''}
           </div>
         </div>
       </div>`;
@@ -780,7 +1140,7 @@ async function renderScenesPage(main) {
     </div>
     <div class="scene-cards">${cards}</div>
     <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:14px;font-size:12px;color:var(--muted)">
-      💡 <strong style="color:var(--accent)">Cara menambah scene baru:</strong>
+      <strong style="color:var(--accent)">Cara menambah scene baru:</strong>
       Klik "+ Tambah Scene" → isi form → scene VR otomatis dibuat → tambahkan objek via tab "Objek Scene".
       Upload foto ke <code>public/assets/images/[scene_id].jpg</code> agar thumbnail muncul.
     </div>`;
@@ -809,13 +1169,13 @@ async function renderTourPage(main) {
       </div>
       <div class="sc-body">
         <div class="sc-name">${t.name}</div>
-        <div class="sc-loc">📍 ${t.source || 'Foto 360° asli'}</div>
+        <div class="sc-loc">${t.source || 'Foto 360° asli'}</div>
         <div class="sc-stats">
           <div class="sc-stat"><div class="sc-stat-val">${t.node_count}</div><div class="sc-stat-lbl">Titik</div></div>
           <div class="sc-stat"><div class="sc-stat-val">${t.identified_count}</div><div class="sc-stat-lbl">Teridentifikasi</div></div>
         </div>
         <div class="sc-actions">
-          <button class="btn btn-ghost btn-sm" onclick="state.currentTourId='${t.tour_id}'; renderTourPage(document.getElementById('main-content'))">🧭 Kelola Identifikasi</button>
+          <button class="btn btn-ghost btn-sm" onclick="state.currentTourId='${t.tour_id}'; renderTourPage(document.getElementById('main-content'))">Kelola Identifikasi</button>
           <a href="/vr/tour-${t.tour_id}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Tur</a>
         </div>
       </div>
@@ -865,7 +1225,7 @@ async function renderTourDetailPage(main, tourId) {
           </div>
         </td>
         <td>${identify?`<span class="badge-interactive">Teridentifikasi</span>`:'<span class="badge-static">Belum</span>'}</td>
-        <td><button class="btn btn-primary btn-sm" onclick="saveTourFolder('${folder.replace(/'/g,"\\'")}','${rowId}')">💾 Simpan</button></td>
+        <td><button class="btn btn-primary btn-sm" onclick="saveTourFolder('${folder.replace(/'/g,"\\'")}','${rowId}')">Simpan</button></td>
       </tr>`;
   }).join('');
 
@@ -891,7 +1251,7 @@ async function renderTourDetailPage(main, tourId) {
       </table>
     </div>
     <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:14px;font-size:12px;color:var(--muted);margin-top:16px">
-      💡 Satu area (mis. "Teras 1") bisa berisi banyak titik pandang — mengatur kelas geometri di sini menerapkannya ke <strong style="color:var(--accent)">semua titik dalam area itu sekaligus</strong>. Pilih "— Tidak ada —" untuk area yang memang tidak punya elemen geometri jelas (mis. halaman/selasar).
+      Satu area (mis. "Teras 1") bisa berisi banyak titik pandang — mengatur kelas geometri di sini menerapkannya ke <strong style="color:var(--accent)">semua titik dalam area itu sekaligus</strong>. Pilih "— Tidak ada —" untuk area yang memang tidak punya elemen geometri jelas (mis. halaman/selasar).
     </div>`;
 }
 
@@ -983,8 +1343,8 @@ async function renderReportPage(main, page) {
       <div><h1>Laporan Guru</h1><div class="sub">Rekap sesi eksplorasi, kuis, dan interaksi siswa${isSuperAdmin()?' (semua sekolah, bisa difilter)':''}</div></div>
       <div>
         ${schoolFilterHtml}
-        <a href="${csvUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-right:8px">⬇️ Export CSV</a>
-        <button class="btn btn-ghost btn-sm" onclick="renderReportPage(document.getElementById('main-content'))">🔄 Refresh</button>
+        <a href="${csvUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-right:8px">Export CSV</a>
+        <button class="btn btn-ghost btn-sm" onclick="renderReportPage(document.getElementById('main-content'))">Refresh</button>
       </div>
     </div>
     <div class="stats">
@@ -1071,8 +1431,8 @@ async function renderClassesPage(main) {
       ${showOwnerCol ? `<td>${ownerLabel(c)}</td>` : ''}
       <td>${c.student_count}</td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="state.currentClassId=${c.id}; renderClassesPage(document.getElementById('main-content'))">👥 Kelola Siswa</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteClass(${c.id},'${c.class_name.replace(/'/g,"\\'")}')" style="margin-left:4px">🗑</button>
+        <button class="btn btn-ghost btn-sm" onclick="state.currentClassId=${c.id}; renderClassesPage(document.getElementById('main-content'))">Kelola Siswa</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteClass(${c.id},'${c.class_name.replace(/'/g,"\\'")}')" style="margin-left:4px" title="Hapus">×</button>
       </td>
     </tr>`).join('') : `<tr><td colspan="${showOwnerCol?6:5}" style="text-align:center;padding:24px;color:var(--muted)">Belum ada kelas</td></tr>`;
 
@@ -1144,8 +1504,8 @@ async function renderClassDetailPage(main, classId) {
       <td style="font-weight:600">${s.name}</td>
       <td style="font-family:monospace;font-size:12px">${s.student_number}</td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword(${s.id},'${s.name.replace(/'/g,"\\'")}')">🔑 Reset Password</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.name.replace(/'/g,"\\'")}')" style="margin-left:4px">🗑</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword(${s.id},'${s.name.replace(/'/g,"\\'")}')">Reset Password</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.name.replace(/'/g,"\\'")}')" style="margin-left:4px" title="Hapus">×</button>
       </td>
     </tr>`).join('') : `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--muted)">Belum ada siswa — tambahkan lewat form di bawah</td></tr>`;
 
@@ -1244,7 +1604,7 @@ async function renderSchoolsPage(main) {
       <td style="font-weight:600">${s.name}</td>
       <td style="font-family:monospace;font-size:11px;color:var(--muted)">${s.code || '—'}</td>
       <td>${accounts.filter(a => a.school_id === s.id).length}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteSchool(${s.id},'${s.name.replace(/'/g,"\\'")}')">🗑 Hapus</button></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteSchool(${s.id},'${s.name.replace(/'/g,"\\'")}')">Hapus</button></td>
     </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Belum ada sekolah</td></tr>`;
 
   const schoolOptions = schools.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
@@ -1255,8 +1615,8 @@ async function renderSchoolsPage(main) {
       <td>${ROLE_BADGES[a.role] || a.role}</td>
       ${isSuperAdmin() ? `<td>${a.school_name || '—'}</td>` : ''}
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="resetAccountPassword(${a.id},'${a.username}')">🔑 Reset Password</button>
-        ${a.role !== 'super_admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id},'${a.username}')" style="margin-left:4px">🗑</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="resetAccountPassword(${a.id},'${a.username}')">Reset Password</button>
+        ${a.role !== 'super_admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id},'${a.username}')" style="margin-left:4px" title="Hapus">×</button>` : ''}
       </td>
     </tr>`).join('') : '';
 
@@ -1407,8 +1767,8 @@ function renderExportPage(main) {
         <div style="font-weight:700;margin-bottom:10px">${s.name} <code style="font-size:11px;color:var(--muted);margin-left:8px">data/${s.scene_id}.json</code></div>
         <div class="export-box"><pre>${JSON.stringify(state.scenes[s.scene_id]||{},null,2).slice(0,500)}...</pre></div>
         <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-success" onclick="downloadJSON('${s.scene_id}')">⬇️ Download JSON</button>
-          <button class="btn btn-ghost" onclick="copyJSON('${s.scene_id}')">📋 Copy</button>
+          <button class="btn btn-success" onclick="downloadJSON('${s.scene_id}')">Download JSON</button>
+          <button class="btn btn-ghost" onclick="copyJSON('${s.scene_id}')">Copy</button>
         </div>
       </div>`).join('')}`;
 }
@@ -1429,7 +1789,7 @@ function renderSettingsPage(main) {
       <div style="font-weight:700;margin-bottom:4px">Akun Admin</div>
       <div style="color:var(--muted);font-size:12px;margin-bottom:16px">Username: <strong style="color:var(--accent)">${state.username}</strong></div>
       <div class="pwd-form">
-        <h3>🔑 Ganti Password</h3>
+        <h3>Ganti Password</h3>
         <div class="form-grid">
           <div class="form-group full"><label>Password Lama</label><input id="pwd-old" type="password" placeholder="••••••••"></div>
           <div class="form-group"><label>Password Baru</label><input id="pwd-new" type="password" placeholder="min. 6 karakter"></div>
@@ -1582,10 +1942,10 @@ function renderTeamPage(main) {
 
   const memberCard = (m) => {
     const photoHtml = m.photo
-      ? `<img src="${m.photo}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
+      ? `<img src="${m.photo}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;object-position:top center;border-radius:0;position:absolute;inset:0;"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
       : '';
-    const fallbackEmoji = m.role_type === 'mahasiswa' ? '👨‍🎓' : '👩‍🔬';
+    const fallbackEmoji = '';
     const expertiseTags = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(e=>e.trim()).filter(Boolean))
       .map(e => `<span style="background:rgba(200,150,62,.1);border:1px solid rgba(200,150,62,.2);color:#C8963E;border-radius:3px;padding:1px 7px;font-size:10px;font-weight:600">${e}</span>`).join('');
     const links = [
@@ -1597,14 +1957,14 @@ function renderTeamPage(main) {
     return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
         <!-- Foto -->
-        <div style="height:160px;background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center" id="photo-wrap-${m.id}">
+        <div style="aspect-ratio:1/1;background:#F1F5F9;position:relative;overflow:hidden;border-radius:10px 10px 0 0" id="photo-wrap-${m.id}">
           ${photoHtml}
-          <div style="${m.photo?'display:none;':''}width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3em;color:var(--muted)" id="photo-fallback-${m.id}">${fallbackEmoji}</div>
+          <div style="${m.photo?'display:none;':''}width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:1.8rem;font-weight:900;color:#94A3B8;letter-spacing:-.01em;background:linear-gradient(135deg,#F1F5F9,#E2E8F0)" id="photo-fallback-${m.id}">${m.name.split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('')}</div>
           <!-- Upload button overlay -->
           <label for="upload-${m.id}" title="Ganti foto"
             style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.15);
                    border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;z-index:2">
-            📷 Ganti Foto
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:middle" aria-hidden="true"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Ganti Foto
           </label>
           <input type="file" id="upload-${m.id}" accept="image/jpeg,image/png,image/webp"
             style="display:none" onchange="uploadPhoto('${m.id}', this)">
@@ -1618,8 +1978,8 @@ function renderTeamPage(main) {
           ${expertiseTags ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${expertiseTags}</div>` : ''}
           ${links ? `<div style="display:flex;gap:0;margin-top:6px;align-items:center">${links}</div>` : ''}
           <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openEditMemberModal('${m.id}')">✏️ Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')">🗑</button>
+            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openEditMemberModal('${m.id}')">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')" title="Hapus anggota" aria-label="Hapus anggota">×</button>
           </div>
         </div>
       </div>`;
@@ -1632,9 +1992,7 @@ function renderTeamPage(main) {
     </div>
 
     <div style="background:rgba(200,150,62,.06);border:1px solid rgba(200,150,62,.15);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--muted)">
-      💡 <strong style="color:var(--gold)">Cara upload foto:</strong>
-      Klik tombol <strong>📷 Ganti Foto</strong> di kartu anggota. Format JPG/PNG/WebP, maksimal 3MB.
-      Foto langsung tampil di halaman portal.
+      <strong style="color:var(--gold)">Panduan upload foto:</strong> Klik tombol "Ganti Foto" di kartu anggota. Format JPG/PNG/WebP, maksimal 3MB. Foto langsung tampil di halaman portal.
     </div>
 
     <!-- Peneliti -->
