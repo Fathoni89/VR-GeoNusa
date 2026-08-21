@@ -1,5 +1,10 @@
 # Database — VR-GeoNusa
 
+Schema MySQL aktif dikelola oleh Drizzle di `src/db/schema.ts` dan
+`src/db/migrations/`. Jalankan melalui `npm run db:migrate -- --approve` dengan
+gate backup, target, dan maintenance window yang dijelaskan di README migration.
+`schema.mysql.sql` sekarang hanya snapshot legacy untuk menguji jalur upgrade.
+
 Skema di `schema.sql` (SQLite, 6 tabel: `users`, `sessions`, `objects`, `predictions`,
 `interactions`, `quiz_results`) — dipakai untuk mencatat sesi eksplorasi siswa, hasil
 prediksi ML, interaksi gaze, dan hasil kuis.

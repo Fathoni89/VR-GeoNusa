@@ -17,7 +17,7 @@ export interface AuthRouterOptions {
   staffLoginLimiter: RequestHandler;
   publicWriteLimiter: RequestHandler;
   cookieName: string;
-  cookieOptions(): CookieOptions;
+  cookieOptions(options?: { includeMaxAge?: boolean }): CookieOptions;
 }
 
 function forwardAsync(handler: AsyncRequestHandler): RequestHandler {
@@ -164,6 +164,11 @@ export function createAuthRouter(options: AuthRouterOptions): Router {
       });
     }),
   );
+
+  router.post('/logout', (_request, response) => {
+    response.clearCookie(options.cookieName, options.cookieOptions({ includeMaxAge: false }));
+    response.json({ success: true, message: 'Logout berhasil' });
+  });
 
   return router;
 }

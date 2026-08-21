@@ -13,7 +13,7 @@ function extractServerRoutes(source) {
 
 function extractRouterRoutes(source, prefix) {
   return [...source.matchAll(/\brouter\s*\.\s*(get|post|put|patch|delete)\s*\(\s*(['"])(.*?)\2/g)]
-    .map(match => `${match[1].toUpperCase()} ${match[3] === '/' ? prefix : `${prefix}${match[3]}`}`);
+    .map(match => `${match[1].toUpperCase()} ${match[3] === '/' ? prefix || '/' : `${prefix}${match[3]}`}`);
 }
 
 function extractInventoryRoutes(markdown) {
@@ -75,6 +75,18 @@ describe('route inventory contract', () => {
     path.join(PROJECT_ROOT, 'src', 'modules', 'reports', 'reports.router.ts'),
     'utf8'
   );
+  const teamRouterSource = readFileSync(
+    path.join(PROJECT_ROOT, 'src', 'modules', 'team', 'team.router.ts'),
+    'utf8'
+  );
+  const healthRouterSource = readFileSync(
+    path.join(PROJECT_ROOT, 'src', 'modules', 'health', 'health.router.ts'),
+    'utf8'
+  );
+  const staticApplicationSource = readFileSync(
+    path.join(PROJECT_ROOT, 'src', 'static-application.ts'),
+    'utf8'
+  );
   const inventory = readFileSync(
     path.join(PROJECT_ROOT, 'docs', 'architecture', 'api-route-inventory.md'),
     'utf8'
@@ -92,6 +104,9 @@ describe('route inventory contract', () => {
   const toursRoutes = extractRouterRoutes(toursRouterSource, '/api');
   const datasetRoutes = extractRouterRoutes(datasetRouterSource, '/api/dataset');
   const reportsRoutes = extractRouterRoutes(reportsRouterSource, '/api/reports');
+  const teamRoutes = extractRouterRoutes(teamRouterSource, '/api/team');
+  const healthRoutes = extractRouterRoutes(healthRouterSource, '/api/health');
+  const staticApplicationRoutes = extractRouterRoutes(staticApplicationSource, '');
   const actualRoutes = [
     ...serverRoutes,
     ...authRoutes,
@@ -106,6 +121,9 @@ describe('route inventory contract', () => {
     ...toursRoutes,
     ...datasetRoutes,
     ...reportsRoutes,
+    ...teamRoutes,
+    ...healthRoutes,
+    ...staticApplicationRoutes,
   ];
   const expectedRoutes = extractInventoryRoutes(inventory);
 
@@ -114,7 +132,7 @@ describe('route inventory contract', () => {
       missingRoutes(actualRoutes, expectedRoutes),
       'Kontrak route hilang dari aplikasi'
     ).toEqual([]);
-    expect(actualRoutes, 'Jumlah route saat ini tidak sesuai inventory').toHaveLength(53);
+    expect(actualRoutes, 'Jumlah route saat ini tidak sesuai inventory').toHaveLength(55);
   });
 
   test('detector melaporkan route spesifik yang hilang', () => {
@@ -128,6 +146,7 @@ describe('route inventory contract', () => {
       'GET /api/auth/verify',
       'POST /api/auth/change-password',
       'POST /api/auth/student-login',
+      'POST /api/auth/logout',
     ].includes(route))).toEqual([]);
   });
 
@@ -193,6 +212,28 @@ describe('route inventory contract', () => {
     expect(serverRoutes.filter(route => [
       'GET /api/reports/summary',
       'GET /api/reports/export.csv',
+    ].includes(route))).toEqual([]);
+  });
+
+  test('route team yang dimigrasikan tidak lagi dideklarasikan sebagai route legacy', () => {
+    expect(serverRoutes.filter(route => [
+      'GET /api/team',
+      'POST /api/team',
+      'PUT /api/team/:id',
+      'DELETE /api/team/:id',
+      'PATCH /api/team/reorder',
+      'POST /api/team/:id/photo',
+    ].includes(route))).toEqual([]);
+  });
+
+  test('route health dan static application tidak lagi dideklarasikan sebagai route legacy', () => {
+    expect(serverRoutes.filter(route => [
+      'GET /',
+      'GET /admin',
+      'GET /admin/login',
+      'GET /api/ml-placeholder.json',
+      'GET /api/health',
+      'GET *',
     ].includes(route))).toEqual([]);
   });
 });

@@ -16,6 +16,9 @@ const { createApp } = require('./src/app');
 const { runtimeEnv } = require('./src/config/env');
 const { createPaths } = require('./src/config/paths');
 const { createDatabasePool } = require('./src/db/client');
+const {
+  ensureMustChangePasswordMigration: migrateLegacyAdminPassword,
+} = require('./src/db/legacy-baseline');
 const { createAuthentication } = require('./src/middleware/authenticate');
 const { requireAnyRole, requireRole } = require('./src/middleware/authorize');
 const { errorHandler } = require('./src/middleware/error-handler');
@@ -65,16 +68,22 @@ const { createDatasetRouter } = require('./src/modules/dataset/dataset.router');
 const { createReportsRepository } = require('./src/modules/reports/reports.repository');
 const { createReportsService } = require('./src/modules/reports/reports.service');
 const { createReportsRouter } = require('./src/modules/reports/reports.router');
+const { createTeamRepository } = require('./src/modules/team/team.repository');
+const { createTeamService } = require('./src/modules/team/team.service');
+const { createTeamRouter } = require('./src/modules/team/team.router');
+const { createHealthRepository } = require('./src/modules/health/health.repository');
+const { createHealthService } = require('./src/modules/health/health.service');
+const { createHealthRouter } = require('./src/modules/health/health.router');
+const {
+  createFrontendFallbackRouter,
+  createStaticApplicationRouter,
+} = require('./src/static-application');
 const {
   createPublicWriteLimiter,
   createStaffLoginLimiter,
 } = require('./src/middleware/rate-limit');
 const { startHttpServer } = require('./src/server');
-const {
-  assertFileIdentifier,
-  InvalidFilePathError,
-  resolveWithin,
-} = require('./src/shared/ids');
+const { assertFileIdentifier } = require('./src/shared/ids');
 
 const app = createApp();
 const PORT = runtimeEnv.PORT;
@@ -96,7 +105,6 @@ const PUBLIC_DIR = runtimePaths.publicDir;
 const VR_DIR = runtimePaths.vrDir;
 const CONFIG_DIR = runtimePaths.configDir;
 const DATASET_DIR = runtimePaths.datasetDir;
-const TEAM_FILE = runtimePaths.teamFile;
 
 // ── JWT secret — auto-generate & persist lokal jika belum ada (kredensial
 // database TETAP harus diisi manual lewat .env, ini cuma untuk menandatangani
@@ -140,116 +148,15 @@ function logMlInitializationError(error, logger = app.locals.logger) {
   logger.error('Gagal memuat model ML server-side:', error.message);
 }
 
-// `CREATE TABLE IF NOT EXISTS` tidak menambah kolom baru ke tabel yang sudah
-// ada dari deploy sebelumnya (mis. `sessions` sudah ada sebelum kolom
-// student_id/class_id ditambahkan ke schema.mysql.sql) — jadi kolom baru
-// perlu ditambah manual lewat migrasi kecil ini, dicek dulu supaya aman
-// dijalankan berkali-kali (idempotent) di semua versi MySQL/MariaDB.
-async function ensureColumn(table, column, definition, {
-  dbPool = pool,
-  env = runtimeEnv,
-  logger = console,
-} = {}) {
-  const [rows] = await dbPool.query(
-    `SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS
-     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
-    [env.DB_NAME, table, column]
-  );
-  if (rows[0].cnt === 0) {
-    await dbPool.query(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
-    logger.log(`Migrasi: kolom "${column}" ditambahkan ke tabel "${table}"`);
-  }
-}
-
-// Sama seperti ensureColumn — ALTER TABLE ... MODIFY COLUMN untuk menambah
-// nilai ENUM baru ('school_admin') ke deploy lama yang masih pakai ENUM lama.
-async function ensureAccountsRoleEnum({
-  dbPool = pool,
-  env = runtimeEnv,
-  logger = console,
-} = {}) {
-  const [[row]] = await dbPool.query(
-    `SELECT COLUMN_TYPE AS type FROM information_schema.COLUMNS
-     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'accounts' AND COLUMN_NAME = 'role'`,
-    [env.DB_NAME]
-  );
-  if (row && !row.type.includes('school_admin')) {
-    await dbPool.query(`ALTER TABLE accounts MODIFY COLUMN role ENUM('super_admin','school_admin','teacher') NOT NULL DEFAULT 'teacher'`);
-    logger.log('Migrasi: role "school_admin" ditambahkan ke enum accounts.role');
-  }
-}
-
 async function ensureMustChangePasswordMigration({
   dbPool = pool,
   env = runtimeEnv,
-  logger = console,
 } = {}) {
-  const [columns] = await dbPool.query(
-    `SELECT IS_NULLABLE AS is_nullable, COLUMN_DEFAULT AS column_default
-     FROM information_schema.COLUMNS
-     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'accounts'
-       AND COLUMN_NAME = 'must_change_password'`,
-    [env.DB_NAME]
+  return migrateLegacyAdminPassword(
+    dbPool,
+    env.DB_NAME,
+    env.BOOTSTRAP_ADMIN_PASSWORD,
   );
-
-  let column = columns[0];
-  if (!column) {
-    // NULL menjadi penanda durable untuk baris yang berasal dari deployment
-    // lama. Jika startup terputus, retry dapat melanjutkan tanpa rotasi ulang.
-    await dbPool.query(
-      'ALTER TABLE accounts ADD COLUMN must_change_password BOOLEAN NULL DEFAULT NULL'
-    );
-    logger.log('Migrasi: kolom "must_change_password" ditambahkan ke tabel "accounts"');
-    column = { is_nullable: 'YES', column_default: null };
-  }
-
-  if (String(column.is_nullable).toUpperCase() !== 'YES') return;
-
-  const [[legacyAdmin]] = await dbPool.query(
-    `SELECT id FROM accounts
-     WHERE username = ? AND role = ? AND must_change_password IS NULL
-     LIMIT 1`,
-    ['admin', 'super_admin']
-  );
-
-  if (legacyAdmin) {
-    const bootstrapPassword = env.BOOTSTRAP_ADMIN_PASSWORD;
-    if (typeof bootstrapPassword !== 'string' || bootstrapPassword.length === 0) {
-      throw new Error(
-        'Konfigurasi BOOTSTRAP_ADMIN_PASSWORD wajib diisi untuk memigrasikan admin legacy'
-      );
-    }
-
-    const hash = await bcrypt.hash(bootstrapPassword, 10);
-    const [result] = await dbPool.query(
-      `UPDATE accounts
-       SET password_hash = ?, must_change_password = TRUE
-       WHERE id = ? AND must_change_password IS NULL`,
-      [hash, legacyAdmin.id]
-    );
-    if (result.affectedRows > 0) {
-      logger.log('Password akun admin legacy dirotasi; ganti password setelah login');
-    }
-  }
-
-  await dbPool.query(
-    `UPDATE accounts SET must_change_password = FALSE
-     WHERE must_change_password IS NULL
-       AND NOT (username = 'admin' AND role = 'super_admin')`
-  );
-
-  const [[{ cnt }]] = await dbPool.query(
-    'SELECT COUNT(*) AS cnt FROM accounts WHERE must_change_password IS NULL'
-  );
-  if (Number(cnt) !== 0) {
-    throw new Error('Migrasi must_change_password belum dapat diselesaikan dengan aman');
-  }
-
-  await dbPool.query(
-    `ALTER TABLE accounts MODIFY COLUMN
-     must_change_password BOOLEAN NOT NULL DEFAULT FALSE`
-  );
-  logger.log('Migrasi: kolom "must_change_password" difinalisasi');
 }
 
 async function initDb({
@@ -257,17 +164,12 @@ async function initDb({
   env = runtimeEnv,
   logger = console,
 } = {}) {
-  const schema = fs.readFileSync(runtimePaths.schemaFile, 'utf8');
-  await dbPool.query(schema);
-
-  const migrationContext = { dbPool, env, logger };
-  await ensureColumn('sessions', 'student_id', 'student_id INT NULL REFERENCES students(id)', migrationContext);
-  await ensureColumn('sessions', 'class_id', 'class_id INT NULL REFERENCES classes(id)', migrationContext);
-  await ensureColumn('sessions', 'write_token_hash', 'write_token_hash VARCHAR(64) NULL', migrationContext);
-  await ensureColumn('accounts', 'auth_version', 'auth_version INT UNSIGNED NOT NULL DEFAULT 0', migrationContext);
-  await ensureColumn('students', 'auth_version', 'auth_version INT UNSIGNED NOT NULL DEFAULT 0', migrationContext);
-  await ensureAccountsRoleEnum(migrationContext);
-  await ensureMustChangePasswordMigration(migrationContext);
+  const [[migration]] = await dbPool.query(
+    'SELECT created_at FROM __drizzle_migrations ORDER BY created_at DESC LIMIT 1'
+  );
+  if (!migration) {
+    throw new Error('Database belum dimigrasikan; jalankan npm run db:migrate');
+  }
 
   // Bootstrap hanya berjalan pada database kosong. Secret wajib disediakan
   // operator dan tidak pernah ditulis ke log atau disimpan sebagai plaintext.
@@ -394,18 +296,12 @@ const studentsRouter = createStudentsRouter({
 const publicWriteLimiter = createPublicWriteLimiter();
 const staffLoginLimiter = createStaffLoginLimiter();
 
-// ── Route eksplisit halaman ───────────────────────────
-app.get('/',             (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
-app.get('/admin',        (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'admin', 'index.html')));
-app.get('/admin/login',  (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'admin', 'index.html')));
-
-// ── Static files ──────────────────────────────────────
-app.use(express.static(PUBLIC_DIR, { index: false }));
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
-app.use('/data',   express.static(DATA_DIR));
-app.get('/api/ml-placeholder.json', (req, res) =>
-  res.sendFile(path.join(__dirname, 'api', 'ml-placeholder.json'))
-);
+// Data kanonik harus menang atas salinan kompatibilitas public/data.
+app.use(createStaticApplicationRouter({
+  rootDir: runtimePaths.rootDir,
+  dataDir: DATA_DIR,
+  publicDir: PUBLIC_DIR,
+}));
 
 // ── VR HTML template generator ────────────────────────
 function generateVrPage(scene) {
@@ -592,12 +488,6 @@ const authRouter = createAuthRouter({
 });
 app.use('/api/auth', authRouter);
 
-// POST /api/auth/logout
-app.post('/api/auth/logout', (req, res) => {
-  res.clearCookie(AUTH_COOKIE_NAME, authCookieOptions({ includeMaxAge: false }));
-  res.json({ success: true, message: 'Logout berhasil' });
-});
-
 // ══════════════════════════════════════════════════════
 // REST API — SEKOLAH & AKUN GURU (super_admin only kecuali GET publik)
 // ══════════════════════════════════════════════════════
@@ -760,125 +650,26 @@ app.use('/api/reports', reportsRouter);
 // REST API — TIM PENELITI
 // ══════════════════════════════════════════════════════
 
-function readTeam() {
-  if (!fs.existsSync(TEAM_FILE)) return [];
-  return JSON.parse(fs.readFileSync(TEAM_FILE, 'utf8'));
-}
-function writeTeam(data) {
-  fs.writeFileSync(TEAM_FILE, JSON.stringify(data, null, 2), 'utf8');
-  // Sync ke public/data/ untuk GitHub Pages
-  const pubFile = path.join(PUBLIC_DIR, 'data', 'team.json');
-  fs.writeFileSync(pubFile, JSON.stringify(data, null, 2), 'utf8');
-}
-
-// GET /api/team
-app.get('/api/team', (req, res) => {
-  res.json({ success: true, data: readTeam() });
+const teamService = createTeamService(createTeamRepository({
+  teamFile: runtimePaths.teamFile,
+  publicTeamFile: path.join(PUBLIC_DIR, 'data', 'team.json'),
+  teamImageDir: path.join(PUBLIC_DIR, 'assets', 'images', 'team'),
+}));
+const teamRouter = createTeamRouter({
+  service: teamService,
+  requireAuth,
+  requireSuperAdmin: superAdminOnly,
 });
 
-// POST /api/team — tambah anggota
-app.post('/api/team', requireAuth, requireRole('super_admin'), (req, res) => {
-  const team = readTeam();
-  const member = req.body;
-  if (!member.id || !member.name)
-    return res.status(400).json({ success: false, message: 'id dan name wajib diisi' });
-  assertFileIdentifier(member.id, 'team_id');
-  if (team.find(m => m.id === member.id))
-    return res.status(409).json({ success: false, message: `ID "${member.id}" sudah ada` });
-  member.order = member.order ?? (team.length + 1);
-  team.push(member);
-  writeTeam(team);
-  res.status(201).json({ success: true, data: member });
-});
+app.use('/api/team', teamRouter);
 
-// PUT /api/team/:id — update anggota
-app.put('/api/team/:id', requireAuth, requireRole('super_admin'), (req, res) => {
-  assertFileIdentifier(req.params.id, 'team_id');
-  const team = readTeam();
-  const idx = team.findIndex(m => m.id === req.params.id);
-  if (idx < 0) return res.status(404).json({ success: false, message: 'Anggota tidak ditemukan' });
-  team[idx] = { ...team[idx], ...req.body, id: req.params.id };
-  writeTeam(team);
-  res.json({ success: true, data: team[idx] });
-});
+const healthService = createHealthService(
+  createHealthRepository(() => app.locals.dbPool),
+  () => mlProvider !== null,
+);
+app.use('/api/health', createHealthRouter(healthService));
 
-// DELETE /api/team/:id
-app.delete('/api/team/:id', requireAuth, requireRole('super_admin'), (req, res) => {
-  assertFileIdentifier(req.params.id, 'team_id');
-  const team = readTeam();
-  const before = team.length;
-  const filtered = team.filter(m => m.id !== req.params.id);
-  if (filtered.length === before)
-    return res.status(404).json({ success: false, message: 'Anggota tidak ditemukan' });
-  writeTeam(filtered);
-  res.json({ success: true, message: `Anggota "${req.params.id}" dihapus` });
-});
-
-// PATCH /api/team/reorder — ubah urutan
-app.patch('/api/team/reorder', requireAuth, requireRole('super_admin'), (req, res) => {
-  const { order } = req.body;
-  if (!Array.isArray(order)) return res.status(400).json({ success: false, message: 'Kirim array "order"' });
-  const team = readTeam();
-  team.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-  team.forEach((m, i) => m.order = i + 1);
-  writeTeam(team);
-  res.json({ success: true, data: team });
-});
-
-// POST /api/team/:id/photo — upload foto anggota (multipart, max 2MB)
-app.post('/api/team/:id/photo', requireAuth, requireRole('super_admin'), (req, res) => {
-  const teamId = assertFileIdentifier(req.params.id, 'team_id');
-  const team = readTeam();
-  const member = team.find(m => m.id === teamId);
-  if (!member) return res.status(404).json({ success: false, message: 'Anggota tidak ditemukan' });
-
-  const chunks = [];
-  req.on('data', chunk => chunks.push(chunk));
-  req.on('end', () => {
-    try {
-      const buf = Buffer.concat(chunks);
-      if (buf.length > 3 * 1024 * 1024)
-        return res.status(413).json({ success: false, message: 'Foto maksimal 3MB' });
-
-      const ct = req.headers['content-type'] || '';
-      const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : 'jpg';
-      const filename = `${teamId}.${ext}`;
-      const teamImgDir = path.join(PUBLIC_DIR, 'assets', 'images', 'team');
-      if (!fs.existsSync(teamImgDir)) fs.mkdirSync(teamImgDir, { recursive: true });
-      fs.writeFileSync(resolveWithin(teamImgDir, filename), buf);
-
-      const photoPath = `/assets/images/team/${filename}`;
-      const idx = team.findIndex(m => m.id === teamId);
-      team[idx].photo = photoPath;
-      writeTeam(team);
-      res.json({ success: true, photo: photoPath });
-    } catch(e) {
-      res.status(500).json({ success: false, message: e.message });
-    }
-  });
-});
-
-// ── Health check ─────────────────────────────────────
-app.get('/api/health', async (req, res) => {
-  const [[{ ok }]] = await req.app.locals.dbPool.query('SELECT 1 AS ok');
-  res.json({ success: true, message: 'VR-GeoNusa server running', version: '2.0.0', db: ok === 1 ? 'connected' : 'error',
-    timestamp: new Date().toISOString(),
-    scenes: fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json')).map(f => f.replace('.json','')),
-  });
-});
-
-// ── Fallback ─────────────────────────────────────────
-app.get('*', (req, res) => {
-  let filePath;
-  try {
-    filePath = resolveWithin(PUBLIC_DIR, req.path.replace(/^[/\\]+/, ''));
-  } catch (error) {
-    if (!(error instanceof InvalidFilePathError)) throw error;
-    return res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
-  }
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return res.sendFile(filePath);
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
-});
+app.use(createFrontendFallbackRouter(PUBLIC_DIR));
 
 // Centralized error handler harus menjadi middleware terakhir. Response tidak
 // membocorkan detail error internal, sementara logger tetap menerima detailnya.

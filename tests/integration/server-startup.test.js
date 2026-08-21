@@ -100,11 +100,15 @@ test('startServer tetap membuka HTTP server ketika inisialisasi ML gagal', async
   }
 });
 
-test('health endpoint non-ML tetap mengembalikan response sukses', async () => {
+test('liveness tetap sukses tanpa membaca database', async () => {
   const { app } = loadServerModule();
   const originalPool = app.locals.dbPool;
+  let queries = 0;
   app.locals.dbPool = {
-    query: async () => [[{ ok: 1 }]],
+    query: async () => {
+      queries += 1;
+      throw new Error('database tidak boleh dibaca oleh liveness');
+    },
   };
 
   try {
@@ -114,34 +118,37 @@ test('health endpoint non-ML tetap mengembalikan response sukses', async () => {
     assert.equal(response.status, 200);
     assert.equal(body.success, true);
     assert.equal(body.message, 'VR-GeoNusa server running');
-    assert.equal(body.db, 'connected');
+    assert.equal(body.status, 'live');
+    assert.equal(body.db, undefined);
+    assert.equal(body.scenes, undefined);
+    assert.equal(queries, 0);
   } finally {
     app.locals.dbPool = originalPool;
   }
 });
 
-test('async rejection menghasilkan response JSON 500 dan tidak menggantung', async () => {
+test('database readiness terpisah dan gagal terkontrol', async () => {
   const { app } = loadServerModule();
   const originalPool = app.locals.dbPool;
-  const originalLogger = app.locals.logger;
   app.locals.dbPool = {
     query: async () => { throw new Error('database unavailable'); },
   };
-  app.locals.logger = { log() {}, error() {} };
 
   try {
-    const response = await requestApp(app, '/api/health');
+    const response = await requestApp(app, '/api/health/readiness/database');
     const body = await response.json();
 
-    assert.equal(response.status, 500);
+    assert.equal(response.status, 503);
     assert.match(response.headers.get('content-type'), /^application\/json/);
     assert.deepEqual(body, {
       success: false,
-      message: 'Internal server error',
+      status: 'unavailable',
+      component: 'database',
+      timestamp: body.timestamp,
     });
+    assert.match(body.timestamp, /^\d{4}-\d{2}-\d{2}T/);
   } finally {
     app.locals.dbPool = originalPool;
-    app.locals.logger = originalLogger;
   }
 });
 

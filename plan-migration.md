@@ -5,6 +5,7 @@ Target: **Feature-based modular monolith dengan Clean Architecture pragmatis dan
 Strategi: **Incremental strangler migration**  
 Tanggal penyusunan: **13 Agustus 2026**
 Pembaruan strategi ML hybrid: **16 Agustus 2026**
+Pembaruan integrasi revisi klien (`revision.md`): **19 Agustus 2026** — lihat Bagian 27.
 
 ## 1. Tujuan
 
@@ -215,14 +216,21 @@ Aturan ini wajib diikuti oleh setiap model yang mengeksekusi rencana:
 - [ ] Fase 6E — Ekstrak module scenes dan objects
 - [ ] Fase 6F — Ekstrak module tours dan dataset
 - [ ] Fase 6G — Ekstrak module reports
-- [ ] Fase 6H — Ekstrak module team
-- [ ] Fase 6I — Ekstrak health dan static application
-- [ ] Fase 7 — Migrasi database versioned
+- [x] Fase 6H — Ekstrak module team
+- [x] Fase 6I — Ekstrak health dan static application
+- [x] Fase 7 — Migrasi database versioned
+- [ ] Fase R0 — Baseline revisi klien dan paket bukti awal (lihat Bagian 27)
+- [ ] Fase R1 — Ketepatan konsep, keamanan, dan kesiapan rilis (lihat Bagian 27)
+- [ ] Fase R2 — Interaksi geometri inti VR (lihat Bagian 27)
+- [ ] Fase R3 — Dataset dan bukti kinerja model, digabung dengan Fase 8A–8D (lihat Bagian 27)
 - [ ] Fase 8A — Bentuk kontrak dan data ML hybrid
 - [ ] Fase 8B — Isolasi inferensi classifier dalam worker
 - [ ] Fase 8C — Migrasi classifier ke ONNX dengan parity
 - [ ] Fase 8D — Terapkan decision policy dan pengalaman runtime hybrid
 - [ ] Fase 8E — Tambahkan candidate hotspot berbasis review admin
+- [ ] Fase R4 — Konten, kurikulum, instrumen, dan fitur geometri lanjutan (lihat Bagian 27)
+- [ ] Fase R5 — Etik, tata kelola, dokumentasi teknis, dan legacy (lihat Bagian 27)
+- [ ] Fase R6 — Verifikasi akhir dan paket laporan kemajuan (lihat Bagian 27)
 - [ ] Fase 9 — Migrasi frontend VR
 - [ ] Fase 10 — Migrasi admin
 - [ ] Fase 11 — Bentuk npm workspaces
@@ -714,6 +722,10 @@ Pekerjaan:
 - batasi ukuran ketika streaming, bukan setelah seluruh body masuk memory;
 - cegah filename collision dengan UUID atau atomic counter.
 
+#### Catatan revisi (19 Agustus 2026)
+
+`revision.md` butir B1 mengubah mode anotasi dataset dari crop per panorama/node menjadi anotasi per objek dengan kotak pembatas (`object_id`, `class_id`, koordinat ternormalisasi). Perubahan ini membuka kembali `src/modules/dataset/` yang sudah selesai pada fase ini dan dikerjakan pada Fase R3 (Bagian 27), bukan sebagai subfase 6F baru. Jangan mengulang pekerjaan yang sudah terverifikasi di fase ini (validasi MIME, atomic write, provenance, split deterministik); Fase R3 hanya menambah unit anotasi bounding box di atas fondasi tersebut.
+
 ### 13.7 Fase 6G — Reports
 
 Pekerjaan:
@@ -748,6 +760,10 @@ Pisahkan:
 - frontend fallback.
 
 Health endpoint publik tidak boleh menampilkan daftar file internal atau detail secret/configuration.
+
+#### Catatan revisi (19 Agustus 2026)
+
+`revision.md` butir E1 mewajibkan `data/` menjadi sumber kanonik runtime: mount route `/data` sebelum `express.static(PUBLIC_DIR)` agar suntingan admin pada `data/` langsung terlihat tanpa bergantung pada sinkronisasi ke `public/data/`. Terapkan urutan middleware ini sebagai bagian dari static asset serving pada fase ini, dan pertahankan `public/data/` hanya sebagai salinan kompatibilitas yang tidak lagi menang saat konflik. Tambahkan test yang menyunting data melalui repository/API pada temporary directory lalu membuktikan `GET /data/...` melihat versi terbaru.
 
 ### Acceptance criteria Fase 6
 
@@ -809,6 +825,14 @@ Model wajib berhenti sebelum menjalankan migration production dan meminta:
 - Tidak ada orphan setelah migration.
 - Restore backup telah diuji.
 
+### Hasil eksekusi (21 Agustus 2026)
+
+- Fresh install dan upgrade snapshot legacy berisi data lulus pada MySQL 8.4.
+- Orphan ditolak sebelum DDL; retry migration bersifat idempotent.
+- Kebijakan `RESTRICT`, `SET NULL`, dan `CASCADE` serta dump/restore backup telah diuji.
+- Migration production belum dijalankan dan tetap memerlukan seluruh gate manual.
+- Schema revisi C4/C5/D4/D5/F2 ditunda karena struktur finalnya masih menunggu keputusan manual Bagian 24.
+
 ---
 
 ## 15. Fase 8 — Migrasi ke ML Hybrid Terverifikasi Admin
@@ -859,6 +883,8 @@ Memisahkan ground truth terverifikasi, prediksi model, keputusan policy, dan met
 6. Dokumentasikan bahwa `identify.conf` adalah metadata legacy, bukan confidence model. Jangan gunakan field itu untuk evaluasi.
 7. Tentukan cache key dari tour/node, checksum atau versi asset, yaw/pitch/FOV, model version, dan preprocessing version agar cache lama tidak dipakai setelah salah satu input berubah.
 8. Response endpoint lama tetap menyediakan `class_id` dan `confidence`; response baru boleh menambahkan objek `verified`, `prediction`, dan `decision` secara backward-compatible.
+9. (Revisi B5) Tambahkan body opsional `yaw`/`pitch` yang divalidasi pada `POST /api/ml/predict/:tourId/:nodeId` agar client baru dapat mengirim sudut pandang bebas pengguna untuk crop; client lama tanpa body tetap memakai `identify.local_angle` agar kompatibel. Catat `latency_ms`, sumber prediksi, dan kecocokan dengan label area pada setiap panggilan.
+10. (Revisi B7) Nilai `identify.conf` yang berasal dari input admin (bukan hasil inferensi model) tidak boleh ditampilkan sebagai confidence model di UI maupun dicatat sebagai confidence pada tabel `predictions`. Tandai secara eksplisit sebagai data referensi admin.
 
 #### Test wajib
 
@@ -868,6 +894,9 @@ Memisahkan ground truth terverifikasi, prediksi model, keputusan policy, dan met
 - Cache invalid ketika model, preprocessing, crop, atau asset berubah.
 - Client lama masih dapat membaca response legacy.
 - Browser fallback selalu ditandai sebagai sumber yang berbeda.
+- Request dengan `yaw`/`pitch` valid menghasilkan crop sesuai sudut pandang pengguna; request tanpa body tetap memakai `local_angle`.
+- `yaw`/`pitch` tidak valid ditolak tanpa membaca file panorama.
+- UI dan log prediction tidak pernah menyebut `identify.conf` bersumber admin sebagai confidence model.
 
 #### Acceptance criteria
 
@@ -1213,6 +1242,10 @@ Pipeline menjalankan:
 - Readiness ML classifier dan candidate proposer dilaporkan terpisah; proposer yang dinonaktifkan tidak membuat aplikasi siswa dianggap down.
 - Candidate proposer default `off` sampai gate data, metrik, authorization, dan admin review disetujui.
 
+#### Catatan revisi (19 Agustus 2026)
+
+`revision.md` butir E3/E5 (satu alamat produksi berfungsi penuh, manifest aset wajib dengan checksum, smoke test produksi) sudah diverifikasi lebih awal pada Fase R1 sebagai bukti laporan kemajuan klien, sebelum Fase 8–12 dikerjakan. Fase 12 ini mengeraskan hasil tersebut menjadi bagian CI/deployment permanen (readiness terpisah database/ML, manifest aset otomatis pada build), bukan mengulang pembuktian dari nol.
+
 ### Cleanup
 
 Hapus file hanya setelah `rg` membuktikan tidak ada referensi:
@@ -1425,6 +1458,15 @@ Model harus meminta keputusan pengguna sebelum fase terkait jika belum tersedia:
 15. Jumlah minimum anotasi, coverage situs, dan metrik minimum sebelum proposer diaktifkan.
 16. Maintenance window dan backup sebelum migration production.
 
+Keputusan tambahan dari integrasi `revision.md` (lihat Bagian 27), wajib diselesaikan sebelum fase R terkait dimulai:
+
+17. B3 — pertahankan kelas `kerucut` dengan data nyata dan anotasi yang sah, atau keluarkan kelas tersebut dari taksonomi, model, kuis, dan UI secara konsisten.
+18. C4 — daftar final minimal 15 objek warisan budaya lintas situs, beserta situs asal, kelas geometri, dan bukti rujukan, ditetapkan oleh tim materi.
+19. C5 — kurikulum, fase/kelas, capaian pembelajaran, tujuan pembelajaran, dan indikator per objek/area, ditetapkan oleh tim materi.
+20. D4 dan D5 — naskah instrumen Draft I pretest-posttest dan kuesioner efikasi diri, kunci/skoring, skala, versi, dan status validasi ahli, diserahkan oleh tim peneliti. Pengembang tidak menulis substansi instrumen.
+21. F2 — dasar persetujuan etik, naskah consent orang tua dan assent siswa, data yang boleh dikumpulkan, masa simpan, hak akses, mekanisme penarikan data, dan bentuk ekspor pseudonim, ditetapkan oleh penanggung jawab etik.
+22. B6 (revisi) — situs atau dataset pembanding yang sah untuk uji lintas situs dan aturan pemisahan train/validation/test, ditetapkan oleh tim penelitian sebelum Fase R3 menjalankan uji lintas situs.
+
 ## 25. Template Prompt untuk Model Eksekutor
 
 Salin template berikut dan ganti placeholder fase:
@@ -1490,3 +1532,58 @@ Aturan:
 
 Berhenti. Jangan otomatis mengerjakan fase berikutnya.
 ```
+
+## 27. Integrasi dengan revision.md
+
+### Konteks
+
+`revision.md` (disusun 18 Agustus 2026) adalah daftar revisi klien untuk tahap laporan kemajuan, dengan 29 butir aktif (22 P0, 7 P1) dan fase eksekusinya sendiri, R0–R6. Dokumen tersebut ditulis di atas working tree migrasi yang sedang berjalan dan tidak menyebutkan bagaimana fase R harus disisipkan ke dalam Fase 0–12 pada dokumen ini. Bagian ini mengunci keputusan integrasi sehingga model eksekutor tidak perlu menebak urutan.
+
+### Keputusan sequencing (disetujui pengguna, 19 Agustus 2026)
+
+Selesaikan sisa ekstraksi modul dan migrasi database versioned terlebih dahulu, karena sebagian besar butir revisi mengubah schema atau bergantung pada routing final:
+
+1. Tuntaskan **Fase 6H** (Team) dan **Fase 6I** (Health dan Static Application) — Fase 6I sudah memuat catatan revisi E1.
+2. Tuntaskan **Fase 7** (Migrasi database versioned) — sertakan kolom/tabel baru yang dibutuhkan revisi (lihat "Perubahan data" di bawah) sebagai bagian dari migration versioned yang sama, bukan SQL ad hoc terpisah.
+3. Jalankan **Fase R0–R6** secara penuh, dengan **Fase R3 digabung ke Fase 8A–8D** (lihat pemetaan di bawah) karena keduanya sama-sama mengubah kontrak `POST /api/ml/predict/:tourId/:nodeId` dan modul dataset. Fase 8E (candidate hotspot) tetap dikerjakan setelah R3/8A–8D selesai, bukan bagian dari R3.
+4. Setelah R0–R6 selesai, lanjutkan **Fase 9–12** (VR, admin, workspaces, CI/deployment) seperti rencana semula. Fase 12 sudah memuat catatan revisi yang menegaskan E3/E5 tidak diulang dari nol.
+
+Alasan: butir P0 revisi (konten, keamanan, bukti kinerja model, interaksi VR inti) lebih mendesak untuk laporan kemajuan klien daripada sisa pekerjaan Fase 9–12 yang sifatnya migrasi frontend/admin dan pembersihan. Aturan "satu fase per task" pada Bagian 5 tetap berlaku di dalam urutan ini.
+
+### Pemetaan fase R terhadap dokumen ini
+
+| Fase R | Butir | Hubungan dengan Fase 0–12 |
+|---|---|---|
+| R0 | Baseline dan bukti awal | Melengkapi, bukan mengulang, Fase 0 dan Fase 2. Fokus pada validator konten dan characterization test khusus butir revisi. |
+| R1 | C1, B3, E1, E3, E4, E5, D1, D6 | E1 sudah disisipkan ke Fase 6I. E3/E5 diverifikasi di sini lalu dikeraskan di Fase 12. D1, D6, E4 hanya perlu test regresi karena sudah diimplementasikan (Fase 3D, 3C, 3B). B3 adalah gate manual (Bagian 24 butir 17) sebelum R3/Fase 8 dataset dikerjakan. |
+| R2 | A1–A4 | Tidak beririsan dengan Fase 0–12; murni fitur VR baru, dikerjakan sebelum Fase 9 (migrasi frontend VR) agar tidak dibangun dua kali di stack lama lalu dipindah. |
+| R3 | B1, B2, B4, B5, B6, B7, penyelesaian B3 | **Digabung dengan Fase 8A–8D.** B1 membuka kembali modul dataset Fase 6F (lihat catatan revisi di 13.6). B5 dan B7 sudah disisipkan ke pekerjaan dan test Fase 8A. B6 butuh keputusan Bagian 24 butir 22 sebelum uji lintas situs. |
+| R4 | A5, C2, C3, C4, C5, D2, D4, D5 | C4, C5, D4, D5 adalah gate manual (Bagian 24 butir 18–20). A5 memakai mode transparan dari Fase R2 (A3), dikerjakan sebelum Fase 9 dengan alasan sama seperti R2. |
+| R5 | F2, F5, E2 | F2 adalah gate manual (Bagian 24 butir 21). F5 (Laporan Teknis Desain ML) menjadi artifact tambahan untuk Fase 8's evaluation report (Bagian 20). E2 beririsan dengan Fase 12 cleanup — jangan hapus file legacy pada R5, cukup keluarkan dari route/build aktif sesuai Bagian 5 aturan 5. |
+| R6 | Verifikasi akhir 29 butir | Setara cakupan dengan Fase 12 tetapi untuk butir revisi klien. Jalankan setelah R1–R5, sebelum Fase 9 dimulai, agar laporan kemajuan tidak menunggu migrasi frontend/admin selesai. |
+
+### Konflik yang teridentifikasi dan resolusinya
+
+1. **E1 dijadwalkan lebih awal oleh klien (R1) tetapi awalnya ditempatkan di Fase 6I (akhir Fase 6).** Resolusi: dipertahankan di Fase 6I karena urutan asli sudah cukup dekat (6H → 6I), tetapi persyaratan teknis eksplisit dari `revision.md` (urutan middleware `/data` sebelum `express.static`) ditambahkan ke Fase 6I agar tidak lagi ambigu.
+2. **E3/E5 (kesiapan produksi) adalah P0 klien tetapi aslinya hanya ada di Fase 12 (fase terakhir).** Resolusi: dibuktikan lebih awal di Fase R1, dikeraskan menjadi bagian CI permanen di Fase 12. Lihat catatan revisi pada kedua fase.
+3. **B1 (anotasi bounding box per objek) menyiratkan modul dataset perlu diubah, padahal Fase 6F sudah selesai.** Resolusi: dicatat eksplisit di Fase 6F bahwa pekerjaan lanjutan terjadi di Fase R3/8, tanpa mengulang validasi yang sudah lulus.
+4. **B5 (prediksi sudut pandang bebas) dan B7 (confidence admin bukan confidence model) tidak ada di kontrak Fase 8A awal.** Resolusi: ditambahkan sebagai pekerjaan dan test eksplisit di Fase 8A.
+5. **Gate keputusan manual B3, C4, C5, D4/D5, F2 tidak ada di Bagian 24 versi awal.** Resolusi: ditambahkan sebagai butir 17–22 di Bagian 24.
+6. **Perubahan schema database untuk revisi (instrumen, consent, metadata dataset/objek) tidak disebutkan di Fase 7.** Resolusi: lihat "Perubahan data" di bawah; seluruh migrasi tersebut mengikuti disiplin Fase 7 (Drizzle, review manual, gate manual sebelum production) dan tidak boleh dijalankan sebagai SQL ad hoc di luar migration versioned.
+7. **R0 tumpang tindih dengan Fase 0/2 (baseline dan characterization test).** Resolusi: R0 diperlakukan sebagai pelengkap terarah pada 29 butir revisi, bukan pengulangan baseline arsitektur yang sudah selesai.
+
+### Perubahan data tambahan untuk Fase 7
+
+Selain kolom yang sudah direncanakan di Bagian 14 dan Bagian 21, migration versioned pada Fase 7 harus turut menyediakan ruang untuk:
+
+- metadata objek budaya: approximation note (C2), hubungan budaya-geometri (C3), tujuan kurikulum (C5);
+- metadata dataset per objek: `object_id`, bounding box ternormalisasi, sudut kamera, kualitas anotasi, annotator/reviewer pseudonim, versi taksonomi (B1);
+- metadata model: model version, taxonomy version, dataset manifest hash, metrik evaluasi, latensi (B6);
+- tabel definisi instrumen, administrasi instrumen, dan respons (D4, D5), dengan `respondent_code` pseudonim;
+- tabel/mapping consent dan audit trail (F2), terpisah aksesnya dari tabel hasil penelitian.
+
+Struktur dan isi pastinya menunggu keputusan manual Bagian 24 butir 18–21 sebelum schema final ditulis.
+
+### Dokumen sumber
+
+Isi lengkap butir, prioritas, dan bukti laporan ada di `revision.md`. Dokumen tersebut tetap menjadi rujukan detail per butir; bagian ini hanya mengunci titik integrasi dan urutan eksekusi terhadap dokumen ini.

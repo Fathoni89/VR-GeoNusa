@@ -1,4 +1,9 @@
--- VR-GeoNusa — skema database (MySQL/MariaDB)
+-- VR-GeoNusa — snapshot schema legacy (MySQL/MariaDB)
+--
+-- Jangan gunakan file ini untuk instalasi atau upgrade baru. Schema aktif ada
+-- di src/db/schema.ts dan dijalankan melalui `npm run db:migrate -- --approve`.
+-- File ini dipertahankan sebagai bentuk input yang didukung jalur baseline
+-- legacy pada Fase 7.
 --
 -- Versi MySQL dari db/schema.sql (SQLite), dipakai sejak hosting pindah ke
 -- Rumahweb Medium. Tabel `schools` dan `accounts` baru untuk Tahap 2

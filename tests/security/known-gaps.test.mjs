@@ -86,5 +86,6 @@ test('kegagalan ML tidak mematikan health API non-ML', async () => {
     message: 'Layanan prediksi ML belum siap',
   });
   expect(health.status, 'Health non-ML harus tetap hidup setelah ML gagal').toBe(200);
-  expect(health.body).toMatchObject({ success: true, db: 'connected' });
+  expect(health.body).toMatchObject({ success: true, status: 'live' });
+  expect(health.body).not.toHaveProperty('scenes');
 });

@@ -22,8 +22,9 @@ const originalLogger = app.locals.logger;
 const originalBootstrapPassword = runtimeEnv.BOOTSTRAP_ADMIN_PASSWORD;
 
 class BootstrapDb {
-  constructor({ accountCount = 0 } = {}) {
+  constructor({ accountCount = 0, migrated = true } = {}) {
     this.accountCount = accountCount;
+    this.migrated = migrated;
     this.calls = [];
   }
 
@@ -31,7 +32,9 @@ class BootstrapDb {
     const normalized = String(sql).replace(/\s+/g, ' ').trim().toLowerCase();
     this.calls.push({ sql: normalized, params });
 
-    if (normalized.startsWith('-- vr-geonusa')) return [{}, []];
+    if (normalized.startsWith('select created_at from __drizzle_migrations')) {
+      return [this.migrated ? [{ created_at: 1 }] : [], []];
+    }
     if (normalized.includes('select count(*) as cnt from information_schema.columns')) {
       return [[{ cnt: 1 }], []];
     }
@@ -64,12 +67,12 @@ class LegacyAccountsDb {
     const normalized = String(sql).replace(/\s+/g, ' ').trim().toLowerCase();
     this.calls.push({ sql: normalized, params });
 
-    if (normalized.includes('select is_nullable as is_nullable, column_default as column_default')) {
+    if (normalized.includes('select is_nullable as is_nullable, column_type as column_type')) {
       if (this.columnState === 'missing') return [[], []];
       if (this.columnState === 'nullable') {
-        return [[{ is_nullable: 'YES', column_default: null }], []];
+        return [[{ is_nullable: 'YES', column_type: 'tinyint(1)' }], []];
       }
-      return [[{ is_nullable: 'NO', column_default: '0' }], []];
+      return [[{ is_nullable: 'NO', column_type: 'tinyint(1)' }], []];
     }
     if (normalized.startsWith('alter table accounts add column must_change_password')) {
       this.columnState = 'nullable';
@@ -102,9 +105,9 @@ class LegacyAccountsDb {
       });
       return [{ affectedRows: 1 }, []];
     }
-    if (normalized.startsWith('select count(*) as cnt from accounts where must_change_password is null')) {
+    if (normalized.startsWith('select count(*) as count from accounts where must_change_password is null')) {
       return [[{
-        cnt: this.accounts.filter(account => account.must_change_password === null).length,
+        count: this.accounts.filter(account => account.must_change_password === null).length,
       }], []];
     }
     if (normalized.startsWith('alter table accounts modify column must_change_password')) {
@@ -130,6 +133,14 @@ afterEach(async () => {
 });
 
 describe('bootstrap database kosong', () => {
+  test('menolak startup sebelum migration versioned dijalankan', async () => {
+    const fakeDb = new BootstrapDb({ migrated: false });
+
+    await expect(initDb({ dbPool: fakeDb, logger: { log() {} } }))
+      .rejects.toThrow(/npm run db:migrate/);
+    expect(fakeDb.calls.some(call => call.sql.includes('from accounts'))).toBe(false);
+  });
+
   test('gagal aman tanpa password bootstrap dan tidak membuat akun', async () => {
     const fakeDb = new BootstrapDb();
     const logs = [];
