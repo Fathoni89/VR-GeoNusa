@@ -1,4 +1,4 @@
-# Rencana Migrasi Arsitektur VR-GeoNusa
+/# Rencana Migrasi Arsitektur VR-GeoNusa
 
 Status: **Draft untuk eksekusi bertahap**  
 Target: **Feature-based modular monolith dengan Clean Architecture pragmatis dan ML hybrid terverifikasi admin pada worker terisolasi**
@@ -216,9 +216,9 @@ Aturan ini wajib diikuti oleh setiap model yang mengeksekusi rencana:
 - [ ] Fase 6E — Ekstrak module scenes dan objects
 - [ ] Fase 6F — Ekstrak module tours dan dataset
 - [ ] Fase 6G — Ekstrak module reports
-- [x] Fase 6H — Ekstrak module team
-- [x] Fase 6I — Ekstrak health dan static application
-- [x] Fase 7 — Migrasi database versioned
+- [ ] Fase 6H — Ekstrak module team
+- [ ] Fase 6I — Ekstrak health dan static application
+- [ ] Fase 7 — Migrasi database versioned
 - [ ] Fase R0 — Baseline revisi klien dan paket bukti awal (lihat Bagian 27)
 - [ ] Fase R1 — Ketepatan konsep, keamanan, dan kesiapan rilis (lihat Bagian 27)
 - [ ] Fase R2 — Interaksi geometri inti VR (lihat Bagian 27)
@@ -824,14 +824,6 @@ Model wajib berhenti sebelum menjalankan migration production dan meminta:
 - Upgrade dari schema lama berhasil.
 - Tidak ada orphan setelah migration.
 - Restore backup telah diuji.
-
-### Hasil eksekusi (21 Agustus 2026)
-
-- Fresh install dan upgrade snapshot legacy berisi data lulus pada MySQL 8.4.
-- Orphan ditolak sebelum DDL; retry migration bersifat idempotent.
-- Kebijakan `RESTRICT`, `SET NULL`, dan `CASCADE` serta dump/restore backup telah diuji.
-- Migration production belum dijalankan dan tetap memerlukan seluruh gate manual.
-- Schema revisi C4/C5/D4/D5/F2 ditunda karena struktur finalnya masih menunggu keputusan manual Bagian 24.
 
 ---
 

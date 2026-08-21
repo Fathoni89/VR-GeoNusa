@@ -620,12 +620,12 @@ textarea#bulk-student-input:focus {
 
   <!-- Topbar -->
   <header class="topbar">
-    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Buka menu">Menu</button>
+    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Buka menu">☰</button>
     <span class="logo">VR-GeoNusa</span>
     <span class="badge">Admin</span>
     <div class="spacer"></div>
     <span class="user-info" id="topbar-user"></span>
-    <a href="/" target="_blank" style="margin:0 12px"> Portal</a>
+    <a href="/" target="_blank" style="margin:0 12px">↗ Portal</a>
     <button class="logout-btn" onclick="doLogout()">Keluar</button>
   </header>
 
@@ -746,11 +746,7 @@ textarea#bulk-student-input:focus {
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal('obj-modal')">Batal</button>
-<<<<<<< HEAD
-        <button type="submit" class="btn btn-primary"> Simpan Objek</button>
-=======
         <button type="submit" class="btn btn-primary">Simpan Objek</button>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
       </div>
     </form>
   </div>
@@ -803,11 +799,7 @@ textarea#bulk-student-input:focus {
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal('scene-modal')">Batal</button>
-<<<<<<< HEAD
-        <button type="submit" class="btn btn-primary"> Buat Scene</button>
-=======
         <button type="submit" class="btn btn-primary">Buat Scene</button>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
       </div>
     </form>
   </div>
@@ -881,11 +873,7 @@ textarea#bulk-student-input:focus {
       </div>
       <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
         <button type="button" class="btn btn-ghost" onclick="closeModal('team-modal')">Batal</button>
-<<<<<<< HEAD
-        <button type="submit" class="btn btn-primary"> Simpan Anggota</button>
-=======
         <button type="submit" class="btn btn-primary">Simpan Anggota</button>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
       </div>
     </form>
   </div>
@@ -963,13 +951,19 @@ async function checkAuth() {
   } catch { showLogin(); }
 }
 
-function doLogout() {
+function clearAuth() {
   localStorage.removeItem('vgn_token');
   localStorage.removeItem('vgn_user');
   localStorage.removeItem('vgn_role');
   localStorage.removeItem('vgn_school_id');
   state.token = ''; state.username = ''; state.role = ''; state.schoolId = '';
   state.mustChangePassword = false;
+}
+
+async function doLogout() {
+  try { await apiFetch('/api/auth/logout', { method: 'POST' }); }
+  catch {}
+  clearAuth();
   showLogin();
 }
 
@@ -1036,8 +1030,13 @@ async function loadSceneDetail(id) {
   } catch {}
 }
 
-function apiFetch(url, options={}) {
-  return fetch(url, { ...options, headers: { 'Content-Type':'application/json', Authorization:'Bearer '+state.token, ...(options.headers||{}) } });
+async function apiFetch(url, options={}) {
+  const res = await fetch(url, { ...options, headers: { 'Content-Type':'application/json', Authorization:'Bearer '+state.token, ...(options.headers||{}) } });
+  if (res.status === 401) {
+    clearAuth();
+    showLogin();
+  }
+  return res;
 }
 
 // ══════════════════════════════════════════════════════
@@ -1091,7 +1090,7 @@ function renderObjectsPage(main) {
     <div class="table-wrap">
       <div class="table-toolbar">
         <h2>Daftar Objek — ${escapeHtml(scene.name||state.currentScene)}</h2>
-        <a href="/vr/${encodeURIComponent(state.currentScene)}.html" target="_blank" class="btn btn-ghost btn-sm"> Buka VR</a>
+        <a href="/vr/${encodeURIComponent(state.currentScene)}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka VR</a>
       </div>
       <table>
         <thead><tr><th>ID</th><th>Elemen</th><th>Tipe</th><th>Geometri</th><th>Conf.</th><th>Status</th><th>Aksi</th></tr></thead>
@@ -1109,13 +1108,8 @@ function renderObjectsPage(main) {
                 ${obj.model_src?'<span class="badge-model" style="margin-left:4px">GLTF</span>':''}
               </td>
               <td>
-<<<<<<< HEAD
-                <button class="btn btn-ghost btn-sm" onclick="openEditObjModal(${htmlJsString(obj.id)})"> Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteObj(${htmlJsString(obj.id)})" style="margin-left:4px"></button>
-=======
-                <button class="btn btn-ghost btn-sm" onclick="openEditObjModal('${obj.id}')">Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteObj('${obj.id}')" style="margin-left:4px" title="Hapus">×</button>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+                <button class="btn btn-ghost btn-sm" onclick="openEditObjModal(${htmlJsString(obj.id)})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteObj(${htmlJsString(obj.id)})" style="margin-left:4px" title="Hapus">×</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -1143,36 +1137,21 @@ async function renderScenesPage(main) {
     return `
       <div class="scene-info-card">
         <div class="sc-thumb">
-<<<<<<< HEAD
           <img src="${escapeHtml(thumbPath)}" alt="${escapeHtml(s.name)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-=======
-          <img src="${thumbPath}" alt="${s.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
           <div class="sc-thumb-fallback" style="display:none;background:linear-gradient(135deg,#1a2744,#2d4a2a)"></div>
           ${isDefault?'<span class="sc-default-badge">DEFAULT</span>':''}
         </div>
         <div class="sc-body">
-<<<<<<< HEAD
           <div class="sc-name">${escapeHtml(s.name)}</div>
-          <div class="sc-loc"> ${escapeHtml(s.location||'—')} · ${escapeHtml(sc.era||'—')}</div>
-=======
-          <div class="sc-name">${s.name}</div>
-          <div class="sc-loc">${s.location||'—'} · ${sc.era||'—'}</div>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+          <div class="sc-loc">${escapeHtml(s.location||'—')} · ${escapeHtml(sc.era||'—')}</div>
           <div class="sc-stats">
             <div class="sc-stat"><div class="sc-stat-val">${escapeHtml(s.obj_count)}</div><div class="sc-stat-lbl">Objek</div></div>
             <div class="sc-stat"><div class="sc-stat-val">${(sc.objects||[]).filter(o=>o.interactive).length}</div><div class="sc-stat-lbl">Interaktif</div></div>
           </div>
           <div class="sc-actions">
-<<<<<<< HEAD
-            <button class="btn btn-ghost btn-sm" onclick="switchScene(${htmlJsString(s.scene_id)}); showPage('objects')"> Kelola Objek</button>
-            <a href="/vr/${encodeURIComponent(s.scene_id)}.html" target="_blank" class="btn btn-ghost btn-sm"> Buka VR</a>
-            ${!isDefault?`<button class="btn btn-danger btn-sm" onclick="deleteScene(${htmlJsString(s.scene_id)})"> Hapus</button>`:''}
-=======
-            <button class="btn btn-ghost btn-sm" onclick="switchScene('${s.scene_id}'); showPage('objects')">Kelola Objek</button>
-            <a href="/vr/${s.scene_id}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka VR</a>
-            ${!isDefault?`<button class="btn btn-danger btn-sm" onclick="deleteScene('${s.scene_id}')">Hapus</button>`:''}
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+            <button class="btn btn-ghost btn-sm" onclick="switchScene(${htmlJsString(s.scene_id)}); showPage('objects')">Kelola Objek</button>
+            <a href="/vr/${encodeURIComponent(s.scene_id)}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka VR</a>
+            ${!isDefault?`<button class="btn btn-danger btn-sm" onclick="deleteScene(${htmlJsString(s.scene_id)})">Hapus</button>`:''}
           </div>
         </div>
       </div>`;
@@ -1184,11 +1163,7 @@ async function renderScenesPage(main) {
     </div>
     <div class="scene-cards">${cards}</div>
     <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:14px;font-size:12px;color:var(--muted)">
-<<<<<<< HEAD
-       <strong style="color:var(--accent)">Cara menambah scene baru:</strong>
-=======
       <strong style="color:var(--accent)">Cara menambah scene baru:</strong>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
       Klik "+ Tambah Scene" → isi form → scene VR otomatis dibuat → tambahkan objek via tab "Objek Scene".
       Upload foto ke <code>public/assets/images/[scene_id].jpg</code> agar thumbnail muncul.
     </div>`;
@@ -1216,25 +1191,15 @@ async function renderTourPage(main) {
         <span class="sc-default-badge" style="background:rgba(255,183,77,.15);color:#FFB74D;border-color:rgba(255,183,77,.3)">TUR 360°</span>
       </div>
       <div class="sc-body">
-<<<<<<< HEAD
         <div class="sc-name">${escapeHtml(t.name)}</div>
-        <div class="sc-loc"> ${escapeHtml(t.source || 'Foto 360° asli')}</div>
-=======
-        <div class="sc-name">${t.name}</div>
-        <div class="sc-loc">${t.source || 'Foto 360° asli'}</div>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+        <div class="sc-loc">${escapeHtml(t.source || 'Foto 360° asli')}</div>
         <div class="sc-stats">
           <div class="sc-stat"><div class="sc-stat-val">${escapeHtml(t.node_count)}</div><div class="sc-stat-lbl">Titik</div></div>
           <div class="sc-stat"><div class="sc-stat-val">${escapeHtml(t.identified_count)}</div><div class="sc-stat-lbl">Teridentifikasi</div></div>
         </div>
         <div class="sc-actions">
-<<<<<<< HEAD
-          <button class="btn btn-ghost btn-sm" onclick="state.currentTourId=${htmlJsString(t.tour_id)}; renderTourPage(document.getElementById('main-content'))"> Kelola Identifikasi</button>
-          <a href="/vr/tour-${encodeURIComponent(t.tour_id)}.html" target="_blank" class="btn btn-ghost btn-sm"> Buka Tur</a>
-=======
-          <button class="btn btn-ghost btn-sm" onclick="state.currentTourId='${t.tour_id}'; renderTourPage(document.getElementById('main-content'))">Kelola Identifikasi</button>
-          <a href="/vr/tour-${t.tour_id}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Tur</a>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+          <button class="btn btn-ghost btn-sm" onclick="state.currentTourId=${htmlJsString(t.tour_id)}; renderTourPage(document.getElementById('main-content'))">Kelola Identifikasi</button>
+          <a href="/vr/tour-${encodeURIComponent(t.tour_id)}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Tur</a>
         </div>
       </div>
     </div>`).join('');
@@ -1283,11 +1248,7 @@ async function renderTourDetailPage(main, tourId) {
           </div>
         </td>
         <td>${identify?`<span class="badge-interactive">Teridentifikasi</span>`:'<span class="badge-static">Belum</span>'}</td>
-<<<<<<< HEAD
-        <td><button class="btn btn-primary btn-sm" onclick="saveTourFolder(${htmlJsString(folder)},${htmlJsString(rowId)})"> Simpan</button></td>
-=======
-        <td><button class="btn btn-primary btn-sm" onclick="saveTourFolder('${folder.replace(/'/g,"\\'")}','${rowId}')">Simpan</button></td>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+        <td><button class="btn btn-primary btn-sm" onclick="saveTourFolder(${htmlJsString(folder)},${htmlJsString(rowId)})">Simpan</button></td>
       </tr>`;
   }).join('');
 
@@ -1298,7 +1259,7 @@ async function renderTourDetailPage(main, tourId) {
         <h1>${escapeHtml(tour.name || tourId)}</h1>
         <div class="sub">Atur geometri apa yang teridentifikasi di tiap area — dipakai oleh marker "Identifikasi" di dalam tur</div>
       </div>
-      <a href="/vr/tour-${encodeURIComponent(tourId)}.html" target="_blank" class="btn btn-ghost btn-sm"> Buka Tur</a>
+      <a href="/vr/tour-${encodeURIComponent(tourId)}.html" target="_blank" class="btn btn-ghost btn-sm">↗ Buka Tur</a>
     </div>
     <div class="stats">
       <div class="stat-card"><div class="val">${tour.nodes.length}</div><div class="lbl">Total Titik</div></div>
@@ -1313,11 +1274,7 @@ async function renderTourDetailPage(main, tourId) {
       </table>
     </div>
     <div style="background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:14px;font-size:12px;color:var(--muted);margin-top:16px">
-<<<<<<< HEAD
-       Satu area (mis. "Teras 1") bisa berisi banyak titik pandang — mengatur kelas geometri di sini menerapkannya ke <strong style="color:var(--accent)">semua titik dalam area itu sekaligus</strong>. Pilih "— Tidak ada —" untuk area yang memang tidak punya elemen geometri jelas (mis. halaman/selasar).
-=======
       Satu area (mis. "Teras 1") bisa berisi banyak titik pandang — mengatur kelas geometri di sini menerapkannya ke <strong style="color:var(--accent)">semua titik dalam area itu sekaligus</strong>. Pilih "— Tidak ada —" untuk area yang memang tidak punya elemen geometri jelas (mis. halaman/selasar).
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
     </div>`;
 }
 
@@ -1330,7 +1287,7 @@ async function saveTourFolder(folder, rowId) {
   });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Area "${folder}" diperbarui (${json.applied_to} titik)`, 'success');
+  toast(`Area "${folder}" diperbarui (${json.applied_to} titik) ✓`, 'success');
   renderTourDetailPage(document.getElementById('main-content'), state.currentTourId);
 }
 
@@ -1340,10 +1297,8 @@ async function saveTourFolder(folder, rowId) {
 async function renderReportPage(main, page) {
   main.innerHTML = `<div class="page-header"><div><h1>Laporan Guru</h1><div class="sub">Memuat rekap aktivitas…</div></div></div>`;
 
-  page = Number.isSafeInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
-  const schoolParam = isSuperAdmin() && state.reportSchoolFilter
-    ? `&school_id=${encodeURIComponent(state.reportSchoolFilter)}`
-    : '';
+  page = page || 1;
+  const schoolParam = isSuperAdmin() && state.reportSchoolFilter ? `&school_id=${encodeURIComponent(state.reportSchoolFilter)}` : '';
   const res = await apiFetch(`/api/reports/summary?page=${page}${schoolParam}`);
   const json = await res.json();
   if (!json.success) { main.innerHTML = `<div class="page-header"><div><h1>Laporan Guru</h1><div class="sub" style="color:var(--red)">${escapeHtml(json.message)}</div></div></div>`; return; }
@@ -1404,24 +1359,15 @@ async function renderReportPage(main, page) {
   }).join('') : `<div style="color:var(--muted);text-align:center;padding:24px">Belum ada data kuis untuk direkap per konsep</div>`;
 
   const csvUrl = `/api/reports/export.csv${schoolParam ? '?' + schoolParam.slice(1) : ''}`;
-  const pageBtn = (p, label) => {
-    const targetPage = Number.isSafeInteger(Number(p)) ? Number(p) : 1;
-    const totalPages = Number.isSafeInteger(Number(pagination.totalPages)) ? Number(pagination.totalPages) : 0;
-    return `<button class="btn btn-ghost btn-sm" ${targetPage<1||targetPage>totalPages?'disabled':''} onclick="renderReportPage(document.getElementById('main-content'), ${targetPage})">${escapeHtml(label)}</button>`;
-  };
+  const pageBtn = (p, label) => `<button class="btn btn-ghost btn-sm" ${p<1||p>pagination.totalPages?'disabled':''} onclick="renderReportPage(document.getElementById('main-content'), ${Number(p)})">${escapeHtml(label)}</button>`;
 
   main.innerHTML = `
     <div class="page-header">
       <div><h1>Laporan Guru</h1><div class="sub">Rekap sesi eksplorasi, kuis, dan interaksi siswa${isSuperAdmin()?' (semua sekolah, bisa difilter)':''}</div></div>
       <div>
         ${schoolFilterHtml}
-<<<<<<< HEAD
-        <button type="button" class="btn btn-ghost btn-sm" style="margin-right:8px" onclick="downloadReportCsv(${htmlJsString(csvUrl)})"> Export CSV</button>
-        <button class="btn btn-ghost btn-sm" onclick="renderReportPage(document.getElementById('main-content'))"> Refresh</button>
-=======
-        <a href="${csvUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-right:8px">Export CSV</a>
+        <button type="button" class="btn btn-ghost btn-sm" style="margin-right:8px" onclick="downloadReportCsv(${htmlJsString(csvUrl)})">Export CSV</button>
         <button class="btn btn-ghost btn-sm" onclick="renderReportPage(document.getElementById('main-content'))">Refresh</button>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
       </div>
     </div>
     <div class="stats">
@@ -1484,7 +1430,6 @@ async function downloadReportCsv(csvUrl) {
       toast(json.message || 'Gagal mengunduh CSV', 'error');
       return;
     }
-
     const blob = await res.blob();
     const objectUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1521,9 +1466,7 @@ async function renderClassesPage(main) {
   }
 
   const showOwnerCol = isSuperAdmin() || isSchoolAdmin();
-  const ownerLabel = (c) => isSuperAdmin()
-    ? `${escapeHtml(c.school_name)} <span style="color:var(--muted);font-size:11px">(${escapeHtml(c.teacher_username)})</span>`
-    : escapeHtml(c.teacher_username);
+  const ownerLabel = (c) => isSuperAdmin() ? `${escapeHtml(c.school_name)} <span style="color:var(--muted);font-size:11px">(${escapeHtml(c.teacher_username)})</span>` : escapeHtml(c.teacher_username);
 
   const rows = classes.length ? classes.map(c => `
     <tr>
@@ -1533,13 +1476,8 @@ async function renderClassesPage(main) {
       ${showOwnerCol ? `<td>${ownerLabel(c)}</td>` : ''}
       <td>${escapeHtml(c.student_count)}</td>
       <td>
-<<<<<<< HEAD
-        <button class="btn btn-ghost btn-sm" onclick="state.currentClassId=${htmlJsString(c.id)}; renderClassesPage(document.getElementById('main-content'))"> Kelola Siswa</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteClass(${htmlJsString(c.id)},${htmlJsString(c.class_name)})" style="margin-left:4px"></button>
-=======
-        <button class="btn btn-ghost btn-sm" onclick="state.currentClassId=${c.id}; renderClassesPage(document.getElementById('main-content'))">Kelola Siswa</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteClass(${c.id},'${c.class_name.replace(/'/g,"\\'")}')" style="margin-left:4px" title="Hapus">×</button>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+        <button class="btn btn-ghost btn-sm" onclick="state.currentClassId=${htmlJsString(c.id)}; renderClassesPage(document.getElementById('main-content'))">Kelola Siswa</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteClass(${htmlJsString(c.id)},${htmlJsString(c.class_name)})" style="margin-left:4px" title="Hapus">×</button>
       </td>
     </tr>`).join('') : `<tr><td colspan="${showOwnerCol?6:5}" style="text-align:center;padding:24px;color:var(--muted)">Belum ada kelas</td></tr>`;
 
@@ -1585,7 +1523,7 @@ async function addClass(e) {
   });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Kelas "${form.get('class_name')}" dibuat`, 'success');
+  toast(`Kelas "${form.get('class_name')}" dibuat ✓`, 'success');
   renderClassesPage(document.getElementById('main-content'));
 }
 
@@ -1594,7 +1532,7 @@ async function deleteClass(id, name) {
   const res = await apiFetch(`/api/classes/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast('Kelas dihapus', 'success');
+  toast('Kelas dihapus ✓', 'success');
   renderClassesPage(document.getElementById('main-content'));
 }
 
@@ -1611,13 +1549,8 @@ async function renderClassDetailPage(main, classId) {
       <td style="font-weight:600">${escapeHtml(s.name)}</td>
       <td style="font-family:monospace;font-size:12px">${escapeHtml(s.student_number)}</td>
       <td>
-<<<<<<< HEAD
-        <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword(${htmlJsString(s.id)},${htmlJsString(s.name)})"> Reset Password</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${htmlJsString(s.id)},${htmlJsString(s.name)})" style="margin-left:4px"></button>
-=======
-        <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword(${s.id},'${s.name.replace(/'/g,"\\'")}')">Reset Password</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.name.replace(/'/g,"\\'")}')" style="margin-left:4px" title="Hapus">×</button>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+        <button class="btn btn-ghost btn-sm" onclick="resetStudentPassword(${htmlJsString(s.id)},${htmlJsString(s.name)})">Reset Password</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${htmlJsString(s.id)},${htmlJsString(s.name)})" style="margin-left:4px" title="Hapus">×</button>
       </td>
     </tr>`).join('') : `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--muted)">Belum ada siswa — tambahkan lewat form di bawah</td></tr>`;
 
@@ -1669,12 +1602,12 @@ async function bulkAddStudents(classId) {
 
   resultEl.innerHTML = `
     <div style="background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:10px;padding:12px">
-      <div style="color:#00e676;font-weight:700;font-size:12px;margin-bottom:8px">${json.created.length} siswa ditambahkan — <b>salin password ini sekarang</b>, tidak ditampilkan lagi setelah halaman di-refresh:</div>
+      <div style="color:#00e676;font-weight:700;font-size:12px;margin-bottom:8px">✓ ${json.created.length} siswa ditambahkan — <b>salin password ini sekarang</b>, tidak ditampilkan lagi setelah halaman di-refresh:</div>
       <table style="width:100%"><thead><tr><th style="text-align:left">Nama</th><th style="text-align:left">No. Induk</th><th style="text-align:left">Password</th></tr></thead><tbody>${createdRows}</tbody></table>
       ${skippedList}
     </div>`;
   document.getElementById('bulk-student-input').value = '';
-  toast(`${json.created.length} siswa ditambahkan`, 'success');
+  toast(`${json.created.length} siswa ditambahkan ✓`, 'success');
 }
 
 async function resetStudentPassword(id, name) {
@@ -1690,7 +1623,7 @@ async function deleteStudent(id, name) {
   const res = await apiFetch(`/api/students/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`"${name}" dihapus`, 'success');
+  toast(`"${name}" dihapus ✓`, 'success');
   renderClassDetailPage(document.getElementById('main-content'), state.currentClassId);
 }
 
@@ -1716,11 +1649,7 @@ async function renderSchoolsPage(main) {
       <td style="font-weight:600">${escapeHtml(s.name)}</td>
       <td style="font-family:monospace;font-size:11px;color:var(--muted)">${escapeHtml(s.code || '—')}</td>
       <td>${accounts.filter(a => a.school_id === s.id).length}</td>
-<<<<<<< HEAD
-      <td><button class="btn btn-danger btn-sm" onclick="deleteSchool(${htmlJsString(s.id)},${htmlJsString(s.name)})"> Hapus</button></td>
-=======
-      <td><button class="btn btn-danger btn-sm" onclick="deleteSchool(${s.id},'${s.name.replace(/'/g,"\\'")}')">Hapus</button></td>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+      <td><button class="btn btn-danger btn-sm" onclick="deleteSchool(${htmlJsString(s.id)},${htmlJsString(s.name)})">Hapus</button></td>
     </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--muted)">Belum ada sekolah</td></tr>`;
 
   const schoolOptions = schools.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
@@ -1731,13 +1660,8 @@ async function renderSchoolsPage(main) {
       <td>${ROLE_BADGES[a.role] || escapeHtml(a.role)}</td>
       ${isSuperAdmin() ? `<td>${escapeHtml(a.school_name || '—')}</td>` : ''}
       <td>
-<<<<<<< HEAD
-        <button class="btn btn-ghost btn-sm" onclick="resetAccountPassword(${htmlJsString(a.id)},${htmlJsString(a.username)})"> Reset Password</button>
-        ${a.role !== 'super_admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${htmlJsString(a.id)},${htmlJsString(a.username)})" style="margin-left:4px"></button>` : ''}
-=======
-        <button class="btn btn-ghost btn-sm" onclick="resetAccountPassword(${a.id},'${a.username}')">Reset Password</button>
-        ${a.role !== 'super_admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id},'${a.username}')" style="margin-left:4px" title="Hapus">×</button>` : ''}
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+        <button class="btn btn-ghost btn-sm" onclick="resetAccountPassword(${htmlJsString(a.id)},${htmlJsString(a.username)})">Reset Password</button>
+        ${a.role !== 'super_admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${htmlJsString(a.id)},${htmlJsString(a.username)})" style="margin-left:4px" title="Hapus">×</button>` : ''}
       </td>
     </tr>`).join('') : '';
 
@@ -1794,7 +1718,7 @@ async function addSchool(e) {
   const res = await apiFetch('/api/schools', { method: 'POST', body: JSON.stringify({ name: form.get('name'), code: form.get('code') || null }) });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Sekolah "${form.get('name')}" ditambahkan`, 'success');
+  toast(`Sekolah "${form.get('name')}" ditambahkan ✓`, 'success');
   state.schoolsCache = null;
   renderSchoolsPage(document.getElementById('main-content'));
 }
@@ -1804,7 +1728,7 @@ async function deleteSchool(id, name) {
   const res = await apiFetch(`/api/schools/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast('Sekolah dihapus', 'success');
+  toast('Sekolah dihapus ✓', 'success');
   state.schoolsCache = null;
   renderSchoolsPage(document.getElementById('main-content'));
 }
@@ -1823,7 +1747,7 @@ async function addAccount(e) {
   });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Akun "${form.get('username')}" dibuat`, 'success');
+  toast(`Akun "${form.get('username')}" dibuat ✓`, 'success');
   renderSchoolsPage(document.getElementById('main-content'));
 }
 
@@ -1833,7 +1757,7 @@ async function resetAccountPassword(id, username) {
   const res = await apiFetch(`/api/accounts/${id}/reset-password`, { method: 'PUT', body: JSON.stringify({ new_password: newPassword }) });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Password "${username}" berhasil direset`, 'success');
+  toast(`Password "${username}" berhasil direset ✓`, 'success');
 }
 
 async function deleteAccount(id, username) {
@@ -1841,7 +1765,7 @@ async function deleteAccount(id, username) {
   const res = await apiFetch(`/api/accounts/${id}`, { method: 'DELETE' });
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
-  toast(`Akun "${username}" dihapus`, 'success');
+  toast(`Akun "${username}" dihapus ✓`, 'success');
   renderSchoolsPage(document.getElementById('main-content'));
 }
 
@@ -1888,13 +1812,8 @@ function renderExportPage(main) {
         <div style="font-weight:700;margin-bottom:10px">${escapeHtml(s.name)} <code style="font-size:11px;color:var(--muted);margin-left:8px">data/${escapeHtml(s.scene_id)}.json</code></div>
         <div class="export-box"><pre>${escapeHtml(JSON.stringify(state.scenes[s.scene_id]||{},null,2).slice(0,500))}...</pre></div>
         <div style="display:flex;gap:8px;margin-top:10px">
-<<<<<<< HEAD
-          <button class="btn btn-success" onclick="downloadJSON(${htmlJsString(s.scene_id)})"> Download JSON</button>
-          <button class="btn btn-ghost" onclick="copyJSON(${htmlJsString(s.scene_id)})"> Copy</button>
-=======
-          <button class="btn btn-success" onclick="downloadJSON('${s.scene_id}')">Download JSON</button>
-          <button class="btn btn-ghost" onclick="copyJSON('${s.scene_id}')">Copy</button>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+          <button class="btn btn-success" onclick="downloadJSON(${htmlJsString(s.scene_id)})">Download JSON</button>
+          <button class="btn btn-ghost" onclick="copyJSON(${htmlJsString(s.scene_id)})">Copy</button>
         </div>
       </div>`).join('')}`;
 }
@@ -1915,11 +1834,7 @@ function renderSettingsPage(main) {
       <div style="font-weight:700;margin-bottom:4px">Akun Admin</div>
       <div style="color:var(--muted);font-size:12px;margin-bottom:16px">Username: <strong style="color:var(--accent)">${escapeHtml(state.username)}</strong></div>
       <div class="pwd-form">
-<<<<<<< HEAD
-        <h3> Ganti Password</h3>
-=======
         <h3>Ganti Password</h3>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
         <div class="form-grid">
           <div class="form-group full"><label>Password Lama</label><input id="pwd-old" type="password" placeholder="••••••••"></div>
           <div class="form-group"><label>Password Baru</label><input id="pwd-new" type="password" placeholder="min. 6 karakter"></div>
@@ -1997,7 +1912,7 @@ async function saveObject(e) {
   if(!json.success){ toast(json.message,'error'); return; }
   await loadSceneDetail(id);
   closeModal('obj-modal');
-  toast(isEdit?'Objek diupdate':'Objek ditambahkan','success');
+  toast(isEdit?'Objek diupdate ✓':'Objek ditambahkan ✓','success');
   renderObjectsPage(document.getElementById('main-content'));
 }
 async function deleteObj(objId) {
@@ -2006,7 +1921,7 @@ async function deleteObj(objId) {
   const json=await res.json();
   if(!json.success){ toast(json.message,'error'); return; }
   await loadSceneDetail(state.currentScene);
-  toast('Objek dihapus','success');
+  toast('Objek dihapus ✓','success');
   renderObjectsPage(document.getElementById('main-content'));
 }
 
@@ -2028,7 +1943,7 @@ async function saveNewScene(e) {
   if(!json.success){ toast(json.message,'error'); return; }
   await loadAllScenes();
   closeModal('scene-modal');
-  toast(`Scene "${json.data.name}" berhasil dibuat — VR page: ${json.vr_url}`,'success');
+  toast(`Scene "${json.data.name}" berhasil dibuat ✓ — VR page: ${json.vr_url}`,'success');
   // Update landing page scene list juga
   state.currentScene = json.data.scene_id;
   renderScenesPage(document.getElementById('main-content'));
@@ -2040,7 +1955,7 @@ async function deleteScene(id) {
   if(!json.success){ toast(json.message,'error'); return; }
   await loadAllScenes();
   if(state.currentScene===id) state.currentScene='prambanan';
-  toast(`Scene "${id}" dihapus`,'success');
+  toast(`Scene "${id}" dihapus ✓`,'success');
   renderScenesPage(document.getElementById('main-content'));
 }
 
@@ -2074,49 +1989,31 @@ function renderTeamPage(main) {
   const students    = state.team.filter(m => m.role_type === 'mahasiswa');
 
   const memberCard = (m) => {
-<<<<<<< HEAD
     const photoUrl = safeTeamPhotoUrl(m.photo);
     const photoHtml = photoUrl
-      ? `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(m.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-      : '';
-    const fallbackLabel = m.role_type === 'mahasiswa' ? 'Mahasiswa' : 'Peneliti';
-=======
-    const photoHtml = m.photo
-      ? `<img src="${m.photo}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;object-position:top center;border-radius:0;position:absolute;inset:0;"
+      ? `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(m.name)}" style="width:100%;height:100%;object-fit:cover;object-position:top center;border-radius:0;position:absolute;inset:0;"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
       : '';
     const fallbackEmoji = '';
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
     const expertiseTags = (Array.isArray(m.expertise) ? m.expertise : (m.expertise||'').split(',').map(e=>e.trim()).filter(Boolean))
       .map(e => `<span style="background:rgba(200,150,62,.1);border:1px solid rgba(200,150,62,.2);color:#C8963E;border-radius:3px;padding:1px 7px;font-size:10px;font-weight:600">${escapeHtml(e)}</span>`).join('');
     const links = [
-      m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${encodeURIComponent(m.sinta_id)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-size:11px">SINTA </a>` : '',
-      m.orcid    ? `<a href="https://orcid.org/${encodeURIComponent(m.orcid)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-size:11px">ORCID </a>` : '',
-      m.email    ? `<a href="mailto:${encodeURIComponent(m.email)}" style="color:var(--muted);font-size:11px"> Email</a>` : '',
+      m.sinta_id ? `<a href="https://sinta.kemdikbud.go.id/authors/profile/${encodeURIComponent(m.sinta_id)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-size:11px">SINTA ↗</a>` : '',
+      m.orcid    ? `<a href="https://orcid.org/${encodeURIComponent(m.orcid)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-size:11px">ORCID ↗</a>` : '',
+      m.email    ? `<a href="mailto:${encodeURIComponent(m.email)}" style="color:var(--muted);font-size:11px">✉ Email</a>` : '',
     ].filter(Boolean).join('<span style="color:var(--border);margin:0 4px">|</span>');
 
     return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
         <!-- Foto -->
-<<<<<<< HEAD
-        <div style="height:160px;background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center" id="photo-wrap-${escapeHtml(m.id)}">
+        <div style="aspect-ratio:1/1;background:#F1F5F9;position:relative;overflow:hidden;border-radius:10px 10px 0 0" id="photo-wrap-${escapeHtml(m.id)}">
           ${photoHtml}
-          <div style="${photoUrl?'display:none;':''}width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1em;font-weight:700;color:var(--muted)" id="photo-fallback-${escapeHtml(m.id)}">${fallbackLabel}</div>
-=======
-        <div style="aspect-ratio:1/1;background:#F1F5F9;position:relative;overflow:hidden;border-radius:10px 10px 0 0" id="photo-wrap-${m.id}">
-          ${photoHtml}
-          <div style="${m.photo?'display:none;':''}width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:1.8rem;font-weight:900;color:#94A3B8;letter-spacing:-.01em;background:linear-gradient(135deg,#F1F5F9,#E2E8F0)" id="photo-fallback-${m.id}">${m.name.split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('')}</div>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+          <div style="${photoUrl?'display:none;':'display:flex;'}width:100%;height:100%;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:1.8rem;font-weight:900;color:#94A3B8;letter-spacing:-.01em;background:linear-gradient(135deg,#F1F5F9,#E2E8F0)" id="photo-fallback-${escapeHtml(m.id)}">${escapeHtml(String(m.name ?? '').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join(''))}</div>
           <!-- Upload button overlay -->
           <label for="upload-${escapeHtml(m.id)}" title="Ganti foto"
             style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.15);
                    border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;z-index:2">
-<<<<<<< HEAD
-             Ganti Foto
-=======
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:middle" aria-hidden="true"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Ganti Foto
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
           </label>
           <input type="file" id="upload-${escapeHtml(m.id)}" accept="image/jpeg,image/png,image/webp"
             style="display:none" onchange="uploadPhoto(${htmlJsString(m.id)}, this)">
@@ -2130,13 +2027,8 @@ function renderTeamPage(main) {
           ${expertiseTags ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${expertiseTags}</div>` : ''}
           ${links ? `<div style="display:flex;gap:0;margin-top:6px;align-items:center">${links}</div>` : ''}
           <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-<<<<<<< HEAD
-            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openEditMemberModal(${htmlJsString(m.id)})"> Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteMember(${htmlJsString(m.id)})"></button>
-=======
-            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openEditMemberModal('${m.id}')">Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')" title="Hapus anggota" aria-label="Hapus anggota">×</button>
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
+            <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openEditMemberModal(${htmlJsString(m.id)})">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMember(${htmlJsString(m.id)})" title="Hapus anggota" aria-label="Hapus anggota">×</button>
           </div>
         </div>
       </div>`;
@@ -2149,13 +2041,7 @@ function renderTeamPage(main) {
     </div>
 
     <div style="background:rgba(200,150,62,.06);border:1px solid rgba(200,150,62,.15);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--muted)">
-<<<<<<< HEAD
-       <strong style="color:var(--gold)">Cara upload foto:</strong>
-      Klik tombol <strong> Ganti Foto</strong> di kartu anggota. Format JPG/PNG/WebP, maksimal 3MB.
-      Foto langsung tampil di halaman portal.
-=======
       <strong style="color:var(--gold)">Panduan upload foto:</strong> Klik tombol "Ganti Foto" di kartu anggota. Format JPG/PNG/WebP, maksimal 3MB. Foto langsung tampil di halaman portal.
->>>>>>> 11b9f0111bf4a7bca0b690c3992afc9a2094d605
     </div>
 
     <!-- Peneliti -->
@@ -2237,7 +2123,7 @@ async function saveMember(e) {
   const teamJson = await teamRes.json();
   state.team = (teamJson.data||[]).sort((a,b)=>(a.order||99)-(b.order||99));
   closeModal('team-modal');
-  toast(isEdit ? 'Profil diupdate' : 'Anggota ditambahkan', 'success');
+  toast(isEdit ? 'Profil diupdate ✓' : 'Anggota ditambahkan ✓', 'success');
   renderTeamPage(document.getElementById('main-content'));
 }
 
@@ -2248,7 +2134,7 @@ async function deleteMember(id) {
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
   state.team = state.team.filter(t => t.id !== id);
-  toast('Anggota dihapus', 'success');
+  toast('Anggota dihapus ✓', 'success');
   renderTeamPage(document.getElementById('main-content'));
 }
 
@@ -2266,25 +2152,21 @@ async function uploadPhoto(memberId, input) {
   const json = await res.json();
   if (!json.success) { toast(json.message, 'error'); return; }
 
-  const uploadedPhoto = safeTeamPhotoUrl(json.photo);
-  if (!uploadedPhoto) { toast('URL foto dari server tidak valid', 'error'); return; }
-  const displayedPhoto = uploadedPhoto + '?t=' + Date.now();
-
   // Update state dan tampilkan foto baru
   const idx = state.team.findIndex(t => t.id === memberId);
-  if (idx >= 0) state.team[idx].photo = displayedPhoto;
+  if (idx >= 0) state.team[idx].photo = json.photo + '?t=' + Date.now();
 
   // Update gambar di card langsung tanpa reload halaman
   const wrap = document.getElementById(`photo-wrap-${memberId}`);
   if (wrap) {
     let img = wrap.querySelector('img');
     if (!img) { img = document.createElement('img'); img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:10px'; wrap.prepend(img); }
-    img.src = displayedPhoto;
+    img.src = json.photo + '?t=' + Date.now();
     img.style.display = '';
     const fb = document.getElementById(`photo-fallback-${memberId}`);
     if (fb) fb.style.display = 'none';
   }
-  toast('Foto berhasil diupload', 'success');
+  toast('Foto berhasil diupload ✓', 'success');
 }
 
 // ── Boot ─────────────────────────────────────────────

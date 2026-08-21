@@ -178,3 +178,15 @@ test('export laporan memakai authenticated fetch dan download Blob', () => {
   expect(source).toContain("a.download = 'vr-geonusa-sessions.csv'");
   expect(source).not.toMatch(/<a href="\$\{csvUrl\}"/);
 });
+
+test('HTML frontend bebas marker konflik dan inline script dapat diparse', () => {
+  for (const relativePath of ['public/admin/index.html', 'public/index.html']) {
+    const source = readFileSync(path.join(PROJECT_ROOT, relativePath), 'utf8');
+    expect(source).not.toMatch(/^(<<<<<<<|=======|>>>>>>>)/m);
+
+    const inlineScripts = [...source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
+      .map(match => match[1])
+      .filter(script => script.trim());
+    for (const script of inlineScripts) expect(() => new Function(script)).not.toThrow();
+  }
+});
