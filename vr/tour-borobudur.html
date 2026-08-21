@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="description" content="VR-GeoNusa — Tur 360° Candi Borobudur dengan foto panorama asli">
+  <title>VR-GeoNusa — Tur 360° Candi Borobudur</title>
+
+  <!-- A-Frame WebXR Framework -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- TensorFlow.js — inferensi klasifikasi geometri di browser (client-side ML) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+
+  <link rel="stylesheet" href="../css/ui.css">
+</head>
+<body>
+
+<!-- Loading Bar -->
+<div id="loading-bar"></div>
+
+<!-- ── SPLASH SCREEN ────────────────────────────────── -->
+<div id="splash">
+  <div class="logo-wrap">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30" stroke="#818CF8" stroke-width="1.5" opacity="0.4"/>
+      <polygon points="32,8 52,44 12,44" stroke="#38BDF8" stroke-width="1.8" fill="rgba(56,189,248,0.08)"/>
+      <rect x="22" y="44" width="20" height="8" rx="2" stroke="#A78BFA" stroke-width="1.5" fill="rgba(167,139,250,0.08)"/>
+      <circle cx="32" cy="28" r="5" stroke="#00e5ff" stroke-width="1.5" fill="rgba(0,229,255,0.1)"/>
+    </svg>
+  </div>
+
+  <h1>Tur 360°</h1>
+  <p class="tagline">Candi Borobudur — Foto Panorama Asli</p>
+
+  <div class="login-mode-tabs">
+    <button type="button" class="mode-tab active" data-mode="guest" onclick="setLoginMode('guest')">Tamu</button>
+    <button type="button" class="mode-tab" data-mode="student" onclick="setLoginMode('student')">Login Siswa</button>
+  </div>
+
+  <div id="guest-fields">
+    <input id="student-name" class="splash-input" type="text" placeholder="Nama kamu (opsional)" maxlength="100">
+    <select id="student-school" class="splash-input school-select"><option value="">Pilih sekolah (opsional)</option></select>
+  </div>
+
+  <div id="student-login-fields" style="display:none">
+    <select id="login-school" class="splash-input school-select"><option value="">Pilih sekolah</option></select>
+    <input id="login-student-number" class="splash-input" type="text" placeholder="Nomor Induk">
+    <input id="login-student-password" class="splash-input" type="password" placeholder="Password">
+    <div id="student-login-error" class="splash-error"></div>
+  </div>
+
+  <button id="start-tour-btn" onclick="startTour()">Mulai Tur</button>
+
+  <div class="meta">
+    Dokumentasi RICOH THETA V, 2018 — 12 area, 60 titik pandang<br>
+    Klik lingkaran "Maju" / "Mundur" untuk berpindah titik · gunakan menu area di kanan atas untuk lompat langsung
+  </div>
+</div>
+
+<!-- ── HUD ───────────────────────────────────────────── -->
+<div id="hud" style="display:none">
+  <div id="hud-scene">
+    <span class="hud-green-dot" aria-hidden="true"></span>
+    <div>
+      <div class="hud-label">VR-GeoNusa · Tur 360°</div>
+      <div class="hud-name">Candi Borobudur</div>
+      <div class="hud-loc">Magelang, Jawa Tengah</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Area Jump Menu ───────────────────────────────── -->
+<select id="tour-jump"></select>
+
+<!-- ── Hasil Belajar Saya (muncul kalau login sebagai siswa) ── -->
+<button id="student-results-toggle" onclick="toggleStudentResults()">📊 Hasil Saya</button>
+<div id="student-results-panel"></div>
+
+<!-- ── Dataset Capture Mode (untuk tim peneliti — buat dataset ML) ── -->
+<button id="dataset-toggle" onclick="toggleDatasetPanel()" style="display:none">📸 Mode Dataset</button>
+<div id="dataset-panel" style="display:none">
+
+  <div class="dataset-desc">
+    <b>Bukan untuk siswa.</b> Alat internal tim peneliti untuk menambah foto contoh yang dipakai <i>melatih ulang</i> model ML — bukan bagian dari tur, dan tidak terlihat oleh siswa.
+  </div>
+
+  <div id="dataset-login">
+    <label>Login Tim Peneliti</label>
+    <input id="dataset-user" placeholder="Username" autocomplete="username">
+    <input id="dataset-pass" type="password" placeholder="Password" autocomplete="current-password">
+    <button onclick="datasetLogin()">Masuk</button>
+    <div id="dataset-login-msg"></div>
+  </div>
+
+  <div id="dataset-capture" style="display:none">
+    <div class="dataset-desc" style="margin-bottom:10px;padding-bottom:10px">
+      Arahkan kamera ke bentuk yang jelas, pilih kelasnya, lalu ambil gambar. Ulangi dari beberapa sudut berbeda untuk hasil terbaik.
+    </div>
+    <label>Kelas Geometri</label>
+    <select id="dataset-class"></select>
+    <button onclick="captureDatasetImage()">Ambil Gambar dari View Ini</button>
+    <div id="dataset-status"></div>
+  </div>
+
+</div>
+
+<!-- ── Controls Hint ─────────────────────────────────── -->
+<div id="controls-hint">
+  Mouse lihat sekeliling &nbsp;·&nbsp; ↑/W maju &nbsp;·&nbsp; ↓/S mundur &nbsp;·&nbsp; ←→/AD menoleh &nbsp;·&nbsp; atau klik lingkaran
+</div>
+
+<!-- ── Area Info Panel ──────────────────────────────── -->
+<div id="tour-panel">
+  <div class="tour-area-label">Area Saat Ini</div>
+  <div class="tour-area-name" id="tour-area-name">—</div>
+  <div class="tour-area-pos"  id="tour-area-pos">—</div>
+  <div class="tour-area-desc" id="tour-area-desc">—</div>
+</div>
+
+<!-- ── Geometri Info Overlay (identifikasi objek) ────── -->
+<div id="info-overlay">
+  <button class="close" onclick="hideInfo()" aria-label="Tutup">×</button>
+
+  <div class="panel-label">Geometri Teridentifikasi</div>
+  <div class="geo-name" id="info-geo-name">—</div>
+  <div class="geo-sub"  id="info-geo-sub">—</div>
+  <div class="element-tag" id="info-element"></div>
+
+  <div class="conf-row">
+    <span class="conf-title">Confidence ML</span>
+    <span class="conf-text" id="info-conf-text">0%</span>
+  </div>
+  <div class="conf-bar">
+    <div class="conf-fill" id="info-conf-bar" style="width:0%"></div>
+  </div>
+
+  <div class="props">
+    <div>
+      <div class="prop-val"   id="info-sisi">0</div>
+      <div class="prop-label">Sisi</div>
+    </div>
+    <div>
+      <div class="prop-val"   id="info-rusuk">0</div>
+      <div class="prop-label">Rusuk</div>
+    </div>
+    <div>
+      <div class="prop-val"   id="info-titik">0</div>
+      <div class="prop-label">Titik Sudut</div>
+    </div>
+  </div>
+
+  <div class="formula-block">
+    <div class="formula"><b>V =</b> <span id="info-volume">—</span></div>
+    <div class="formula"><b>L =</b> <span id="info-luas">—</span></div>
+  </div>
+
+  <div class="context">
+    <div class="ctx-label">Konteks Budaya</div>
+    <div id="info-context">—</div>
+  </div>
+
+  <button id="quiz-trigger-btn" onclick="openQuiz()">📝 Uji Pemahaman</button>
+</div>
+
+<!-- ── Kuis Panel ────────────────────────────────────── -->
+<div id="quiz-overlay">
+  <button class="close" onclick="closeQuiz()" aria-label="Tutup">×</button>
+  <div class="panel-label">Uji Pemahaman</div>
+  <div id="quiz-question" class="quiz-question">—</div>
+  <div id="quiz-options" class="quiz-options"></div>
+  <div id="quiz-feedback" class="quiz-feedback"></div>
+</div>
+
+<!-- ── Scene Switch Button ───────────────────────────── -->
+<button id="scene-btn" onclick="window.location.href='/'">← Portal</button>
+
+<!-- ── Fade transition (menghaluskan lompatan antar titik) ── -->
+<div id="tour-fade"></div>
+
+<!-- ── A-FRAME 360° SCENE ────────────────────────────── -->
+<a-scene
+  id="vrscene"
+  vr-mode-ui="enabled: true"
+  renderer="colorManagement:true; preserveDrawingBuffer:true"
+  loading-screen="enabled:false"
+  style="display:none"
+>
+  <a-sky id="tour-sky" src="" rotation="0 0 0"></a-sky>
+
+  <!-- ── Camera Rig (statis — tidak ada gerak WASD, hanya lihat + klik hotspot) ── -->
+  <a-entity id="rig" position="0 0 0">
+    <a-entity
+      camera
+      look-controls="pointerLockEnabled:false"
+      position="0 1.6 0"
+    >
+      <a-cursor
+        fuse="true"
+        fuse-timeout="1000"
+        color="#00e5ff"
+        opacity="0.8"
+        raycaster="objects:.wbn-hotspot, .wbn-identify; far:25"
+        animation__fusing="property:scale; from:1 1 1; to:0.5 0.5 0.5; dur:1000; startEvents:fusing"
+        animation__defuse="property:scale; to:1 1 1; dur:200; startEvents:mouseleave"
+      ></a-cursor>
+    </a-entity>
+  </a-entity>
+
+</a-scene>
+
+<script src="../js/tour.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+{
+  "_comment": "VR-GeoNusa — konfigurasi kelas klasifikasi ML (TensorFlow.js, MobileNetV2). Dipakai oleh skrip training (urutan array = urutan output softmax) dan sebagai referensi mapping objek scene → kelas geometri.",
+  "_version": "0.1.0",
+  "target_images_per_class": 50,
+  "min_images_per_class": 30,
+  "split_ratio": { "train": 0.7, "val": 0.2, "test": 0.1 },
+  "dataset_dir": "Dataset/geometry_wbn",
+  "classes": [
+    {
+      "class_id": "limas-segiempat",
+      "label_id": "Limas Segiempat",
+      "label_en": "Square Pyramid",
+      "sisi": 5, "rusuk": 8, "titik": 5,
+      "volume": "⅓ × Luas alas × t",
+      "luas": "Luas alas + Σ luas sisi tegak",
+      "sample_object_ids": [{ "scene_id": "borobudur", "object_id": "obj-dasar" }]
+    },
+    {
+      "class_id": "balok",
+      "label_id": "Balok",
+      "label_en": "Rectangular Prism",
+      "sisi": 6, "rusuk": 12, "titik": 8,
+      "volume": "p × l × t",
+      "luas": "2(pl + pt + lt)",
+      "sample_object_ids": [{ "scene_id": "borobudur", "object_id": "obj-teras1" }]
+    },
+    {
+      "class_id": "setengah-bola",
+      "label_id": "Setengah Bola",
+      "label_en": "Hemisphere",
+      "sisi": 1, "rusuk": 0, "titik": 0,
+      "volume": "⅔ × π × r³",
+      "luas": "3πr²",
+      "sample_object_ids": [{ "scene_id": "borobudur", "object_id": "obj-stupa" }]
+    },
+    {
+      "class_id": "tabung",
+      "label_id": "Tabung",
+      "label_en": "Cylinder",
+      "sisi": 3, "rusuk": 2, "titik": 0,
+      "volume": "π × r² × t",
+      "luas": "2πr² + 2πrt",
+      "sample_object_ids": [
+        { "scene_id": "borobudur", "object_id": "obj-stupa-kecil" },
+        { "scene_id": "borobudur", "object_id": "obj-pilar" }
+      ]
+    },
+    {
+      "class_id": "prisma-segitiga",
+      "label_id": "Prisma Segitiga",
+      "label_en": "Triangular Prism",
+      "sisi": 5, "rusuk": 9, "titik": 6,
+      "volume": "Luas alas × t",
+      "luas": "2 × Luas alas + Keliling alas × t",
+      "sample_object_ids": [{ "scene_id": "borobudur", "object_id": "obj-tangga" }]
+    },
+    {
+      "class_id": "kerucut",
+      "label_id": "Kerucut",
+      "label_en": "Cone",
+      "sisi": 2, "rusuk": 1, "titik": 1,
+      "volume": "⅓ × π × r² × t",
+      "luas": "πr² + πrs",
+      "sample_object_ids": [{ "scene_id": "borobudur", "object_id": "obj-kerucut" }]
+    }
+  ]
+}

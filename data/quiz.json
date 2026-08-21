@@ -1,0 +1,54 @@
+{
+  "_comment": "VR-GeoNusa — bank soal kuis geometri, ditampilkan setelah siswa mengidentifikasi objek di scene VR. is_correct dihitung di frontend lalu dikirim ke POST /api/quiz-results.",
+  "_version": "0.1.0",
+  "questions": [
+    {
+      "id": "q-limas-01",
+      "class_id": "limas-segiempat",
+      "question": "Dasar Candi Borobudur berbentuk Limas Segiempat. Berapa jumlah titik sudutnya?",
+      "options": ["4", "5", "6", "8"],
+      "correct_answer": "5",
+      "explanation": "Limas segiempat memiliki 5 titik sudut: 4 di alas dan 1 di puncak."
+    },
+    {
+      "id": "q-balok-01",
+      "class_id": "balok",
+      "question": "Teras Rupadhatu berbentuk Balok. Rumus volume balok adalah…",
+      "options": ["p × l × t", "⅓ × p × l × t", "2(p × l)", "s³"],
+      "correct_answer": "p × l × t",
+      "explanation": "Volume balok = panjang × lebar × tinggi."
+    },
+    {
+      "id": "q-setengah-bola-01",
+      "class_id": "setengah-bola",
+      "question": "Stupa utama Borobudur mendekati bentuk Setengah Bola. Berapa jumlah sisinya?",
+      "options": ["0", "1", "2", "3"],
+      "correct_answer": "1",
+      "explanation": "Setengah bola hanya memiliki 1 sisi lengkung (tanpa alas datar dihitung terpisah pada model sederhana ini)."
+    },
+    {
+      "id": "q-tabung-01",
+      "class_id": "tabung",
+      "question": "Pilar gapura dan stupa berlubang di Borobudur berbentuk Tabung. Rumus luas permukaan tabung adalah…",
+      "options": ["2πr² + 2πrt", "πr² + πrs", "4πr²", "⅔πr³"],
+      "correct_answer": "2πr² + 2πrt",
+      "explanation": "Luas permukaan tabung = luas 2 lingkaran alas/tutup + luas selimut."
+    },
+    {
+      "id": "q-prisma-segitiga-01",
+      "class_id": "prisma-segitiga",
+      "question": "Tangga masuk candi didekati sebagai Prisma Segitiga. Berapa jumlah rusuknya?",
+      "options": ["6", "9", "12", "8"],
+      "correct_answer": "9",
+      "explanation": "Prisma segitiga memiliki 9 rusuk: 3 pada alas, 3 pada tutup, dan 3 rusuk tegak."
+    },
+    {
+      "id": "q-kerucut-01",
+      "class_id": "kerucut",
+      "question": "Ornamen puncak gapura Borobudur berbentuk Kerucut. Berapa jumlah titik sudutnya?",
+      "options": ["0", "1", "2", "3"],
+      "correct_answer": "1",
+      "explanation": "Kerucut memiliki 1 titik sudut, yaitu titik puncaknya."
+    }
+  ]
+}

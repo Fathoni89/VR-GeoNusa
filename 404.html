@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="0;url=/">
+  <title>VR-GeoNusa</title>
+</head>
+<body>
+  <script>
+    // Redirect ke portal dengan path tersimpan di sessionStorage
+    const path = window.location.pathname;
+    // Jika path mengarah ke file yang dikenal, tetap redirect ke sana setelah hash
+    sessionStorage.setItem('redirect', path);
+    window.location.replace('/VR-GeoNusa/');
+  </script>
+</body>
+</html>
